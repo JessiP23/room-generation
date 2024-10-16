@@ -345,15 +345,29 @@ export default function CustomizableRoom() {
           <button type="submit" className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Generate</button>
         </form>
         <div className="flex items-center gap-4 mb-4">
-          <label htmlFor="realistic-mode" className="text-gray-700">Realistic Mode</label>
-          <input
-            type="checkbox"
-            id="realistic-mode"
-            checked={realisticMode}
-            onChange={(e) => setRealisticMode(e.target.checked)}
-            className="form-checkbox h-5 w-5 text-blue-600"
-          />
-        </div>
+      <label htmlFor="realistic-mode" className="text-gray-700">
+        Realistic Mode
+      </label>
+      <label className="relative inline-block w-10 h-6">
+        <input
+          type="checkbox"
+          id="realistic-mode"
+          checked={realisticMode}
+          onChange={(e) => setRealisticMode(e.target.checked)}
+          className="sr-only"
+        />
+        <div
+          className={`block bg-gray-300 w-full h-full rounded-full cursor-pointer ${
+            realisticMode ? 'bg-blue-600' : ''
+          }`}
+        ></div>
+        <div
+          className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform transform ${
+            realisticMode ? 'translate-x-4' : ''
+          }`}
+        ></div>
+      </label>
+    </div>
         <div className="flex gap-2 mb-4">
           <input
             type="number"
