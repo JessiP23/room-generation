@@ -401,7 +401,7 @@ export default function CustomizableRoom() {
           <button onClick={handleSave} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Save Rooms</button>
           <button onClick={handleLoad} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Load Rooms</button>
           <button onClick={addRoom} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Room</button>
-          <button onClick={joinRooms} className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">Join Rooms</button>
+          <button onClick={joinRooms} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Join Rooms</button>
           <button onClick={toggleView} className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600">
             {isInternalView ? 'External View' : 'Internal View'}
           </button>
