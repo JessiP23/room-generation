@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text } from '@react-three/drei'
+import { OrbitControls, Text, PerspectiveCamera } from '@react-three/drei'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 
-// room
 function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode }) {
   const { width, height, depth } = structure
 
@@ -79,7 +78,6 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
       const x = (mouse.x * viewport.width) / 2
       const y = (mouse.y * viewport.height) / 2
       
-      // Convert mouse position to wall-relative position
       const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation))
       const planeIntersect = new THREE.Plane(wallNormal, 0)
       const raycaster = new THREE.Raycaster()
@@ -87,7 +85,6 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
       const intersectPoint = new THREE.Vector3()
       raycaster.ray.intersectPlane(planeIntersect, intersectPoint)
 
-      // Constrain position within wall boundaries
       const halfWidth = wallDimensions[0] / 2
       const halfHeight = wallDimensions[1] / 2
       const newX = THREE.MathUtils.clamp(intersectPoint.x - wallPosition[0], -halfWidth + 0.5, halfWidth - 0.5)
@@ -99,8 +96,13 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
 
   const handlePointerDown = (e) => {
     e.stopPropagation()
-    setIsMoving(!isMoving)
-    if (!isMoving) {
+    setIsMoving(true)
+  }
+
+  const handlePointerUp = (e) => {
+    e.stopPropagation()
+    setIsMoving(false)
+    if (mesh.current) {
       onMove(mesh.current.position)
     }
   }
@@ -111,6 +113,7 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
         ref={mesh}
         position={position}
         onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
       >
         <boxGeometry args={type === 'door' ? [1, 2, 0.1] : [1, 1, 0.1]} />
         <meshStandardMaterial 
@@ -121,6 +124,17 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
       </mesh>
     </group>
   )
+}
+
+function WalkingCamera({ position, rotation }) {
+  const { camera } = useThree()
+  
+  useEffect(() => {
+    camera.position.set(...position)
+    camera.rotation.set(...rotation)
+  }, [camera, position, rotation])
+
+  return null
 }
 
 export default function CustomizableRoom() {
@@ -138,6 +152,9 @@ export default function CustomizableRoom() {
   const [selectedWall, setSelectedWall] = useState(null)
   const [notification, setNotification] = useState('')
   const [realisticMode, setRealisticMode] = useState(false)
+  const [isInternalView, setIsInternalView] = useState(false)
+  const [cameraPosition, setCameraPosition] = useState([0, 1.6, 0])
+  const [cameraRotation, setCameraRotation] = useState([0, 0, 0])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -232,6 +249,82 @@ export default function CustomizableRoom() {
     setRooms(newRooms)
   }
 
+  const joinRooms = () => {
+    if (rooms.length < 2) return
+    const newRooms = [...rooms]
+    const lastRoom = newRooms[newRooms.length - 1]
+    const secondLastRoom = newRooms[newRooms.length - 2]
+    lastRoom.position = [
+      secondLastRoom.position[0] + secondLastRoom.structure.width,
+      secondLastRoom.position[1],
+      secondLastRoom.position[2]
+    ]
+    setRooms(newRooms)
+  }
+
+  const toggleView = () => {
+    setIsInternalView(!isInternalView)
+    if (!isInternalView) {
+      setCameraPosition([rooms[selectedRoom].position[0], 1.6, rooms[selectedRoom].position[2]])
+      setCameraRotation([0, 0, 0])
+    }
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isInternalView) return
+
+      const speed = 0.1
+      const currentRoom = rooms[selectedRoom]
+      const halfWidth = currentRoom.structure.width / 2
+      const halfDepth = currentRoom.structure.depth / 2
+
+      switch (e.key) {
+        case 'w':
+          setCameraPosition(prev => [
+            THREE.MathUtils.clamp(prev[0] + Math.sin(cameraRotation[1]) * speed, 
+              currentRoom.position[0] - halfWidth, currentRoom.position[0] + halfWidth),
+            prev[1],
+            THREE.MathUtils.clamp(prev[2] - Math.cos(cameraRotation[1]) * speed,
+              currentRoom.position[2] - halfDepth, currentRoom.position[2] + halfDepth)
+          ])
+          break
+        case 's':
+          setCameraPosition(prev => [
+            THREE.MathUtils.clamp(prev[0] - Math.sin(cameraRotation[1]) * speed,
+              currentRoom.position[0] - halfWidth, currentRoom.position[0] + halfWidth),
+            prev[1],
+            THREE.MathUtils.clamp(prev[2] + Math.cos(cameraRotation[1]) * speed,
+              currentRoom.position[2] - halfDepth, currentRoom.position[2] + halfDepth)
+          ])
+          break
+        case 'a':
+          setCameraPosition(prev => [
+            THREE.MathUtils.clamp(prev[0] - Math.cos(cameraRotation[1]) * speed,
+              currentRoom.position[0] - halfWidth, currentRoom.position[0] + halfWidth),
+            prev[1],
+            THREE.MathUtils.clamp(prev[2] - Math.sin(cameraRotation[1]) * speed,
+              currentRoom.position[2] - halfDepth, currentRoom.position[2] + halfDepth)
+          ])
+          break
+        case 'd':
+          setCameraPosition(prev => [
+            THREE.MathUtils.clamp(prev[0] + Math.cos(cameraRotation[1]) * speed,
+              currentRoom.position[0] - halfWidth, currentRoom.position[0] + halfWidth),
+            prev[1],
+            THREE.MathUtils.clamp(prev[2] + Math.sin(cameraRotation[1]) * speed,
+              currentRoom.position[2] - halfDepth, currentRoom.position[2] + halfDepth)
+          ])
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', 
+
+ handleKeyDown)
+  }, [isInternalView, cameraRotation, rooms, selectedRoom])
+
   return (
     <div className="flex flex-col h-screen">
       <div className="p-4 bg-gray-100">
@@ -306,12 +399,20 @@ export default function CustomizableRoom() {
           <button onClick={handleSave} className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Save Rooms</button>
           <button onClick={handleLoad} className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Load Rooms</button>
           <button onClick={addRoom} className="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Add Room</button>
+          <button onClick={joinRooms} className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">Join Rooms</button>
+          <button onClick={toggleView} className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600">
+            {isInternalView ? 'External View' : 'Internal View'}
+          </button>
         </div>
       </div>
       <div className="flex-grow relative">
-        <Canvas camera={{ position: [20, 20, 20] }}>
-          
-          <OrbitControls />
+        <Canvas>
+          {isInternalView ? (
+            <WalkingCamera position={cameraPosition} rotation={cameraRotation} />
+          ) : (
+            <PerspectiveCamera makeDefault position={[20, 20, 20]} />
+          )}
+          {!isInternalView && <OrbitControls />}
           {rooms.map((room, index) => (
             <group key={room.id} position={room.position}>
               <Room
