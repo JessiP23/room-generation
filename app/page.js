@@ -393,8 +393,8 @@ export default function CustomizableRoom() {
         </div>
         {selectedWall !== null && (
           <div className="flex gap-2 mb-4">
-            <button onClick={() => addFeature('door')} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Add Door</button>
-            <button onClick={() => addFeature('window')} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Add Window</button>
+            <button onClick={() => addFeature('door')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Door</button>
+            <button onClick={() => addFeature('window')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Window</button>
             <input
               type="color"
               value={rooms[selectedRoom].wallColors[selectedWall]}
