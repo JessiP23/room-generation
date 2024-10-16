@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text, PerspectiveCamera } from '@react-three/drei'
+import { OrbitControls, Text, PerspectiveCamera, PointerLockControls } from '@react-three/drei'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
+import { Vector3 } from 'three'
 
 function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode }) {
   const { width, height, depth } = structure
@@ -128,15 +129,106 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
 
 
 // walking camera
-function WalkingCamera({ position, rotation }) {
-  const { camera } = useThree()
-  
-  useEffect(() => {
-    camera.position.set(...position)
-    camera.rotation.set(...rotation)
-  }, [camera, position, rotation])
 
-  return null
+function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2 }) {
+  const { camera, gl } = useThree();
+  const controlsRef = useRef();
+  const [moveDirection, setMoveDirection] = useState(new THREE.Vector3());
+  const [isSprinting, setIsSprinting] = useState(false);
+
+  useEffect(() => {
+    camera.position.set(...initialPosition);
+  }, [camera, initialPosition]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      switch (event.code) {
+        case 'KeyW':
+        case 'ArrowUp':
+          setMoveDirection((prev) => prev.setZ(-1));
+          break;
+        case 'KeyS':
+        case 'ArrowDown':
+          setMoveDirection((prev) => prev.setZ(1));
+          break;
+        case 'KeyA':
+        case 'ArrowLeft':
+          setMoveDirection((prev) => prev.setX(-1));
+          break;
+        case 'KeyD':
+        case 'ArrowRight':
+          setMoveDirection((prev) => prev.setX(1));
+          break;
+        case 'Space':
+          if (camera.position.y === initialPosition[1]) {
+            camera.position.y += 0.5; // Simple jump
+          }
+          break;
+        case 'ShiftLeft':
+          setIsSprinting(true);
+          break;
+      }
+    };
+
+    // improved version
+
+    const handleKeyUp = (event) => {
+      switch (event.code) {
+        case 'KeyW':
+        case 'KeyS':
+        case 'ArrowUp':
+        case 'ArrowDown':
+          setMoveDirection((prev) => prev.setZ(0));
+          break;
+        case 'KeyA':
+        case 'KeyD':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          setMoveDirection((prev) => prev.setX(0));
+          break;
+        case 'ShiftLeft':
+          setIsSprinting(false);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [initialPosition]);
+
+  useFrame(() => {
+    if (controlsRef.current) {
+      const speed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
+      const direction = moveDirection.clone().normalize().multiplyScalar(speed);
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      cameraDirection.y = 0;
+      cameraDirection.normalize();
+
+      const sideways = new THREE.Vector3(-cameraDirection.z, 0, cameraDirection.x);
+
+      const movement = new THREE.Vector3()
+        .addScaledVector(cameraDirection, -direction.z)
+        .addScaledVector(sideways, direction.x);
+
+      camera.position.add(movement);
+
+      // Simple gravity
+      if (camera.position.y > initialPosition[1]) {
+        camera.position.y = Math.max(
+          camera.position.y - 0.05,
+          initialPosition[1]
+        );
+      }
+    }
+  });
+
+  return <PointerLockControls ref={controlsRef} args={[camera, gl.domElement]} />;
 }
 
 export default function CustomizableRoom() {
