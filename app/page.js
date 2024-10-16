@@ -397,7 +397,7 @@ export default function CustomizableRoom() {
           </div>
         )}
         <div className="flex gap-2">
-          <button onClick={handleDownload} className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">Download 3D Room</button>
+          <button onClick={handleDownload} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Download 3D Room</button>
           <button onClick={handleSave} className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Save Rooms</button>
           <button onClick={handleLoad} className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Load Rooms</button>
           <button onClick={addRoom} className="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Add Room</button>
