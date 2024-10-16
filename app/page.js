@@ -342,7 +342,7 @@ export default function CustomizableRoom() {
             placeholder="Describe the house or room..."
             className="flex-grow p-2 border rounded text-gray-900"
           />
-          <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Generate</button>
+          <button type="submit" className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Generate</button>
         </form>
         <div className="flex items-center gap-4 mb-4">
           <label htmlFor="realistic-mode" className="text-gray-700">Realistic Mode</label>
