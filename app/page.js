@@ -7,6 +7,8 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 
+
+// customizations
 export default function CustomizableRoom() {
   const [prompt, setPrompt] = useState('')
   const [structure, setStructure] = useState(null)
