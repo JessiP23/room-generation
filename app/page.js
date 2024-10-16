@@ -126,6 +126,8 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
   )
 }
 
+
+// walking camera
 function WalkingCamera({ position, rotation }) {
   const { camera } = useThree()
   
