@@ -2,198 +2,185 @@
 
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry'
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { OrbitControls, Text } from '@react-three/drei'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 
+function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode }) {
+  const { width, height, depth } = structure
 
-// customizations
+  const sides = [
+    { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, 1] },
+    { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, 1] },
+    { pos: [width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1] },
+    { pos: [-width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1] },
+    { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
+    { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
+  ]
+
+  return (
+    <group>
+      {sides.map((side, index) => (
+        <mesh 
+          key={index} 
+          position={side.pos} 
+          rotation={side.rot} 
+          scale={side.scale}
+          onClick={(e) => {
+            e.stopPropagation()
+            onWallClick(index)
+          }}
+        >
+          <planeGeometry args={[1, 1]} />
+          <meshStandardMaterial 
+            color={wallColors[index]} 
+            side={THREE.DoubleSide}
+            emissive={selectedWall === index ? new THREE.Color(0x666666) : undefined}
+            roughness={realisticMode ? 0.8 : 0.5}
+            metalness={realisticMode ? 0.2 : 0}
+          />
+        </mesh>
+      ))}
+      {features.map((feature, index) => (
+        <Feature 
+          key={index} 
+          {...feature} 
+          onMove={(newPosition) => onFeatureMove(index, newPosition)} 
+          wallDimensions={sides[feature.wallIndex].scale}
+          wallRotation={sides[feature.wallIndex].rot}
+          wallPosition={sides[feature.wallIndex].pos}
+          realisticMode={realisticMode}
+        />
+      ))}
+      <axesHelper args={[Math.max(width, height, depth)]} />
+      <Text position={[width/2 + 0.5, 0, 0]} rotation={[0, -Math.PI/2, 0]} fontSize={0.5}>
+        {`Width: ${width.toFixed(2)}`}
+      </Text>
+      <Text position={[0, height/2 + 0.5, 0]} rotation={[0, 0, Math.PI/2]} fontSize={0.5}>
+        {`Height: ${height.toFixed(2)}`}
+      </Text>
+      <Text position={[0, 0, depth/2 + 0.5]} rotation={[0, Math.PI, 0]} fontSize={0.5}>
+        {`Depth: ${depth.toFixed(2)}`}
+      </Text>
+      <ambientLight intensity={0.5} />
+      <pointLight position={[10, 10, 10]} />
+    </group>
+  )
+}
+
+function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode }) {
+  const mesh = useRef()
+  const { size, viewport } = useThree()
+  const [isMoving, setIsMoving] = useState(false)
+
+  useFrame(({ mouse, camera }) => {
+    if (isMoving && mesh.current) {
+      const x = (mouse.x * viewport.width) / 2
+      const y = (mouse.y * viewport.height) / 2
+      
+      // Convert mouse position to wall-relative position
+      const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation))
+      const planeIntersect = new THREE.Plane(wallNormal, 0)
+      const raycaster = new THREE.Raycaster()
+      raycaster.setFromCamera(new THREE.Vector2(mouse.x, mouse.y), camera)
+      const intersectPoint = new THREE.Vector3()
+      raycaster.ray.intersectPlane(planeIntersect, intersectPoint)
+
+      // Constrain position within wall boundaries
+      const halfWidth = wallDimensions[0] / 2
+      const halfHeight = wallDimensions[1] / 2
+      const newX = THREE.MathUtils.clamp(intersectPoint.x - wallPosition[0], -halfWidth + 0.5, halfWidth - 0.5)
+      const newY = THREE.MathUtils.clamp(intersectPoint.y - wallPosition[1], -halfHeight + (type === 'door' ? 1 : 0.5), halfHeight - (type === 'door' ? 1 : 0.5))
+
+      mesh.current.position.set(newX, newY, 0.05)
+    }
+  })
+
+  const handlePointerDown = (e) => {
+    e.stopPropagation()
+    setIsMoving(!isMoving)
+    if (!isMoving) {
+      onMove(mesh.current.position)
+    }
+  }
+
+  return (
+    <group position={wallPosition} rotation={wallRotation}>
+      <mesh
+        ref={mesh}
+        position={position}
+        onPointerDown={handlePointerDown}
+      >
+        <boxGeometry args={type === 'door' ? [1, 2, 0.1] : [1, 1, 0.1]} />
+        <meshStandardMaterial 
+          color={type === 'door' ? '#8B4513' : '#87CEEB'} 
+          roughness={realisticMode ? 0.6 : 0.3}
+          metalness={realisticMode ? 0.1 : 0}
+        />
+      </mesh>
+    </group>
+  )
+}
+
 export default function CustomizableRoom() {
-  const [prompt, setPrompt] = useState('')
-  const [structure, setStructure] = useState(null)
-  const [wallColors, setWallColors] = useState(Array(6).fill('#ADD8E6'))
+  const [rooms, setRooms] = useState([
+    {
+      id: 1,
+      prompt: '',
+      structure: { width: 10, height: 8, depth: 10 },
+      wallColors: Array(6).fill('#FFFFFF'),
+      features: [],
+      position: [0, 0, 0],
+    }
+  ])
+  const [selectedRoom, setSelectedRoom] = useState(0)
   const [selectedWall, setSelectedWall] = useState(null)
   const [notification, setNotification] = useState('')
-  const mountRef = useRef(null)
-  const sceneRef = useRef(null)
-  const cameraRef = useRef(null)
-  const rendererRef = useRef(null)
-
-  useEffect(() => {
-    if (!structure) return
-
-    // Three.js setup
-    const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-    const renderer = new THREE.WebGLRenderer()
-
-    renderer.setSize(window.innerWidth, window.innerHeight)
-    mountRef.current.appendChild(renderer.domElement)
-
-    // Add orbit controls
-    const controls = new OrbitControls(camera, renderer.domElement)
-
-    // Create structure
-    const { width, height, depth } = structure
-    const geometry = new THREE.BoxGeometry(width, height, depth)
-    const edges = new THREE.EdgesGeometry(geometry)
-    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }))
-    scene.add(line)
-
-    // Add colored sides
-    const sides = [
-      { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, 1] },
-      { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, 1] },
-      { pos: [width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1] },
-      { pos: [-width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1] },
-      { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
-      { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
-    ]
-
-    sides.forEach((side, index) => {
-      const sideGeometry = new THREE.PlaneGeometry(1, 1)
-      const sideMaterial = new THREE.MeshBasicMaterial({ color: wallColors[index], transparent: true, opacity: 0.5, side: THREE.DoubleSide })
-      const sideMesh = new THREE.Mesh(sideGeometry, sideMaterial)
-      sideMesh.position.set(...side.pos)
-      sideMesh.rotation.set(...side.rot)
-      sideMesh.scale.set(...side.scale)
-      sideMesh.userData = { wallIndex: index }
-      scene.add(sideMesh)
-    })
-
-    // Add length labels
-    const loader = new FontLoader()
-    loader.load('/fonts/helvetiker_regular.typeface.json', function(font) {
-      const labelMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
-      const labels = [
-        { text: `${width.toFixed(2)}m`, position: [0, -height/2 - 0.5, 0], rotation: [-Math.PI/2, 0, 0] },
-        { text: `${depth.toFixed(2)}m`, position: [width/2 + 0.5, -height/2 - 0.5, 0], rotation: [-Math.PI/2, 0, Math.PI/2] },
-        { text: `${height.toFixed(2)}m`, position: [-width/2 - 0.5, 0, depth/2 + 0.5], rotation: [0, Math.PI/2, 0] },
-      ]
-
-      labels.forEach(label => {
-        const textGeometry = new TextGeometry(label.text, {
-          font: font,
-          size: 0.5,
-          height: 0.1,
-        })
-        const textMesh = new THREE.Mesh(textGeometry, labelMaterial)
-        textMesh.position.set(...label.position)
-        textMesh.rotation.set(...label.rotation)
-        scene.add(textMesh)
-      })
-    })
-
-    // Set camera position
-    const maxDimension = Math.max(width, height, depth)
-    camera.position.set(maxDimension * 1.5, maxDimension * 1.5, maxDimension * 1.5)
-    controls.update()
-
-    // Add fixed position measurements
-    const axesHelper = new THREE.AxesHelper(5)
-    scene.add(axesHelper)
-
-    const measurementDiv = document.createElement('div')
-    measurementDiv.style.position = 'absolute'
-    measurementDiv.style.top = '10px'
-    measurementDiv.style.left = '10px'
-    measurementDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
-    measurementDiv.style.color = 'white'
-    measurementDiv.style.padding = '10px'
-    mountRef.current.appendChild(measurementDiv)
-
-    // Raycaster for wall selection
-    const raycaster = new THREE.Raycaster()
-    const mouse = new THREE.Vector2()
-
-    renderer.domElement.addEventListener('click', onMouseClick, false)
-
-    function onMouseClick(event) {
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-
-      raycaster.setFromCamera(mouse, camera)
-
-      const intersects = raycaster.intersectObjects(scene.children)
-
-      for (let i = 0; i < intersects.length; i++) {
-        if (intersects[i].object.userData.wallIndex !== undefined) {
-          setSelectedWall(intersects[i].object.userData.wallIndex)
-          setNotification(`Wall ${intersects[i].object.userData.wallIndex + 1} selected`)
-          setTimeout(() => setNotification(''), 2000)
-          break
-        }
-      }
-    }
-
-    // Animation loop
-    const animate = () => {
-      requestAnimationFrame(animate)
-      controls.update()
-      renderer.render(scene, camera)
-
-      // Update measurements
-      const position = camera.position
-      measurementDiv.innerHTML = `
-        X: ${position.x.toFixed(2)}
-        Y: ${position.y.toFixed(2)}
-        Z: ${position.z.toFixed(2)}
-      `
-    }
-    animate()
-
-    // Store references
-    sceneRef.current = scene
-    cameraRef.current = camera
-    rendererRef.current = renderer
-
-    // Clean up
-    return () => {
-      mountRef.current.removeChild(renderer.domElement)
-      mountRef.current.removeChild(measurementDiv)
-      renderer.domElement.removeEventListener('click', onMouseClick, false)
-    }
-  }, [structure, wallColors])
+  const [realisticMode, setRealisticMode] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate structure')
-      }
-
-      const data = await response.json()
-      setStructure(data)
-    } catch (error) {
-      console.error('Error:', error)
-      alert('Failed to generate structure. Please try again.')
+    const newRooms = [...rooms]
+    newRooms[selectedRoom].structure = { 
+      width: Math.random() * 10 + 5, 
+      height: Math.random() * 5 + 3, 
+      depth: Math.random() * 10 + 5 
     }
+    setRooms(newRooms)
   }
 
   const handleColorChange = (color) => {
     if (selectedWall !== null) {
-      const newColors = [...wallColors]
-      newColors[selectedWall] = color
-      setWallColors(newColors)
+      const newRooms = [...rooms]
+      newRooms[selectedRoom].wallColors[selectedWall] = color
+      setRooms(newRooms)
     }
   }
 
-  const handleDownload = () => {
-    if (!sceneRef.current) return
+  const handleWallClick = (index) => {
+    setSelectedWall(index)
+    setNotification(`Wall ${index + 1} selected`)
+    setTimeout(() => setNotification(''), 2000)
+  }
 
+  const addFeature = (type) => {
+    if (selectedWall === null) return
+    const newRooms = [...rooms]
+    const newFeature = { type, position: [0, 0, 0.05], wallIndex: selectedWall }
+    newRooms[selectedRoom].features.push(newFeature)
+    setRooms(newRooms)
+  }
+
+  const handleFeatureMove = (index, newPosition) => {
+    const newRooms = [...rooms]
+    newRooms[selectedRoom].features[index].position = [newPosition.x, newPosition.y, newPosition.z]
+    setRooms(newRooms)
+  }
+
+  const handleDownload = () => {
     const exporter = new GLTFExporter()
     exporter.parse(
-      sceneRef.current,
+      document.querySelector('canvas').scene,
       (gltf) => {
         const output = JSON.stringify(gltf, null, 2)
         const blob = new Blob([output], { type: 'text/plain' })
@@ -208,74 +195,136 @@ export default function CustomizableRoom() {
     )
   }
 
-  const addFeature = (type) => {
-    if (!sceneRef.current || !cameraRef.current || selectedWall === null) return
+  const handleSave = () => {
+    const savedRooms = JSON.stringify(rooms)
+    localStorage.setItem('savedRooms', savedRooms)
+    setNotification('Rooms saved successfully')
+    setTimeout(() => setNotification(''), 2000)
+  }
 
-    const { width, height, depth } = structure
-    const wallDimensions = [
-      { width, height },
-      { width, height },
-      { depth, height },
-      { depth, height },
-      { width, depth },
-      { width, depth },
-    ]
+  const handleLoad = () => {
+    const savedRooms = localStorage.getItem('savedRooms')
+    if (savedRooms) {
+      setRooms(JSON.parse(savedRooms))
+      setNotification('Rooms loaded successfully')
+      setTimeout(() => setNotification(''), 2000)
+    }
+  }
 
-    const currentWallDimensions = wallDimensions[selectedWall]
-    const featureWidth = type === 'door' ? 1 : 1
-    const featureHeight = type === 'door' ? 2 : 1
+  const addRoom = () => {
+    const lastRoom = rooms[rooms.length - 1]
+    const newRoom = {
+      id: rooms.length + 1,
+      prompt: '',
+      structure: { width: 10, height: 8, depth: 10 },
+      wallColors: Array(6).fill('#FFFFFF'),
+      features: [],
+      position: [lastRoom.position[0] + lastRoom.structure.width + 2, 0, 0],
+    }
+    setRooms([...rooms, newRoom])
+    setSelectedRoom(rooms.length)
+  }
 
-    const geometry = new THREE.PlaneGeometry(featureWidth, featureHeight)
-    const material = new THREE.MeshBasicMaterial({ color: 0x8B4513, side: THREE.DoubleSide })
-    const feature = new THREE.Mesh(geometry, material)
-
-    // Position the feature on the selected wall
-    const wallCenter = sceneRef.current.children.find(child => child.userData.wallIndex === selectedWall).position.clone()
-    const wallRotation = sceneRef.current.children.find(child => child.userData.wallIndex === selectedWall).rotation.clone()
-
-    feature.position.copy(wallCenter)
-    feature.rotation.copy(wallRotation)
-
-    // Adjust position to be slightly in front of the wall
-    const normal = new THREE.Vector3(0, 0, 1)
-    normal.applyEuler(wallRotation)
-    feature.position.add(normal.multiplyScalar(0.01))
-
-    sceneRef.current.add(feature)
-    rendererRef.current.render(sceneRef.current, cameraRef.current)
+  const handleDimensionChange = (dimension, value) => {
+    const newRooms = [...rooms]
+    newRooms[selectedRoom].structure[dimension] = Number(value)
+    setRooms(newRooms)
   }
 
   return (
     <div className="flex flex-col h-screen">
       <div className="p-4 bg-gray-100">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
           <input
             type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            value={rooms[selectedRoom].prompt}
+            onChange={(e) => {
+              const newRooms = [...rooms]
+              newRooms[selectedRoom].prompt = e.target.value
+              setRooms(newRooms)
+            }}
             placeholder="Describe the house or room..."
             className="flex-grow p-2 border rounded text-gray-900"
           />
-          <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded">Generate</button>
+          <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Generate</button>
         </form>
+        <div className="flex items-center gap-4 mb-4">
+          <label htmlFor="realistic-mode" className="text-gray-700">Realistic Mode</label>
+          <input
+            type="checkbox"
+            id="realistic-mode"
+            checked={realisticMode}
+            onChange={(e) => setRealisticMode(e.target.checked)}
+            className="form-checkbox h-5 w-5 text-blue-600"
+          />
+        </div>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="number"
+            value={rooms[selectedRoom].structure.width}
+            onChange={(e) => handleDimensionChange('width', e.target.value)}
+            className="w-20 p-2 border rounded text-gray-900"
+            placeholder="Width"
+          />
+          <input
+            type="number"
+            value={rooms[selectedRoom].structure.height}
+            onChange={(e) => handleDimensionChange('height', e.target.value)}
+            className="w-20 p-2 border rounded text-gray-900"
+            placeholder="Height"
+          />
+          <input
+            type="number"
+            value={rooms[selectedRoom].structure.depth}
+            onChange={(e) => handleDimensionChange('depth', e.target.value)}
+            className="w-20 p-2 border rounded text-gray-900"
+            placeholder="Depth"
+          />
+        </div>
         {selectedWall !== null && (
-          <div className="mt-2">
-            <button onClick={() => addFeature('door')} className="px-4 py-2 bg-green-500 text-white rounded mr-2">Add Door</button>
-            <button onClick={() => addFeature('window')} className="px-4 py-2 bg-green-500 text-white rounded">Add Window</button>
+          <div className="flex gap-2 mb-4">
+            <button onClick={() => addFeature('door')} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Add Door</button>
+            <button onClick={() => addFeature('window')} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Add Window</button>
+            <input
+              type="color"
+              value={rooms[selectedRoom].wallColors[selectedWall]}
+              onChange={(e) => handleColorChange(e.target.value)}
+              className="w-12 h-10 border-none"
+            />
+            <input
+              type="text"
+              value={rooms[selectedRoom].wallColors[selectedWall]}
+              onChange={(e) => handleColorChange(e.target.value)}
+              placeholder="Hex color"
+              className="w-28 p-2 border rounded text-gray-900"
+            />
           </div>
         )}
-        <div className="mt-2">
-          <input 
-            type="color" 
-            value={selectedWall !== null ? wallColors[selectedWall] : '#ADD8E6'}
-            onChange={(e) => handleColorChange(e.target.value)}
-            className="mr-2"
-          />
-          <button onClick={handleDownload} className="px-4 py-2 bg-purple-500 text-white rounded">Download 3D Room</button>
+        <div className="flex gap-2">
+          <button onClick={handleDownload} className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">Download 3D Room</button>
+          <button onClick={handleSave} className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Save Rooms</button>
+          <button onClick={handleLoad} className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Load Rooms</button>
+          <button onClick={addRoom} className="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">Add Room</button>
         </div>
       </div>
       <div className="flex-grow relative">
-        <div ref={mountRef} className="absolute inset-0" />
+        <Canvas camera={{ position: [20, 20, 20] }}>
+          
+          <OrbitControls />
+          {rooms.map((room, index) => (
+            <group key={room.id} position={room.position}>
+              <Room
+                structure={room.structure}
+                wallColors={room.wallColors}
+                features={room.features}
+                onFeatureMove={(featureIndex, newPosition) => handleFeatureMove(featureIndex, newPosition)}
+                onWallClick={handleWallClick}
+                selectedWall={selectedRoom === index ? selectedWall : null}
+                realisticMode={realisticMode}
+              />
+            </group>
+          ))}
+        </Canvas>
         {notification && (
           <div className="absolute top-4 right-4 bg-green-500 text-white p-2 rounded">
             {notification}
