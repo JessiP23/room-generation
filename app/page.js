@@ -4,12 +4,16 @@
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry'
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader'
 
 export default function Home() {
   const [prompt, setPrompt] = useState('')
   const [structure, setStructure] = useState(null)
   const mountRef = useRef(null)
 
+
+  // mounting route function
   useEffect(() => {
     if (!structure) return
 
