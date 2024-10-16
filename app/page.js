@@ -1,6 +1,5 @@
 'use client'
 
-
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -12,8 +11,6 @@ export default function Home() {
   const [structure, setStructure] = useState(null)
   const mountRef = useRef(null)
 
-
-  // mounting route function
   useEffect(() => {
     if (!structure) return
 
@@ -29,20 +26,58 @@ export default function Home() {
     const controls = new OrbitControls(camera, renderer.domElement)
 
     // Create structure
-    const geometry = new THREE.BoxGeometry(structure.width, structure.height, structure.depth)
-    const material = new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true })
-    const mesh = new THREE.Mesh(geometry, material)
-    scene.add(mesh)
+    const { width, height, depth } = structure
+    const geometry = new THREE.BoxGeometry(width, height, depth)
+    const edges = new THREE.EdgesGeometry(geometry)
+    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }))
+    scene.add(line)
 
-    // Add floor
-    const floorGeometry = new THREE.PlaneGeometry(structure.width, structure.depth)
-    const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x666666, side: THREE.DoubleSide })
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial)
-    floor.rotation.x = Math.PI / 2
-    floor.position.y = -structure.height / 2
-    scene.add(floor)
+    // Add colored sides
+    const sideMaterial = new THREE.MeshBasicMaterial({ color: 0xADD8E6, transparent: true, opacity: 0.5 })
+    const sides = [
+      { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, 1] },
+      { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, 1] },
+      { pos: [width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1] },
+      { pos: [-width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1] },
+      { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
+      { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
+    ]
 
-    camera.position.set(structure.width, structure.height, structure.depth * 2)
+    sides.forEach(side => {
+      const sideGeometry = new THREE.PlaneGeometry(1, 1)
+      const sideMesh = new THREE.Mesh(sideGeometry, sideMaterial)
+      sideMesh.position.set(...side.pos)
+      sideMesh.rotation.set(...side.rot)
+      sideMesh.scale.set(...side.scale)
+      scene.add(sideMesh)
+    })
+
+    // Add length labels
+    const loader = new FontLoader()
+    loader.load('/fonts/helvetiker_regular.typeface.json', function(font) {
+      const labelMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 })
+      const labels = [
+        { text: `${width.toFixed(2)}m`, position: [0, -height/2 - 0.5, 0], rotation: [-Math.PI/2, 0, 0] },
+        { text: `${depth.toFixed(2)}m`, position: [width/2 + 0.5, -height/2 - 0.5, 0], rotation: [-Math.PI/2, 0, Math.PI/2] },
+        { text: `${height.toFixed(2)}m`, position: [-width/2 - 0.5, 0, depth/2 + 0.5], rotation: [0, Math.PI/2, 0] },
+      ]
+
+      labels.forEach(label => {
+        const textGeometry = new TextGeometry(label.text, {
+          font: font,
+          size: 0.5,
+          height: 0.1,
+        })
+        const textMesh = new THREE.Mesh(textGeometry, labelMaterial)
+        textMesh.position.set(...label.position)
+        textMesh.rotation.set(...label.rotation)
+        scene.add(textMesh)
+      })
+    })
+
+    // Set camera position
+    const maxDimension = Math.max(width, height, depth)
+    camera.position.set(maxDimension * 1.5, maxDimension * 1.5, maxDimension * 1.5)
     controls.update()
 
     // Animation loop
@@ -91,6 +126,7 @@ export default function Home() {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Describe the house or room..."
+          className='text-gray-950'
         />
         <button type="submit">Generate</button>
       </form>
