@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Search, Share, User } from 'lucide-react';
+import { Code, Layout, Search, Share, User, Zap } from 'lucide-react';
 
 const LandingPage = () => {
   return (
@@ -23,7 +23,6 @@ const LandingPage = () => {
           <User size={20} />
         </div>
       </nav>
-      
       
       <main className="flex items-center justify-between px-20 py-16">
         <div className="w-1/2">
@@ -75,8 +74,66 @@ const LandingPage = () => {
           </div>
         </div>
       </main>
+
+      {/* Features Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-12">Why Choose Our 3D Architectural Platform</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <FeatureCard 
+              icon={<Code className="w-12 h-12 text-purple-500" />}
+              title="Immersive 3D Experiences"
+              description="Create stunning, interactive 3D models of your architectural designs that clients can explore in real-time."
+            />
+            <FeatureCard 
+              icon={<Layout className="w-12 h-12 text-blue-500" />}
+              title="Intuitive Interface"
+              description="Our user-friendly platform makes it easy for architects and clients alike to navigate and collaborate on projects."
+            />
+            <FeatureCard 
+              icon={<Zap className="w-12 h-12 text-yellow-500" />}
+              title="Real-time Collaboration"
+              description="Work together with your team and clients in real-time, making changes and getting feedback instantly."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Another 3D Room Section */}
+      <section className="py-16 bg-gray-100">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-12">Experience Our 3D Room Technology</h2>
+          <div className="relative w-full h-[400px] perspective-1000 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg overflow-hidden">
+            <div className="absolute inset-0 transform-3d rotate-y-[-20deg] rotate-x-10 animate-room-rotate">
+              {/* Room walls */}
+              <div className="absolute inset-0 bg-white opacity-50"></div>
+              <div className="absolute top-0 left-0 w-full h-full bg-gray-200 transform-origin-left rotate-y-90 translate-x-[-200px]"></div>
+              <div className="absolute top-0 right-0 w-full h-full bg-gray-300 transform-origin-right rotate-y-[-90deg] translate-x-[200px]"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-full bg-gray-400 transform-origin-bottom rotate-x-90 translate-y-[200px]"></div>
+
+              {/* Furniture and decorations */}
+              <div className="absolute bottom-0 left-1/4 w-1/2 h-1/4 bg-yellow-800 transform translate-z-20"></div>
+              <div className="absolute top-1/4 left-1/4 w-32 h-48 bg-blue-200 border-4 border-white transform translate-z-30"></div>
+              <div className="absolute bottom-1/4 right-1/4 w-24 h-36 bg-green-500 rounded-full transform translate-z-40"></div>
+
+              {/* Animated elements */}
+              <div className="absolute top-20 right-40 w-12 h-12 bg-purple-400 rounded-full animate-float transform translate-z-50"></div>
+              <div className="absolute bottom-40 left-60 w-8 h-8 bg-pink-400 rounded-full animate-ping transform translate-z-60"></div>
+              <div className="absolute top-1/2 left-1/2 w-16 h-16 bg-yellow-400 rounded-full animate-pulse transform translate-z-70"></div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
+
+const FeatureCard = ({ icon, title, description }) => (
+  <div className="bg-gray-50 p-6 rounded-lg shadow-lg transition-transform duration-300 hover:scale-105">
+    <div className="mb-4">{icon}</div>
+    <h3 className="text-xl font-semibold mb-2">{title}</h3>
+    <p className="text-gray-600">{description}</p>
+  </div>
+);
 
 export default LandingPage;
