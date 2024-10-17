@@ -638,7 +638,7 @@ export default function CustomizableRoom() {
         </div>
       </div>
       <div className="flex-grow relative">
-      <Canvas shadows>
+        <Canvas shadows>
           {isInternalView ? (
             <WalkingCamera position={cameraPosition} rotation={cameraRotation} />
           ) : (
