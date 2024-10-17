@@ -32,8 +32,8 @@ const LandingPage = () => {
           <span className="text-white font-bold">LOGO</span>
         </div>
         <div className="flex space-x-4 text-white">
-          <a href="/contact-us" className="hover:underline">Contact us</a>
           <a href="/room-generation" className="hover:underline">Get started</a>
+          <a href="/contact-us" className="hover:underline">Contact us</a>
           <a href="/about-us" className="hover:underline">About us</a>
           <a href="#" className="hover:underline">Portfolio</a>
         </div>
