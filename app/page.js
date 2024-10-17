@@ -13,7 +13,7 @@ const LandingPage = () => {
         </div>
         <div className="flex space-x-4 text-white">
           <a href="#" className="hover:underline">Contact us</a>
-          <a href="#" className="hover:underline">Get started</a>
+          <a href="/room-generation" className="hover:underline">Get started</a>
           <a href="#" className="hover:underline">About us</a>
           <a href="#" className="hover:underline">Portfolio</a>
         </div>
@@ -31,9 +31,9 @@ const LandingPage = () => {
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
             eiusmod tempor incididunt ut labore et dolore magna aliqua.
           </p>
-          <button className="bg-white text-purple-600 px-6 py-2 rounded-full font-bold hover:bg-purple-100 transition-colors duration-300">
+          <a href='/room-generation' className="bg-white text-purple-600 px-6 py-2 rounded-full font-bold hover:bg-purple-100 transition-colors duration-300">
             Get Started
-          </button>
+          </a>
         </div>
         <div className="relative w-1/2 h-96">
           {/* Room container */}
