@@ -46,7 +46,7 @@ const LandingPage = () => {
       
       <main className="flex items-center justify-between px-20 py-16">
         <div className="w-1/2">
-          <h1 className="text-6xl font-bold text-white mb-4">Front end developer</h1>
+          <h1 className="text-6xl font-bold text-white mb-4">Generation of 3D rooms/building</h1>
           <p className="text-white mb-8">
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
             eiusmod tempor incididunt ut labore et dolore magna aliqua.
