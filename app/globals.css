@@ -81,3 +81,27 @@ body {
 .animate-globe-continents-rotate { animation: globe-continents-rotate 40s linear infinite; }
 .animate-satellite-orbit { animation: satellite-orbit 10s linear infinite; }
 .animate-twinkle { animation: twinkle 4s ease-in-out infinite; }
+
+@keyframes menu-open {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes rotate-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes window-light {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.animate-menu-open { animation: menu-open 0.5s ease-out; }
+.animate-rotate-slow { animation: rotate-slow 20s linear infinite; }
+.animate-window-light { animation: window-light 2s ease-in-out infinite; }
+
+.translate-x-100 { --tw-translate-x: 100px; }
+.translate-y-100 { --tw-translate-y: 100px; }
+.-translate-x-100 { --tw-translate-x: -100px; }
+.-translate-y-100 { --tw-translate-y: -100px; }

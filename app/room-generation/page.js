@@ -5,6 +5,8 @@ import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Text, PerspectiveCamera, PointerLockControls, useTexture, SpotLight, Sky, Environment } from '@react-three/drei'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
+import ArchitectureMenu from '../components/Menu'
+import CircularMenu from '../components/Menu'
 
 
 // room 
@@ -542,6 +544,7 @@ export default function CustomizableRoom() {
 
   return (
     <div className="flex flex-col h-screen">
+      <CircularMenu />
       <div className="p-4  bg-gradient-to-b from-purple-400 to-pink-300">
         <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
           <input
