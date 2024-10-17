@@ -102,7 +102,7 @@ const LandingPage = () => {
       {/* Another 3D Room Section */}
       <section className="py-16 bg-gray-100">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12">Experience Our 3D Room Technology</h2>
+          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">Experience Our 3D Room Technology</h2>
           <div className="relative w-full h-[400px] perspective-1000 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg overflow-hidden">
             <div className="absolute inset-0 transform-3d rotate-y-[-20deg] rotate-x-10 animate-room-rotate">
               {/* Room walls */}
