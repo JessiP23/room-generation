@@ -58,7 +58,7 @@ const LandingPage = () => {
         Room Generation
       </a>
       <a
-        href='/learn-more'
+        href='/building-generator'
         className="bg-white bg-gradient-to-r from-purple-500 to-indigo-600 px-8 py-3 rounded-full font-bold hover:bg-purple-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
       >
         Building Generation
