@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import { Code, Layout, Search, Share, User, Zap } from 'lucide-react';
+import { ChevronRight, Code, Layout, Search, Share, User, Zap } from 'lucide-react';
 
 const LandingPage = () => {
   return (
@@ -76,63 +76,74 @@ const LandingPage = () => {
       </main>
 
       {/* Features Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">Why Choose Our 3D Architectural Platform</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <FeatureCard 
-              icon={<Code className="w-12 h-12 text-purple-500" />}
-              title={<span className='text-blue-950'>Immersive 3D Experiences</span>}
-              description="Create stunning, interactive 3D models of your architectural designs that clients can explore in real-time."
-            />
-            <FeatureCard 
-              icon={<Layout className="w-12 h-12 text-blue-500" />}
-              title={<span className="text-red-500">Immersive 3D Experiences</span>}
-              description="Our user-friendly platform makes it easy for architects and clients alike to navigate and collaborate on projects."
-            />
-            <FeatureCard 
-              icon={<Zap className="w-12 h-12 text-yellow-500" />}
-              title={<span className='text-gray-900'>Real-time Collaboration</span>}
-              description="Work together with your team and clients in real-time, making changes and getting feedback instantly."
-            />
-          </div>
-        </div>
-      </section>
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+    <div className="container mx-auto px-4">
+      <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+        Why Choose Our 3D Architectural Platform
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <FeatureCard 
+          icon={<Code className="w-8 h-8 text-white" />}
+          title={<span className='text-blue-950'>Immersive 3D Experiences</span>}
+          description="Create stunning, interactive 3D models of your architectural designs that clients can explore in real-time."
+        />
+        <FeatureCard 
+          icon={<Layout className="w-8 h-8 text-white" />}
+          title={<span className="text-red-500">User-Friendly Interface</span>}
+          description="Our intuitive platform makes it easy for architects and clients alike to navigate and collaborate on projects seamlessly."
+        />
+        <FeatureCard 
+          icon={<Zap className="w-8 h-8 text-white" />}
+          title={<span className='text-gray-900'>Real-time Collaboration</span>}
+          description="Work together with your team and clients in real-time, making changes and getting feedback instantly."
+        />
+      </div>
+    </div>
+  </section>
 
       {/* Another 3D Room Section */}
-      <section className="py-16 bg-gray-100">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">Experience Our 3D Room Technology</h2>
-          <div className="relative w-full h-[400px] perspective-1000 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg overflow-hidden">
-            <div className="absolute inset-0 transform-3d rotate-y-[-20deg] rotate-x-10 animate-room-rotate">
-              {/* Room walls */}
-              <div className="absolute inset-0 bg-white opacity-50"></div>
-              <div className="absolute top-0 left-0 w-full h-full bg-gray-200 transform-origin-left rotate-y-90 translate-x-[-200px]"></div>
-              <div className="absolute top-0 right-0 w-full h-full bg-gray-300 transform-origin-right rotate-y-[-90deg] translate-x-[200px]"></div>
-              <div className="absolute bottom-0 left-0 right-0 h-full bg-gray-400 transform-origin-bottom rotate-x-90 translate-y-[200px]"></div>
+      <section className="py-20 bg-gradient-to-b from-indigo-50 to-purple-100 overflow-hidden">
+    <div className="container mx-auto px-4">
+      <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+        Experience Our 3D Room Technology
+      </h2>
+      <div className="relative w-full h-[600px] perspective-1000 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 transform-3d rotate-y-[-20deg] rotate-x-10 animate-room-rotate">
+          {/* Room walls */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-200 opacity-90"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-100 to-purple-200 transform-origin-left rotate-y-90 translate-x-[-300px]"></div>
+          <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-indigo-200 to-purple-300 transform-origin-right rotate-y-[-90deg] translate-x-[300px]"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-full bg-gradient-to-t from-indigo-300 to-purple-400 transform-origin-bottom rotate-x-90 translate-y-[300px]"></div>
 
-              {/* Furniture and decorations */}
-              <div className="absolute bottom-0 left-1/4 w-1/2 h-1/4 bg-yellow-800 transform translate-z-20"></div>
-              <div className="absolute top-1/4 left-1/4 w-32 h-48 bg-blue-200 border-4 border-white transform translate-z-30"></div>
-              <div className="absolute bottom-1/4 right-1/4 w-24 h-36 bg-green-500 rounded-full transform translate-z-40"></div>
+          {/* Furniture and decorations */}
+          <div className="absolute bottom-0 left-1/4 w-1/2 h-1/4 bg-gradient-to-t from-yellow-800 to-yellow-700 transform translate-z-20 rounded-t-lg shadow-lg"></div>
+          <div className="absolute top-1/4 left-1/4 w-40 h-56 bg-gradient-to-br from-blue-200 to-blue-300 border-4 border-white transform translate-z-30 rounded-lg shadow-md"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-32 h-48 bg-gradient-to-br from-green-400 to-green-500 rounded-full transform translate-z-40 shadow-lg"></div>
 
-              {/* Animated elements */}
-              <div className="absolute top-20 right-40 w-12 h-12 bg-purple-400 rounded-full animate-float transform translate-z-50"></div>
-              <div className="absolute bottom-40 left-60 w-8 h-8 bg-pink-400 rounded-full animate-ping transform translate-z-60"></div>
-              <div className="absolute top-1/2 left-1/2 w-16 h-16 bg-yellow-400 rounded-full animate-pulse transform translate-z-70"></div>
-            </div>
-          </div>
+          {/* Animated elements */}
+          <div className="absolute top-20 right-40 w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full animate-float transform translate-z-50 shadow-md"></div>
+          <div className="absolute bottom-40 left-60 w-12 h-12 bg-gradient-to-br from-pink-400 to-red-400 rounded-full animate-ping transform translate-z-60 shadow-md"></div>
+          <div className="absolute top-1/2 left-1/2 w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full animate-pulse transform translate-z-70 shadow-md"></div>
         </div>
-      </section>
+      </div>
+    </div>
+  </section>
     </div>
   );
 };
 
 const FeatureCard = ({ icon, title, description }) => (
-  <div className="bg-gray-50 p-6 rounded-lg shadow-lg transition-transform duration-300 hover:scale-105">
-    <div className="mb-4">{icon}</div>
-    <h3 className="text-xl font-semibold mb-2">{title}</h3>
-    <p className="text-gray-600">{description}</p>
+  <div className="bg-gradient-to-br from-white to-gray-100 rounded-xl shadow-lg p-6 transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+    <div className="flex items-center mb-4">
+      <div className="mr-4 p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold">{title}</h3>
+    </div>
+    <p className="text-gray-600 mb-4">{description}</p>
+    <a href="#" className="inline-flex items-center text-indigo-600 hover:text-indigo-800 transition-colors duration-200">
+      Learn more <ChevronRight className="ml-1 w-4 h-4" />
+    </a>
   </div>
 );
 
