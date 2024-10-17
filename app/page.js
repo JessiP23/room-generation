@@ -87,12 +87,12 @@ const LandingPage = () => {
             />
             <FeatureCard 
               icon={<Layout className="w-12 h-12 text-blue-500" />}
-              title="Intuitive Interface"
+              title={<span className="text-red-500">Immersive 3D Experiences</span>}
               description="Our user-friendly platform makes it easy for architects and clients alike to navigate and collaborate on projects."
             />
             <FeatureCard 
               icon={<Zap className="w-12 h-12 text-yellow-500" />}
-              title="Real-time Collaboration"
+              title={<span className='text-gray-900'>Real-time Collaboration</span>}
               description="Work together with your team and clients in real-time, making changes and getting feedback instantly."
             />
           </div>
