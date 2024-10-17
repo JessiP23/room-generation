@@ -7,18 +7,31 @@ const AboutUsPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-purple-400 to-pink-300 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
         {/* 3D Globe Animation */}
-        <div className="w-full md:w-1/2 h-64 md:h-auto relative overflow-hidden">
-          <div className="absolute inset-0 bg-indigo-900 flex items-center justify-center">
-            <div className="relative w-48 h-48">
-              <div className="absolute inset-0 rounded-full bg-blue-500 animate-globe-rotate"></div>
-              <div className="absolute inset-2 rounded-full bg-green-400 animate-globe-rotate-reverse"></div>
-              <div className="absolute inset-4 rounded-full bg-yellow-300 animate-globe-rotate"></div>
-              <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-                <div className="w-1 h-full bg-white opacity-50 rotate-45 transform -translate-x-12"></div>
-                <div className="w-1 h-full bg-white opacity-50 -rotate-45 transform translate-x-12"></div>
+        <div className="w-full md:w-1/2 h-96 md:h-auto relative overflow-hidden bg-indigo-900">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative w-64 h-64 animate-globe-rotate">
+              {/* Globe */}
+              <div className="absolute inset-0 rounded-full bg-blue-500 shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgNDAwIDQwMCI+CiAgPHBhdGggZD0iTTAgMTM1IEwxNTAgMCBMMzAwIDEzNSBNNzUgMjUgTDIyNSAyNSBNMCAyNzUgTDE1MCA0MDAgTDMwMCAyNzUgTTc1IDM3NSBMMjI1IDM3NSIgc3Ryb2tlPSIjNEZBOERBIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiIC8+CiAgPHBhdGggZD0iTTAgMjAwIEw0MDAgMjAwIE0yMDAgMCBMMjAwIDQwMCIgc3Ryb2tlPSIjNEZBOERBIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiIC8+Cjwvc3ZnPg==')] bg-repeat animate-globe-map-rotate"></div>
+              </div>
+              
+              {/* Continents */}
+              <div className="absolute inset-4 rounded-full bg-green-400 opacity-60 overflow-hidden">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgNDAwIDQwMCI+CiAgPHBhdGggZD0iTTUwIDUwIEwxMDAgMTAwIEwxNTAgNTAgTDIwMCAxMDAgTDI1MCA1MCBMMzAwIDEwMCBMMzUwIDUwIE01MCAxNTAgTDEwMCAyMDAgTDE1MCAxNTAgTDIwMCAyMDAgTDI1MCAxNTAgTDMwMCAyMDAgTDM1MCAxNTAgTTUwIDI1MCBMMTAwIDMwMCBMMTUwIDI1MCBMMjAwIDMwMCBMMjUwIDI1MCBMMzAwIDMwMCBMMzUwIDI1MCBNNTAgMzUwIEwxMDAgNDAwIEwxNTAgMzUwIEwyMDAgNDAwIEwyNTAgMzUwIEwzMDAgNDAwIEwzNTAgMzUwIiBzdHJva2U9IiMzNEQzOTkiIHN0cm9rZS13aWR0aD0iMjAiIGZpbGw9Im5vbmUiIC8+Cjwvc3ZnPg==')] bg-repeat animate-globe-continents-rotate"></div>
+              </div>
+              
+              {/* Atmosphere */}
+              <div className="absolute -inset-2 rounded-full bg-blue-200 opacity-20"></div>
+              
+              {/* Orbiting satellite */}
+              <div className="absolute top-0 left-1/2 w-4 h-4 -mt-8 -ml-2 animate-satellite-orbit">
+                <div className="w-full h-full bg-gray-300 rounded-sm transform rotate-45"></div>
               </div>
             </div>
           </div>
+          
+          {/* Stars background */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPgogIDxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9Im5vbmUiIC8+CiAgPGNpcmNsZSBjeD0iNSUiIGN5PSIxMCUiIHI9IjEiIGZpbGw9IndoaXRlIiAvPgogIDxjaXJjbGUgY3g9IjIwJSIgY3k9IjMwJSIgcj0iMSIgZmlsbD0id2hpdGUiIC8+CiAgPGNpcmNsZSBjeD0iNDAlIiBjeT0iNSUiIHI9IjEiIGZpbGw9IndoaXRlIiAvPgogIDxjaXJjbGUgY3g9IjYwJSIgY3k9IjIwJSIgcj0iMSIgZmlsbD0id2hpdGUiIC8+CiAgPGNpcmNsZSBjeD0iODAlIiBjeT0iNDAlIiByPSIxIiBmaWxsPSJ3aGl0ZSIgLz4KICA8Y2lyY2xlIGN4PSI5NSUiIGN5PSI3MCUiIHI9IjEiIGZpbGw9IndoaXRlIiAvPgogIDxjaXJjbGUgY3g9IjEwJSIgY3k9IjkwJSIgcj0iMSIgZmlsbD0id2hpdGUiIC8+CiAgPGNpcmNsZSBjeD0iMzAlIiBjeT0iNjUlIiByPSIxIiBmaWxsPSJ3aGl0ZSIgLz4KICA8Y2lyY2xlIGN4PSI3NSUiIGN5PSI4NSUiIHI9IjEiIGZpbGw9IndoaXRlIiAvPgo8L3N2Zz4=')] animate-twinkle"></div>
         </div>
 
         {/* About Us Content */}
