@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text, PerspectiveCamera, PointerLockControls, useTexture } from '@react-three/drei'
+import { OrbitControls, Text, PerspectiveCamera, PointerLockControls, useTexture, SpotLight, Sky, Environment } from '@react-three/drei'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 
 
 // room 
-function Room({  structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom }) {
+function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom }) {
   const { width, height, depth } = structure
 
   const sides = [
@@ -19,6 +19,14 @@ function Room({  structure, wallColors, features, onFeatureMove, onWallClick, se
     { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
     { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
   ]
+
+  const wallTexture = useTexture('/wall_texture.jpg')
+  wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping
+  wallTexture.repeat.set(2, 2)
+
+  const floorTexture = useTexture('/floor_texture.jpg')
+  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping
+  floorTexture.repeat.set(4, 4)
 
   return (
     <group>
@@ -32,6 +40,8 @@ function Room({  structure, wallColors, features, onFeatureMove, onWallClick, se
             e.stopPropagation()
             onWallClick(roomIndex, index)
           }}
+          castShadow
+          receiveShadow
         >
           <planeGeometry args={[1, 1]} />
           <meshStandardMaterial 
@@ -40,6 +50,7 @@ function Room({  structure, wallColors, features, onFeatureMove, onWallClick, se
             emissive={selectedRoom === roomIndex && selectedWall === index ? new THREE.Color(0x666666) : undefined}
             roughness={realisticMode ? 0.8 : 0.5}
             metalness={realisticMode ? 0.2 : 0}
+            map={index === 5 ? floorTexture : wallTexture}
           />
         </mesh>
       ))}
@@ -54,35 +65,39 @@ function Room({  structure, wallColors, features, onFeatureMove, onWallClick, se
           realisticMode={realisticMode}
         />
       ))}
-      <axesHelper args={[Math.max(width, height, depth)]} />
-      <Text position={[width/2 + 0.5, 0, 0]} rotation={[0, -Math.PI/2, 0]} fontSize={0.5}>
-        {`Width: ${width.toFixed(2)}`}
-      </Text>
-      <Text position={[0, height/2 + 0.5, 0]} rotation={[0, 0, Math.PI/2]} fontSize={0.5}>
-        {`Height: ${height.toFixed(2)}`}
-      </Text>
-      <Text position={[0, 0, depth/2 + 0.5]} rotation={[0, Math.PI, 0]} fontSize={0.5}>
-        {`Depth: ${depth.toFixed(2)}`}
-      </Text>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} />
+      <SpotLight
+        castShadow
+        position={[0, height - 0.5, 0]}
+        angle={0.6}
+        penumbra={0.5}
+        intensity={1}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+      />
+      <pointLight position={[0, height / 2, 0]} intensity={0.5} />
     </group>
   )
 }
 
 
 
-function TopViewRoom({ structure, position, onMove, isSelected }) {
+
+
+function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
   const { width, depth } = structure
   const mesh = useRef()
-
   const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [offset, setOffset] = useState({ x: 0, z: 0 })
 
   const handlePointerDown = (e) => {
     e.stopPropagation()
+    onSelect()
     setIsDragging(true)
-    setDragStart({ x: e.clientX, y: e.clientY })
+    const { x, z } = mesh.current.position
+    setOffset({
+      x: e.point.x - x,
+      z: e.point.z - z
+    })
   }
 
   const handlePointerUp = (e) => {
@@ -93,12 +108,12 @@ function TopViewRoom({ structure, position, onMove, isSelected }) {
     }
   }
 
-  useFrame(({ camera, mouse, viewport }) => {
+  useFrame(({ mouse, viewport }) => {
     if (isDragging && mesh.current) {
-      const moveX = (mouse.x * viewport.width - dragStart.x) / 100
-      const moveZ = (mouse.y * viewport.height - dragStart.y) / 100
-      mesh.current.position.x = position[0] + moveX
-      mesh.current.position.z = position[2] - moveZ
+      const x = (mouse.x * viewport.width) / 2 - offset.x
+      const z = -(mouse.y * viewport.height) / 2 - offset.z
+      mesh.current.position.x = x
+      mesh.current.position.z = z
     }
   })
 
@@ -165,6 +180,8 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
         position={position}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
+        castShadow
+        receiveShadow
       >
         <boxGeometry args={type === 'door' ? [1, 2, 0.1] : [1, 1, 0.1]} />
         <meshStandardMaterial 
@@ -281,6 +298,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
 
   return <PointerLockControls ref={controlsRef} args={[camera, gl.domElement]} />;
 }
+
 
 export default function CustomizableRoom() {
   const [rooms, setRooms] = useState([
@@ -620,7 +638,7 @@ export default function CustomizableRoom() {
         </div>
       </div>
       <div className="flex-grow relative">
-      <Canvas>
+      <Canvas shadows>
           {isInternalView ? (
             <WalkingCamera position={cameraPosition} rotation={cameraRotation} />
           ) : (
@@ -628,7 +646,13 @@ export default function CustomizableRoom() {
           )}
           {!isInternalView && <OrbitControls />}
           <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} />
+          <pointLight position={[10, 10, 10]} castShadow />
+          {realisticMode && (
+            <>
+              <Sky sunPosition={[100, 100, 20]} />
+              <Environment preset="sunset" />
+            </>
+          )}
           {isTopView ? (
             rooms.map((room, index) => (
               <TopViewRoom
@@ -637,6 +661,7 @@ export default function CustomizableRoom() {
                 position={room.position}
                 onMove={(newPosition) => handleRoomMove(index, newPosition)}
                 isSelected={index === selectedRoom}
+                onSelect={() => setSelectedRoom(index)}
               />
             ))
           ) : (
