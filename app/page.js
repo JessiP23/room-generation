@@ -82,7 +82,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard 
               icon={<Code className="w-12 h-12 text-purple-500" />}
-              title="Immersive 3D Experiences"
+              title={<span className='text-blue-950'>Immersive 3D Experiences</span>}
               description="Create stunning, interactive 3D models of your architectural designs that clients can explore in real-time."
             />
             <FeatureCard 
