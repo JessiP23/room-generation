@@ -50,9 +50,21 @@ const LandingPage = () => {
           <p className="text-white mb-8 text-lg">
             Generate your 3D rooms and building with a few clicks. Take a look to our live demo.
           </p>
-          <a href='/room-generation' className="bg-white text-purple-600 px-6 py-2 rounded-full font-bold hover:bg-purple-100 transition-colors duration-300">
-            Get Started
-          </a>
+          <div className="flex justify-center items-center space-x-6 my-8">
+      <a
+        href='/room-generation'
+        className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+      >
+        Room Generation
+      </a>
+      <a
+        href='/learn-more'
+        className="bg-white bg-gradient-to-r from-purple-500 to-indigo-600 px-8 py-3 rounded-full font-bold hover:bg-purple-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+      >
+        Building Generation
+      </a>
+    </div>
+
         </div>
         <div className="relative w-1/2 h-96">
           {/* Room container */}
