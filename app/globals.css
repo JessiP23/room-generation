@@ -105,3 +105,23 @@ body {
 .translate-y-100 { --tw-translate-y: 100px; }
 .-translate-x-100 { --tw-translate-x: -100px; }
 .-translate-y-100 { --tw-translate-y: -100px; }
+
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.animate-twinkle {
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+.flower-open {
+  animation: flowerOpen 0.5s ease-out forwards;
+}
+
+@keyframes flowerOpen {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
