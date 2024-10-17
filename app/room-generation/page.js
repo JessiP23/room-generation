@@ -542,7 +542,7 @@ export default function CustomizableRoom() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="p-4 bg-gray-100">
+      <div className="p-4  bg-gradient-to-b from-purple-400 to-pink-300">
         <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
           <input
             type="text"
@@ -570,7 +570,7 @@ export default function CustomizableRoom() {
           className="sr-only"
         />
         <div
-          className={`block bg-gray-300 w-full h-full rounded-full cursor-pointer ${
+          className={`block bg-gradient-to-b from-purple-400 to-pink-300 w-full h-full rounded-full cursor-pointer ${
             realisticMode ? 'bg-blue-600' : ''
           }`}
         ></div>
