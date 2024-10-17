@@ -82,7 +82,7 @@ const ContactUsPage = () => {
               <Phone className="w-5 h-5 mr-2 text-purple-500" />
               <span>+1 (555) 123-4567</span>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center text-green-800">
               <MapPin className="w-5 h-5 mr-2 text-purple-500" />
               <span>123 Main St, Anytown, USA 12345</span>
             </div>
