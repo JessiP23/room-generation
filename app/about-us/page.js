@@ -38,7 +38,7 @@ const AboutUsPage = () => {
             <div className="flex items-center">
               <Briefcase className="w-8 h-8 mr-4 text-purple-500" />
               <div>
-                <h3 className="font-semibold text-lg">Our Work</h3>
+                <h3 className="font-semibold text-lg text-green-800">Our Work</h3>
                 <p className="text-sm text-gray-600">Impactful projects that push boundaries</p>
               </div>
             </div>
