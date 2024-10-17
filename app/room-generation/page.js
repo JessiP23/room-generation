@@ -5,7 +5,6 @@ import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Text, PerspectiveCamera, PointerLockControls } from '@react-three/drei'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
-import { Vector3 } from 'three'
 
 function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode }) {
   const { width, height, depth } = structure
