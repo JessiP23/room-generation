@@ -47,9 +47,8 @@ const LandingPage = () => {
       <main className="flex items-center justify-between px-20 py-16">
         <div className="w-1/2">
           <h1 className="text-6xl font-bold text-white mb-4">Generation of 3D rooms/building</h1>
-          <p className="text-white mb-8">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua.
+          <p className="text-white mb-8 text-lg">
+            Generate your 3D rooms and building with a few clicks. Take a look to our live demo.
           </p>
           <a href='/room-generation' className="bg-white text-purple-600 px-6 py-2 rounded-full font-bold hover:bg-purple-100 transition-colors duration-300">
             Get Started
