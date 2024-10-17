@@ -1,9 +1,29 @@
 'use client'
 
-import React from 'react';
-import { ChevronRight, Code, Layout, Search, Share, User, Zap } from 'lucide-react';
+import React, {useState, useEffect} from 'react';
+import { Book, ChevronRight, Code, Coffee, Flower, Layout, Moon, Search, Share, Sun, User, Zap } from 'lucide-react';
 
 const LandingPage = () => {
+  const [isDaytime, setIsDaytime] = useState(true);
+  const [rotationX, setRotationX] = useState(0);
+  const [rotationY, setRotationY] = useState(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const { clientX, clientY } = e;
+      const { innerWidth, innerHeight } = window;
+      const x = (clientX / innerWidth - 0.5) * 20;
+      const y = (clientY / innerHeight - 0.5) * -20;
+      setRotationX(y);
+      setRotationY(x);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const toggleDayNight = () => setIsDaytime(!isDaytime);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-400 to-pink-300">
       <nav className="flex justify-between items-center p-4">
@@ -103,31 +123,50 @@ const LandingPage = () => {
 
       {/* Another 3D Room Section */}
       <section className="py-20 bg-gradient-to-b from-indigo-50 to-purple-100 overflow-hidden">
-    <div className="container mx-auto px-4">
-      <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-        Experience Our 3D Room Technology
-      </h2>
-      <div className="relative w-full h-[600px] perspective-1000 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 transform-3d rotate-y-[-20deg] rotate-x-10 animate-room-rotate">
-          {/* Room walls */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-200 opacity-90"></div>
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-100 to-purple-200 transform-origin-left rotate-y-90 translate-x-[-300px]"></div>
-          <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-indigo-200 to-purple-300 transform-origin-right rotate-y-[-90deg] translate-x-[300px]"></div>
-          <div className="absolute bottom-0 left-0 right-0 h-full bg-gradient-to-t from-indigo-300 to-purple-400 transform-origin-bottom rotate-x-90 translate-y-[300px]"></div>
+      <div className="container mx-auto px-4">
+        <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+          Immersive 3D Room Experience
+        </h2>
+        <div className="relative w-full h-[600px] perspective-[1000px] rounded-2xl overflow-hidden shadow-2xl">
+          <div 
+            className={`absolute inset-0 transition-all duration-500 ease-out`}
+            style={{
+              transform: `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`,
+            }}
+          >
+            {/* Room walls */}
+            <div className={`absolute inset-0 transition-colors duration-500 ${isDaytime ? 'bg-gradient-to-br from-blue-100 to-indigo-200' : 'bg-gradient-to-br from-gray-900 to-indigo-900'}`}></div>
+            <div className={`absolute top-0 left-0 w-full h-full transition-colors duration-500 ${isDaytime ? 'bg-gradient-to-br from-blue-200 to-indigo-300' : 'bg-gradient-to-br from-gray-800 to-indigo-800'} transform-3d rotate-y-90 translate-x-[-300px]`}></div>
+            <div className={`absolute top-0 right-0 w-full h-full transition-colors duration-500 ${isDaytime ? 'bg-gradient-to-bl from-blue-300 to-indigo-400' : 'bg-gradient-to-bl from-gray-700 to-indigo-700'} transform-3d rotate-y-[-90deg] translate-x-[300px]`}></div>
+            <div className={`absolute bottom-0 left-0 right-0 h-full transition-colors duration-500 ${isDaytime ? 'bg-gradient-to-t from-blue-400 to-indigo-500' : 'bg-gradient-to-t from-gray-600 to-indigo-600'} transform-3d rotate-x-90 translate-y-[300px]`}></div>
 
-          {/* Furniture and decorations */}
-          <div className="absolute bottom-0 left-1/4 w-1/2 h-1/4 bg-gradient-to-t from-yellow-800 to-yellow-700 transform translate-z-20 rounded-t-lg shadow-lg"></div>
-          <div className="absolute top-1/4 left-1/4 w-40 h-56 bg-gradient-to-br from-blue-200 to-blue-300 border-4 border-white transform translate-z-30 rounded-lg shadow-md"></div>
-          <div className="absolute bottom-1/3 right-1/4 w-32 h-48 bg-gradient-to-br from-green-400 to-green-500 rounded-full transform translate-z-40 shadow-lg"></div>
+            {/* Furniture and decorations */}
+            <div className="absolute bottom-0 left-1/4 w-1/2 h-1/4 bg-gradient-to-t from-amber-700 to-yellow-600 transform-3d translate-z-20 rounded-t-lg shadow-lg"></div>
+            <div className={`absolute top-1/4 left-1/4 w-40 h-56 transition-colors duration-500 ${isDaytime ? 'bg-sky-200' : 'bg-sky-900'} border-4 border-white transform-3d translate-z-30 rounded-lg shadow-md`}></div>
+            <div className="absolute bottom-1/3 right-1/4 w-32 h-48 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full transform-3d translate-z-40 shadow-lg"></div>
 
-          {/* Animated elements */}
-          <div className="absolute top-20 right-40 w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full animate-float transform translate-z-50 shadow-md"></div>
-          <div className="absolute bottom-40 left-60 w-12 h-12 bg-gradient-to-br from-pink-400 to-red-400 rounded-full animate-ping transform translate-z-60 shadow-md"></div>
-          <div className="absolute top-1/2 left-1/2 w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full animate-pulse transform translate-z-70 shadow-md"></div>
+            {/* Animated elements */}
+            <div className="absolute top-20 right-40 w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full animate-float transform-3d translate-z-50 shadow-md"></div>
+            <div className="absolute bottom-40 left-60 w-12 h-12 bg-gradient-to-br from-pink-400 to-red-400 rounded-full animate-ping transform-3d translate-z-60 shadow-md"></div>
+            <div className="absolute top-1/2 left-1/2 w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full animate-pulse transform-3d translate-z-70 shadow-md"></div>
+
+            {/* Interactive elements */}
+            <button
+              onClick={toggleDayNight}
+              className="absolute top-5 right-5 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow"
+            >
+              {isDaytime ? <Moon className="w-6 h-6 text-indigo-600" /> : <Sun className="w-6 h-6 text-yellow-500" />}
+            </button>
+
+            <div className="absolute bottom-10 left-10 flex space-x-4">
+              <Book className={`w-8 h-8 ${isDaytime ? 'text-indigo-600' : 'text-indigo-300'}`} />
+              <Coffee className={`w-8 h-8 ${isDaytime ? 'text-amber-700' : 'text-amber-500'}`} />
+              <Flower className={`w-8 h-8 ${isDaytime ? 'text-green-600' : 'text-green-400'}`} />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
     </div>
   );
 };
