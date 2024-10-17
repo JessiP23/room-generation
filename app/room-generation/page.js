@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text, PerspectiveCamera, PointerLockControls } from '@react-three/drei'
+import { OrbitControls, Text, PerspectiveCamera, PointerLockControls, useTexture } from '@react-three/drei'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 
-function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode }) {
+function Room({  structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom }) {
   const { width, height, depth } = structure
 
   const sides = [
@@ -28,14 +28,14 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
           scale={side.scale}
           onClick={(e) => {
             e.stopPropagation()
-            onWallClick(index)
+            onWallClick(roomIndex, index)
           }}
         >
           <planeGeometry args={[1, 1]} />
           <meshStandardMaterial 
             color={wallColors[index]} 
             side={THREE.DoubleSide}
-            emissive={selectedWall === index ? new THREE.Color(0x666666) : undefined}
+            emissive={selectedRoom === roomIndex && selectedWall === index ? new THREE.Color(0x666666) : undefined}
             roughness={realisticMode ? 0.8 : 0.5}
             metalness={realisticMode ? 0.2 : 0}
           />
@@ -68,16 +68,64 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
   )
 }
 
+
+
+function TopViewRoom({ structure, position, onMove, isSelected }) {
+  const { width, depth } = structure
+  const mesh = useRef()
+
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+
+  const handlePointerDown = (e) => {
+    e.stopPropagation()
+    setIsDragging(true)
+    setDragStart({ x: e.clientX, y: e.clientY })
+  }
+
+  const handlePointerUp = (e) => {
+    e.stopPropagation()
+    setIsDragging(false)
+    if (mesh.current) {
+      onMove([mesh.current.position.x, 0, mesh.current.position.z])
+    }
+  }
+
+  useFrame(({ camera, mouse, viewport }) => {
+    if (isDragging && mesh.current) {
+      const moveX = (mouse.x * viewport.width - dragStart.x) / 100
+      const moveZ = (mouse.y * viewport.height - dragStart.y) / 100
+      mesh.current.position.x = position[0] + moveX
+      mesh.current.position.z = position[2] - moveZ
+    }
+  })
+
+  return (
+    <mesh
+      ref={mesh}
+      position={position}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+    >
+      <boxGeometry args={[width, 0.1, depth]} />
+      <meshStandardMaterial color={isSelected ? '#ff0000' : '#cccccc'} />
+    </mesh>
+  )
+}
+
+
+
+
 function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode }) {
   const mesh = useRef()
-  const { size, viewport } = useThree()
+  const { viewport } = useThree()
   const [isMoving, setIsMoving] = useState(false)
+
+  const doorTexture = useTexture('/door_texture.jpg')
+  const windowTexture = useTexture('/window_texture.jpg')
 
   useFrame(({ mouse, camera }) => {
     if (isMoving && mesh.current) {
-      const x = (mouse.x * viewport.width) / 2
-      const y = (mouse.y * viewport.height) / 2
-      
       const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation))
       const planeIntersect = new THREE.Plane(wallNormal, 0)
       const raycaster = new THREE.Raycaster()
@@ -96,14 +144,15 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
 
   const handlePointerDown = (e) => {
     e.stopPropagation()
-    setIsMoving(true)
+    setIsMoving(!isMoving)
   }
 
   const handlePointerUp = (e) => {
     e.stopPropagation()
-    setIsMoving(false)
-    if (mesh.current) {
-      onMove(mesh.current.position)
+    if (isMoving) {
+      if (mesh.current) {
+        onMove(mesh.current.position)
+      }
     }
   }
 
@@ -120,6 +169,7 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
           color={type === 'door' ? '#8B4513' : '#87CEEB'} 
           roughness={realisticMode ? 0.6 : 0.3}
           metalness={realisticMode ? 0.1 : 0}
+          map={type === 'door' ? doorTexture : windowTexture}
         />
       </mesh>
     </group>
@@ -246,7 +296,8 @@ export default function CustomizableRoom() {
   const [notification, setNotification] = useState('')
   const [realisticMode, setRealisticMode] = useState(false)
   const [isInternalView, setIsInternalView] = useState(false)
-  const [cameraPosition, setCameraPosition] = useState([0, 1.6, 0])
+  const [isTopView, setIsTopView] = useState(false)
+  const [cameraPosition, setCameraPosition] = useState([20, 20, -10])
   const [cameraRotation, setCameraRotation] = useState([0, 0, 0])
 
   const handleSubmit = async (e) => {
@@ -268,9 +319,10 @@ export default function CustomizableRoom() {
     }
   }
 
-  const handleWallClick = (index) => {
-    setSelectedWall(index)
-    setNotification(`Wall ${index + 1} selected`)
+  const handleWallClick = (roomIndex, wallIndex) => {
+    setSelectedRoom(roomIndex)
+    setSelectedWall(wallIndex)
+    setNotification(`Room ${roomIndex + 1}, Wall ${wallIndex + 1} selected`)
     setTimeout(() => setNotification(''), 2000)
   }
 
@@ -282,23 +334,51 @@ export default function CustomizableRoom() {
     setRooms(newRooms)
   }
 
-  const handleFeatureMove = (index, newPosition) => {
+  const handleFeatureMove = (featureIndex, newPosition) => {
     const newRooms = [...rooms]
-    newRooms[selectedRoom].features[index].position = [newPosition.x, newPosition.y, newPosition.z]
-    setRooms(newRooms)
+    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
+      newRooms[selectedRoom].features[featureIndex].position = [newPosition.x, newPosition.y, newPosition.z]
+      setRooms(newRooms)
+    }
   }
 
   const handleDownload = () => {
     const exporter = new GLTFExporter()
+    const scene = new THREE.Scene()
+    rooms.forEach(room => {
+      const roomGroup = new THREE.Group()
+      // Add room geometry
+      const roomGeometry = new THREE.BoxGeometry(room.structure.width, room.structure.height, room.structure.depth)
+      const roomMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.5 })
+      const roomMesh = new THREE.Mesh(roomGeometry, roomMaterial)
+      roomGroup.add(roomMesh)
+      
+      // Add features (doors, windows)
+      room.features.forEach(feature => {
+        const featureGeometry = new THREE.BoxGeometry(
+          feature.type === 'door' ? 1 : 1,
+          feature.type === 'door' ? 2 : 1,
+          0.1
+        )
+        const featureMaterial = new THREE.MeshBasicMaterial({ color: feature.type === 'door' ? 0x8B4513 : 0x87CEEB })
+        const featureMesh = new THREE.Mesh(featureGeometry, featureMaterial)
+        featureMesh.position.set(...feature.position)
+        roomGroup.add(featureMesh)
+      })
+      
+      roomGroup.position.set(...room.position)
+      scene.add(roomGroup)
+    })
+    
     exporter.parse(
-      document.querySelector('canvas').scene,
+      scene,
       (gltf) => {
         const output = JSON.stringify(gltf, null, 2)
         const blob = new Blob([output], { type: 'text/plain' })
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = 'room.gltf'
+        link.download = 'rooms.gltf'
         link.click()
         URL.revokeObjectURL(url)
       },
@@ -345,13 +425,15 @@ export default function CustomizableRoom() {
   const joinRooms = () => {
     if (rooms.length < 2) return
     const newRooms = [...rooms]
-    const lastRoom = newRooms[newRooms.length - 1]
-    const secondLastRoom = newRooms[newRooms.length - 2]
-    lastRoom.position = [
-      secondLastRoom.position[0] + secondLastRoom.structure.width,
-      secondLastRoom.position[1],
-      secondLastRoom.position[2]
-    ]
+    for (let i = 1; i < newRooms.length; i++) {
+      const prevRoom = newRooms[i - 1]
+      const currentRoom = newRooms[i]
+      currentRoom.position = [
+        prevRoom.position[0] + prevRoom.structure.width / 2 + currentRoom.structure.width / 2,
+        prevRoom.position[1],
+        prevRoom.position[2]
+      ]
+    }
     setRooms(newRooms)
   }
 
@@ -360,7 +442,27 @@ export default function CustomizableRoom() {
     if (!isInternalView) {
       setCameraPosition([rooms[selectedRoom].position[0], 1.6, rooms[selectedRoom].position[2]])
       setCameraRotation([0, 0, 0])
+    } else {
+      setCameraPosition([20, 20, 20])
+      setCameraRotation([0, 0, 0])
     }
+  }
+
+  const toggleTopView = () => {
+    setIsTopView(!isTopView)
+    if (!isTopView) {
+      setCameraPosition([0, 50, 0])
+      setCameraRotation([-Math.PI / 2, 0, 0])
+    } else {
+      setCameraPosition([20, 20, 20])
+      setCameraRotation([0, 0, 0])
+    }
+  }
+
+  const handleRoomMove = (index, newPosition) => {
+    const newRooms = [...rooms]
+    newRooms[index].position = newPosition
+    setRooms(newRooms)
   }
 
   useEffect(() => {
@@ -424,7 +526,7 @@ export default function CustomizableRoom() {
         <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
           <input
             type="text"
-            value={rooms[selectedRoom].prompt}
+            value={rooms[selectedRoom]?.prompt || ''}
             onChange={(e) => {
               const newRooms = [...rooms]
               newRooms[selectedRoom].prompt = e.target.value
@@ -510,29 +612,48 @@ export default function CustomizableRoom() {
           <button onClick={toggleView} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
             {isInternalView ? 'External View' : 'Internal View'}
           </button>
+          <button onClick={toggleTopView} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          {isTopView ? 'Normal View' : 'Top View'}
+        </button>
         </div>
       </div>
       <div className="flex-grow relative">
-        <Canvas>
+      <Canvas>
           {isInternalView ? (
             <WalkingCamera position={cameraPosition} rotation={cameraRotation} />
           ) : (
-            <PerspectiveCamera makeDefault position={[20, 20, 20]} />
+            <PerspectiveCamera makeDefault position={cameraPosition} rotation={cameraRotation} />
           )}
           {!isInternalView && <OrbitControls />}
-          {rooms.map((room, index) => (
-            <group key={room.id} position={room.position}>
-              <Room
+          <ambientLight intensity={0.5} />
+          <pointLight position={[10, 10, 10]} />
+          {isTopView ? (
+            rooms.map((room, index) => (
+              <TopViewRoom
+                key={room.id}
                 structure={room.structure}
-                wallColors={room.wallColors}
-                features={room.features}
-                onFeatureMove={(featureIndex, newPosition) => handleFeatureMove(featureIndex, newPosition)}
-                onWallClick={handleWallClick}
-                selectedWall={selectedRoom === index ? selectedWall : null}
-                realisticMode={realisticMode}
+                position={room.position}
+                onMove={(newPosition) => handleRoomMove(index, newPosition)}
+                isSelected={index === selectedRoom}
               />
-            </group>
-          ))}
+            ))
+          ) : (
+            rooms.map((room, index) => (
+              <group key={room.id} position={room.position}>
+                <Room
+                  structure={room.structure}
+                  wallColors={room.wallColors}
+                  features={room.features}
+                  onFeatureMove={(featureIndex, newPosition) => handleFeatureMove(featureIndex, newPosition)}
+                  onWallClick={handleWallClick}
+                  selectedWall={selectedRoom === index ? selectedWall : null}
+                  realisticMode={realisticMode}
+                  roomIndex={index}
+                  selectedRoom={selectedRoom}
+                />
+              </group>
+            ))
+          )}
         </Canvas>
         {notification && (
           <div className="absolute top-4 right-4 bg-green-500 text-white p-2 rounded">
