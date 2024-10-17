@@ -101,13 +101,19 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
     })
   }
 
-  const handlePointerUp = (e) => {
-    e.stopPropagation()
-    setIsDragging(false)
-    if (mesh.current) {
-      onMove([mesh.current.position.x, 0, mesh.current.position.z])
-    }
-  }
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space' && isSelected) {
+        setIsDragging(false);
+        onMove([mesh.current.position.x, 0, mesh.current.position.z]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isSelected, onMove]);
 
   useFrame(({ mouse, viewport }) => {
     if (isDragging && mesh.current) {
@@ -123,7 +129,6 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
       ref={mesh}
       position={position}
       onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
     >
       <boxGeometry args={[width, 0.1, depth]} />
       <meshStandardMaterial color={isSelected ? '#ff0000' : '#cccccc'} />
