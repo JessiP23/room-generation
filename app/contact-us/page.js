@@ -45,7 +45,7 @@ const ContactUsPage = () => {
                 type="text"
                 name="name"
                 placeholder="Your Name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 text-green-800"
                 onChange={handleInputChange}
                 required
               />
@@ -55,7 +55,7 @@ const ContactUsPage = () => {
                 type="email"
                 name="email"
                 placeholder="Your Email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 text-green-800"
                 onChange={handleInputChange}
                 required
               />
@@ -65,7 +65,7 @@ const ContactUsPage = () => {
                 name="message"
                 placeholder="Your Message"
                 rows="4"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 text-green-800"
                 onChange={handleInputChange}
                 required
               ></textarea>
