@@ -25,3 +25,59 @@ body {
     text-wrap: balance;
   }
 }
+
+
+@keyframes building-float {
+  0%, 100% { transform: perspective(1000px) rotateX(2deg) rotateY(2deg) translateY(0px); }
+  50% { transform: perspective(1000px) rotateX(2deg) rotateY(2deg) translateY(-10px); }
+}
+
+@keyframes window-light {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes cloud-1 {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+@keyframes cloud-2 {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-400%); }
+}
+
+@keyframes globe-rotate {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+@keyframes globe-map-rotate {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes globe-continents-rotate {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes satellite-orbit {
+  0% { transform: rotate(0deg) translateX(140px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(140px) rotate(-360deg); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-building-float { animation: building-float 6s ease-in-out infinite; }
+.animate-window-light { animation: window-light 2s ease-in-out infinite; }
+.animate-cloud-1 { animation: cloud-1 20s linear infinite; }
+.animate-cloud-2 { animation: cloud-2 25s linear infinite; }
+.animate-globe-rotate { animation: globe-rotate 20s linear infinite; }
+.animate-globe-map-rotate { animation: globe-map-rotate 40s linear infinite; }
+.animate-globe-continents-rotate { animation: globe-continents-rotate 40s linear infinite; }
+.animate-satellite-orbit { animation: satellite-orbit 10s linear infinite; }
+.animate-twinkle { animation: twinkle 4s ease-in-out infinite; }
