@@ -150,14 +150,16 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.code === 'Space') {
-        setIsMoving(prev => !prev)
+      if (e.code === 'Space' && type === 'door') {
+        setIsMoving(false)
+      } else if (e.code === 'Enter' && type === 'window') {
+        setIsMoving(false)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [type])
 
   useFrame(({ mouse }) => {
     if (isMoving && mesh.current) {
@@ -183,25 +185,12 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
     setIsMoving(true)
   }
 
-  const handlePointerUp = (e) => {
-    e.stopPropagation()
-    setIsMoving(false)
-  }
-
-  const handleResize = (dimension, delta) => {
-    setDimensions(prev => ({
-      ...prev,
-      [dimension]: Math.max(0.5, prev[dimension] + delta)
-    }))
-  }
-
   return (
     <group position={wallPosition} rotation={wallRotation}>
       <mesh
         ref={mesh}
         position={position}
         onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
         castShadow
         receiveShadow
       >
@@ -213,33 +202,12 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
           map={type === 'door' ? doorTexture : windowTexture}
         />
       </mesh>
-      <group position={[position[0] + dimensions.width / 2 + 0.1, position[1], position[2]]}>
-        <mesh onClick={() => handleResize('width', 0.1)}>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="green" />
-        </mesh>
-        <mesh onClick={() => handleResize('width', -0.1)} position={[0, 0.2, 0]}>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="red" />
-        </mesh>
-      </group>
-      <group position={[position[0], position[1] + dimensions.height / 2 + 0.1, position[2]]}>
-        <mesh onClick={() => handleResize('height', 0.1)}>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="green" />
-        </mesh>
-        <mesh onClick={() => handleResize('height', -0.1)} position={[0.2, 0, 0]}>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="red" />
-        </mesh>
-      </group>
     </group>
   )
 }
 
 
 // walking camera
-
 function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room }) {
   const { camera, gl } = useThree();
   const controlsRef = useRef();
@@ -324,28 +292,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
         .addScaledVector(cameraDirection, -direction.z)
         .addScaledVector(sideways, direction.x);
 
-      const newPosition = camera.position.clone().add(movement);
-
-      // Check if the new position is within the room boundaries
-      const halfWidth = room.structure.width / 2;
-      const halfDepth = room.structure.depth / 2;
-      const minX = room.position[0] - halfWidth + 0.5; // Add a small buffer
-      const maxX = room.position[0] + halfWidth - 0.5;
-      const minZ = room.position[2] - halfDepth + 0.5;
-      const maxZ = room.position[2] + halfDepth - 0.5;
-
-      newPosition.x = THREE.MathUtils.clamp(newPosition.x, minX, maxX);
-      newPosition.z = THREE.MathUtils.clamp(newPosition.z, minZ, maxZ);
-
-      camera.position.copy(newPosition);
-
-      // Simple gravity
-      if (camera.position.y > initialPosition[1]) {
-        camera.position.y = Math.max(
-          camera.position.y - 0.05,
-          initialPosition[1]
-        );
-      }
+      camera.position.add(movement);
     }
   });
 
@@ -692,7 +639,7 @@ export default function CustomizableRoom() {
         </div>
       </div>
       <div className="flex-grow relative">
-        <Canvas shadows>
+      <Canvas shadows>
           {isInternalView ? (
             <WalkingCamera position={cameraPosition} 
             rotation={cameraRotation} 
@@ -734,6 +681,7 @@ export default function CustomizableRoom() {
                   roomIndex={index}
                   selectedRoom={selectedRoom}
                 />
+              
               </group>
             ))
           )}
