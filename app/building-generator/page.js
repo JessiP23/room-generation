@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, useTexture, Sky, Environment, Text, Line } from '@react-three/drei'
+import { OrbitControls, useTexture, Sky, Environment, Text, Line, PerspectiveCamera } from '@react-three/drei'
+import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter'
 import FlowerMenu from '../components/Menu'
 
 function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick, rooms, isTopView }) {
@@ -52,8 +53,8 @@ function Floor({ structure, wallTextures, features, floorNumber, isSelected, onW
           wallPosition={sides[feature.wallIndex].pos}
         />
       ))}
-      {isTopView && rooms.map((room, index) => (
-        <Room key={index} {...room} floorHeight={height} />
+      {rooms.map((room, index) => (
+        <Room key={index} {...room} floorHeight={height} isTopView={isTopView} />
       ))}
       <Text
         position={[0, height/2 + 0.5, depth/2 + 0.1]}
@@ -88,20 +89,111 @@ function Feature({ type, position, wallIndex, wallDimensions, wallRotation, wall
   )
 }
 
-function Room({ x, y, width, height, floorHeight }) {
+function Room({ points, floorHeight, isTopView }) {
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: '#cccccc' })
+
+  return (
+    <group>
+      <Line
+        points={points.map(point => [point[0], floorHeight/2 + 0.01, point[1]])}
+        color="red"
+        lineWidth={2}
+      />
+      {!isTopView && points.map((point, index) => {
+        const nextPoint = points[(index + 1) % points.length]
+        const wallVector = new THREE.Vector3(nextPoint[0] - point[0], 0, nextPoint[1] - point[1])
+        const wallLength = wallVector.length()
+        const wallCenter = new THREE.Vector3(
+          (point[0] + nextPoint[0]) / 2,
+          floorHeight / 2,
+          (point[1] + nextPoint[1]) / 2
+        )
+        const wallRotation = new THREE.Euler(0, Math.atan2(wallVector.z, wallVector.x), 0)
+
+        return (
+          <mesh key={index} position={wallCenter} rotation={wallRotation}>
+            <boxGeometry args={[wallLength, floorHeight, 0.1]} />
+            <meshStandardMaterial {...wallMaterial} />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+function TopViewGrid({ size, divisions }) {
+  const points = []
+  const halfSize = size / 2
+
+  for (let i = 0; i <= divisions; i++) {
+    const pos = (i / divisions) * size - halfSize
+    points.push([-halfSize, 0, pos], [halfSize, 0, pos])
+    points.push([pos, 0, -halfSize], [pos, 0, halfSize])
+  }
+
   return (
     <Line
-      points={[
-        [x, floorHeight/2 + 0.01, y],
-        [x + width, floorHeight/2 + 0.01, y],
-        [x + width, floorHeight/2 + 0.01, y + height],
-        [x, floorHeight/2 + 0.01, y + height],
-        [x, floorHeight/2 + 0.01, y]
-      ]}
-      color="red"
-      lineWidth={2}
+      points={points}
+      color="gray"
+      lineWidth={1}
     />
   )
+}
+
+function WalkingCamera({ position, onChange }) {
+  const { camera } = useThree()
+  const [rotation, setRotation] = useState([0, 0, 0])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const speed = 0.1
+      let newPosition = [...position]
+      switch (e.key) {
+        case 'w':
+          newPosition[2] -= speed * Math.cos(rotation[1])
+          newPosition[0] += speed * Math.sin(rotation[1])
+          break
+        case 's':
+          newPosition[2] += speed * Math.cos(rotation[1])
+          newPosition[0] -= speed * Math.sin(rotation[1])
+          break
+        case 'a':
+          newPosition[0] -= speed * Math.cos(rotation[1])
+          newPosition[2] -= speed * Math.sin(rotation[1])
+          break
+        case 'd':
+          newPosition[0] += speed * Math.cos(rotation[1])
+          newPosition[2] += speed * Math.sin(rotation[1])
+          break
+      }
+      onChange(newPosition)
+    }
+
+    const handleMouseMove = (e) => {
+      const sensitivity = 0.002
+      const newRotation = [
+        rotation[0] - e.movementY * sensitivity,
+        rotation[1] - e.movementX * sensitivity,
+        0
+      ]
+      setRotation(newRotation)
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('mousemove', handleMouseMove)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('mousemove', handleMouseMove)
+    }
+  }, [position, rotation, onChange])
+
+  useFrame(() => {
+    camera.position.set(...position)
+    camera.rotation.set(...rotation)
+  })
+
+  return null
 }
 
 function BuildingCreator() {
@@ -124,7 +216,10 @@ function BuildingCreator() {
   const [cameraPosition, setCameraPosition] = useState([15, 15, 15])
   const [isTopView, setIsTopView] = useState(false)
   const [isEditingRooms, setIsEditingRooms] = useState(false)
-  const [newRoom, setNewRoom] = useState({ x: 0, y: 0, width: 0, height: 0 })
+  const [roomPoints, setRoomPoints] = useState([])
+  const [isInsideView, setIsInsideView] = useState(false)
+  const [insideViewPosition, setInsideViewPosition] = useState([0, 1.7, 0])
+  const canvasRef = useRef(null)
 
   const addFloor = () => {
     setFloors([...floors, {
@@ -170,46 +265,112 @@ function BuildingCreator() {
 
   const toggleTopView = () => {
     setIsTopView(!isTopView)
+    setIsInsideView(false)
     if (!isTopView) {
       setCameraPosition([0, 20, 0])
     } else {
       setCameraPosition([15, 15, 15])
     }
+    setIsEditingRooms(false)
+    setRoomPoints([])
   }
 
   const startEditingRooms = () => {
-    setIsEditingRooms(true)
+    setIsEditingRooms(!isEditingRooms)
+    setRoomPoints([])
   }
 
   const handleCanvasClick = (event) => {
-    if (isEditingRooms) {
+    if (isEditingRooms && isTopView) {
       const { clientX, clientY } = event
-      const { left, top, width, height } = event.target.getBoundingClientRect()
+      const { left, top, width, height } = canvasRef.current.getBoundingClientRect()
       const x = ((clientX - left) / width) * 2 - 1
       const y = -((clientY - top) / height) * 2 + 1
 
-      if (newRoom.width === 0) {
-        setNewRoom({ ...newRoom, x, y })
-      } else {
+      const newPoint = [x * 5, y * 5]  // Scale the point to match the floor size
+      const updatedPoints = [...roomPoints, newPoint]
+      setRoomPoints(updatedPoints)
+
+      // Draw the line immediately
+      if (updatedPoints.length > 1) {
         const newFloors = [...floors]
-        newFloors[selectedFloor].rooms.push({
-          x: Math.min(newRoom.x, x),
-          y: Math.min(newRoom.y, y),
-          width: Math.abs(x - newRoom.x),
-          height: Math.abs(y - newRoom.y)
-        })
+        newFloors[selectedFloor].rooms = [
+          ...newFloors[selectedFloor].rooms.filter(room => room.isComplete),
+          { points: updatedPoints, isComplete: false }
+        ]
         setFloors(newFloors)
-        setNewRoom({ x: 0, y: 0, width: 0, height: 0 })
-        setIsEditingRooms(false)
+      }
+
+      // Complete the room if it has at least 3 points and the new point is close to the start
+      if (updatedPoints.length >= 3) {
+        const [startX, startY] = updatedPoints[0]
+        const [endX, endY] = newPoint
+        const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2))
+        if (distance < 0.5) {  // Adjust this threshold as needed
+          const newFloors = [...floors]
+          newFloors[selectedFloor].rooms = [
+            ...newFloors[selectedFloor].rooms.filter(room => room.isComplete),
+            { points: updatedPoints, isComplete: true }
+          ]
+          setFloors(newFloors)
+          setRoomPoints([])
+        }
       }
     }
   }
 
+  const exportToOBJ = () => {
+    const exporter = new OBJExporter()
+    const scene = new THREE.Scene()
+
+    floors.forEach((floor, floorIndex) => {
+      const floorGroup = new THREE.Group()
+      floorGroup.position.y = floorIndex * floor.structure.height
+
+      // Add walls
+      const wallGeometry = new THREE.BoxGeometry(floor.structure.width, floor.structure.height, floor.structure.depth)
+      const wallMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc })
+      const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial)
+      floorGroup.add(wallMesh)
+
+      // Add features (doors and windows)
+      floor.features.forEach(feature => {
+        const featureGeometry = feature.type === 'door'
+          ? new THREE.BoxGeometry(1, 2, 0.1)
+          : new THREE.BoxGeometry(1, 1, 0.1)
+        const featureMaterial = new THREE.MeshBasicMaterial({ color: feature.type === 'door' ? 0x8B4513 : 0x87CEEB })
+        const featureMesh = new THREE.Mesh(featureGeometry, featureMaterial)
+        featureMesh.position.set(...feature.position)
+        floorGroup.add(featureMesh)
+      })
+
+      scene.add(floorGroup)
+    })
+
+    const result = exporter.parse(scene)
+    const blob = new Blob([result], { type: 'text/plain' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = 'building.obj'
+    link.click()
+  }
+
+  const toggleInsideView = () => {
+    setIsInsideView(!isInsideView)
+    setIsTopView(false)
+    if (!isInsideView) {
+      setInsideViewPosition([0, 1.7, 0])
+    } else {
+      setCameraPosition([15, 15, 15])
+    }
+  }
+
   return (
+    
     <div className="h-screen flex flex-col">
       <FlowerMenu />
       <div className="p-4 bg-gray-800 text-white">
-        <h1 className="text-2xl font-bold mb-4">Enhanced Building Creator</h1>
+        <h1 className="text-2xl font-bold mb-4">Advanced Building Creator</h1>
         <div className="flex space-x-4 mb-4">
           <button 
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
@@ -259,9 +420,21 @@ function BuildingCreator() {
               className="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded"
               onClick={startEditingRooms}
             >
-              Edit Rooms
+              {isEditingRooms ? "Finish Room" : "Edit Rooms"}
             </button>
           )}
+          <button 
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            onClick={exportToOBJ}
+          >
+            Export to OBJ
+          </button>
+          <button 
+            className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+            onClick={toggleInsideView}
+          >
+            {isInsideView ? "Exit Inside View" : "Inside View"}
+          </button>
         </div>
         <div className="flex space-x-4">
           <button 
@@ -284,9 +457,15 @@ function BuildingCreator() {
           </button>
         </div>
       </div>
-      <div className="flex-grow" onClick={handleCanvasClick}>
+      <div className="flex-grow" onClick={handleCanvasClick} ref={canvasRef}>
         <Canvas shadows camera={{ position: cameraPosition, fov: 75 }}>
-          <OrbitControls />
+          {!isInsideView && <OrbitControls enabled={!isEditingRooms} />}
+          {isInsideView && (
+            <WalkingCamera
+              position={insideViewPosition}
+              onChange={setInsideViewPosition}
+            />
+          )}
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} />
           
@@ -297,8 +476,10 @@ function BuildingCreator() {
             </>
           )}
           
+          {isTopView && <TopViewGrid size={10} divisions={10} />}
+          
           {floors.map((floor, index) => (
-            <Floor 
+            <Floor  
               key={index}
               structure={floor.structure}
               wallTextures={floor.wallTextures}
@@ -310,6 +491,14 @@ function BuildingCreator() {
               isTopView={isTopView}
             />
           ))}
+
+          {isEditingRooms && roomPoints.length > 0 && (
+            <Line
+              points={roomPoints.map(point => [point[0], floors[selectedFloor].structure.height/2 + 0.01, point[1]])}
+              color="blue"
+              lineWidth={2}
+            />
+          )}
         </Canvas>
       </div>
     </div>
