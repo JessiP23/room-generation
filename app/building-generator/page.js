@@ -6,7 +6,7 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useTexture, Sky, Environment, Text } from '@react-three/drei'
 import FlowerMenu from '../components/Menu'
 
-function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick }) {
+function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick, rooms }) {
   const { width, height, depth } = structure
   
   const sides = [
