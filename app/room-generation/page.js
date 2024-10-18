@@ -8,7 +8,8 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import FlowerMenu from '../components/Menu'
 
 // room 
-function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom }) {
+// Room component
+function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures }) {
   const { width, height, depth } = structure
 
   const sides = [
@@ -20,13 +21,8 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
     { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
   ]
 
-  const wallTexture = useTexture('/wall_texture.jpg')
-  wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping
-  wallTexture.repeat.set(2, 2)
-
-  const floorTexture = useTexture('/floor_texture.jpg')
-  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping
-  floorTexture.repeat.set(4, 4)
+  const textureLoader = new THREE.TextureLoader()
+  const loadedTextures = wallTextures.map(texture => textureLoader.load(texture))
 
   return (
     <group>
@@ -50,7 +46,7 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
             emissive={selectedRoom === roomIndex && selectedWall === index ? new THREE.Color(0x666666) : undefined}
             roughness={realisticMode ? 0.8 : 0.5}
             metalness={realisticMode ? 0.2 : 0}
-            map={index === 5 ? floorTexture : wallTexture}
+            map={loadedTextures[index]}
           />
         </mesh>
       ))}
@@ -78,7 +74,6 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
     </group>
   )
 }
-
 
 
 
@@ -299,6 +294,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
 }
 
 
+
 export default function CustomizableRoom() {
   const [rooms, setRooms] = useState([
     {
@@ -306,6 +302,7 @@ export default function CustomizableRoom() {
       prompt: '',
       structure: { width: 10, height: 8, depth: 10 },
       wallColors: Array(6).fill('#FFFFFF'),
+      wallTextures: Array(6).fill('/wall_texture.jpg'),
       features: [],
       position: [0, 0, 0],
     }
@@ -319,8 +316,16 @@ export default function CustomizableRoom() {
   const [cameraPosition, setCameraPosition] = useState([20, 20, -10])
   const [cameraRotation, setCameraRotation] = useState([0, 0, 0])
 
+  const availableTextures = [
+    '/wall_texture.jpg',
+    '/brick_texture.jpg',
+    '/wood_texture.jpg',
+    '/stone_texture.jpg',
+  ]
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
     const newRooms = [...rooms]
     newRooms[selectedRoom].structure = { 
       width: Math.random() * 10 + 5, 
@@ -334,6 +339,14 @@ export default function CustomizableRoom() {
     if (selectedWall !== null) {
       const newRooms = [...rooms]
       newRooms[selectedRoom].wallColors[selectedWall] = color
+      setRooms(newRooms)
+    }
+  }
+
+  const handleTextureChange = (texture) => {
+    if (selectedWall !== null) {
+      const newRooms = [...rooms]
+      newRooms[selectedRoom].wallTextures[selectedWall] = texture
       setRooms(newRooms)
     }
   }
@@ -428,6 +441,7 @@ export default function CustomizableRoom() {
       prompt: '',
       structure: { width: 10, height: 8, depth: 10 },
       wallColors: Array(6).fill('#FFFFFF'),
+      wallTextures: Array(6).fill('/wall_texture.jpg'),
       features: [],
       position: [lastRoom.position[0] + lastRoom.structure.width + 2, 0, 0],
     }
@@ -484,65 +498,10 @@ export default function CustomizableRoom() {
     setRooms(newRooms)
   }
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (!isInternalView) return
-
-      const speed = 0.1
-      const currentRoom = rooms[selectedRoom]
-      const halfWidth = currentRoom.structure.width / 2
-      const halfDepth = currentRoom.structure.depth / 2
-
-      switch (e.key) {
-        case 'w':
-          setCameraPosition(prev => [
-            THREE.MathUtils.clamp(prev[0] + Math.sin(cameraRotation[1]) * speed, 
-              currentRoom.position[0] - halfWidth, currentRoom.position[0] + halfWidth),
-            prev[1],
-            THREE.MathUtils.clamp(prev[2] - Math.cos(cameraRotation[1]) * speed,
-              currentRoom.position[2] - halfDepth, currentRoom.position[2] + halfDepth)
-          ])
-          break
-        case 's':
-          setCameraPosition(prev => [
-            THREE.MathUtils.clamp(prev[0] - Math.sin(cameraRotation[1]) * speed,
-              currentRoom.position[0] - halfWidth, currentRoom.position[0] + halfWidth),
-            prev[1],
-            THREE.MathUtils.clamp(prev[2] + Math.cos(cameraRotation[1]) * speed,
-              currentRoom.position[2] - halfDepth, currentRoom.position[2] + halfDepth)
-          ])
-          break
-        case 'a':
-          setCameraPosition(prev => [
-            THREE.MathUtils.clamp(prev[0] - Math.cos(cameraRotation[1]) * speed,
-              currentRoom.position[0] - halfWidth, currentRoom.position[0] + halfWidth),
-            prev[1],
-            THREE.MathUtils.clamp(prev[2] - Math.sin(cameraRotation[1]) * speed,
-              currentRoom.position[2] - halfDepth, currentRoom.position[2] + halfDepth)
-          ])
-          break
-        case 'd':
-          setCameraPosition(prev => [
-            THREE.MathUtils.clamp(prev[0] + Math.cos(cameraRotation[1]) * speed,
-              currentRoom.position[0] - halfWidth, currentRoom.position[0] + halfWidth),
-            prev[1],
-            THREE.MathUtils.clamp(prev[2] + Math.sin(cameraRotation[1]) * speed,
-              currentRoom.position[2] - halfDepth, currentRoom.position[2] + halfDepth)
-          ])
-          break
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', 
-
- handleKeyDown)
-  }, [isInternalView, cameraRotation, rooms, selectedRoom])
-
   return (
     <div className="flex flex-col h-screen">
       <FlowerMenu />
-      <div className="p-4  bg-gradient-to-b from-purple-400 to-pink-300">
+      <div className="p-4 bg-gradient-to-b from-purple-400 to-pink-300">
         <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
           <input
             type="text"
@@ -558,29 +517,29 @@ export default function CustomizableRoom() {
           <button type="submit" className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Generate</button>
         </form>
         <div className="flex items-center gap-4 mb-4">
-      <label htmlFor="realistic-mode" className="text-gray-700">
-        Realistic Mode
-      </label>
-      <label className="relative inline-block w-10 h-6">
-        <input
-          type="checkbox"
-          id="realistic-mode"
-          checked={realisticMode}
-          onChange={(e) => setRealisticMode(e.target.checked)}
-          className="sr-only"
-        />
-        <div
-          className={`block bg-gradient-to-b from-purple-400 to-pink-300 w-full h-full rounded-full cursor-pointer ${
-            realisticMode ? 'bg-blue-600' : ''
-          }`}
-        ></div>
-        <div
-          className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform transform ${
-            realisticMode ? 'translate-x-4' : ''
-          }`}
-        ></div>
-      </label>
-    </div>
+          <label htmlFor="realistic-mode" className="text-gray-700">
+            Realistic Mode
+          </label>
+          <label className="relative inline-block w-10 h-6">
+            <input
+              type="checkbox"
+              id="realistic-mode"
+              checked={realisticMode}
+              onChange={(e) => setRealisticMode(e.target.checked)}
+              className="sr-only"
+            />
+            <div
+              className={`block bg-gradient-to-b from-purple-400 to-pink-300 w-full h-full rounded-full cursor-pointer ${
+                realisticMode ? 'bg-blue-600' : ''
+              }`}
+            ></div>
+            <div
+              className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform transform ${
+                realisticMode ? 'translate-x-4' : ''
+              }`}
+            ></div>
+          </label>
+        </div>
         <div className="flex gap-2 mb-4">
           <input
             type="number"
@@ -621,6 +580,17 @@ export default function CustomizableRoom() {
               placeholder="Hex color"
               className="w-28 p-2 border rounded text-gray-900"
             />
+            <select
+              value={rooms[selectedRoom].wallTextures[selectedWall]}
+              onChange={(e) => handleTextureChange(e.target.value)}
+              className="p-2 border rounded text-gray-900"
+            >
+              {availableTextures.map((texture, index) => (
+                <option key={index} value={texture}>
+                  {texture.split('/').pop().split('.')[0]}
+                </option>
+              ))}
+            </select>
           </div>
         )}
         <div className="flex gap-2">
@@ -633,16 +603,17 @@ export default function CustomizableRoom() {
             {isInternalView ? 'External View' : 'Internal View'}
           </button>
           <button onClick={toggleTopView} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-          {isTopView ? 'Normal View' : 'Top View'}
-        </button>
+            {isTopView ? 'Normal View' : 'Top View'}
+          </button>
         </div>
       </div>
       <div className="flex-grow relative">
-      <Canvas shadows>
+        <Canvas shadows>
           {isInternalView ? (
-            <WalkingCamera position={cameraPosition} 
-            rotation={cameraRotation} 
-            room={rooms[selectedRoom]} />
+            <WalkingCamera
+              initialPosition={cameraPosition}
+              room={rooms[selectedRoom]}
+            />
           ) : (
             <PerspectiveCamera makeDefault position={cameraPosition} rotation={cameraRotation} />
           )}
@@ -672,6 +643,7 @@ export default function CustomizableRoom() {
                 <Room
                   structure={room.structure}
                   wallColors={room.wallColors}
+                  wallTextures={room.wallTextures}
                   features={room.features}
                   onFeatureMove={(featureIndex, newPosition) => handleFeatureMove(featureIndex, newPosition)}
                   onWallClick={handleWallClick}
@@ -680,7 +652,6 @@ export default function CustomizableRoom() {
                   roomIndex={index}
                   selectedRoom={selectedRoom}
                 />
-              
               </group>
             ))
           )}
