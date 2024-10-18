@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useTexture, Sky, Environment, Text } from '@react-three/drei'
+import FlowerMenu from '../components/Menu'
 
 function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick }) {
   const { width, height, depth } = structure
@@ -145,6 +146,7 @@ function BuildingCreator() {
 
   return (
     <div className="h-screen flex flex-col">
+      <FlowerMenu />
       <div className="p-4 bg-gray-800 text-white">
         <h1 className="text-2xl font-bold mb-4">Building Creator</h1>
         <div className="flex space-x-4 mb-4">
