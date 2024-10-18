@@ -141,13 +141,25 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
 
 function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode }) {
   const mesh = useRef()
-  const { viewport } = useThree()
+  const { viewport, camera } = useThree()
   const [isMoving, setIsMoving] = useState(false)
+  const [dimensions, setDimensions] = useState({ width: type === 'door' ? 1 : 1, height: type === 'door' ? 2 : 1 })
 
   const doorTexture = useTexture('/door_texture.jpg')
   const windowTexture = useTexture('/window_texture.jpg')
 
-  useFrame(({ mouse, camera }) => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space') {
+        setIsMoving(prev => !prev)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  useFrame(({ mouse }) => {
     if (isMoving && mesh.current) {
       const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation))
       const planeIntersect = new THREE.Plane(wallNormal, 0)
@@ -158,25 +170,29 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
 
       const halfWidth = wallDimensions[0] / 2
       const halfHeight = wallDimensions[1] / 2
-      const newX = THREE.MathUtils.clamp(intersectPoint.x - wallPosition[0], -halfWidth + 0.5, halfWidth - 0.5)
-      const newY = THREE.MathUtils.clamp(intersectPoint.y - wallPosition[1], -halfHeight + (type === 'door' ? 1 : 0.5), halfHeight - (type === 'door' ? 1 : 0.5))
+      const newX = THREE.MathUtils.clamp(intersectPoint.x - wallPosition[0], -halfWidth + dimensions.width / 2, halfWidth - dimensions.width / 2)
+      const newY = THREE.MathUtils.clamp(intersectPoint.y - wallPosition[1], -halfHeight + dimensions.height / 2, halfHeight - dimensions.height / 2)
 
       mesh.current.position.set(newX, newY, 0.05)
+      onMove(mesh.current.position)
     }
   })
 
   const handlePointerDown = (e) => {
     e.stopPropagation()
-    setIsMoving(!isMoving)
+    setIsMoving(true)
   }
 
   const handlePointerUp = (e) => {
     e.stopPropagation()
-    if (isMoving) {
-      if (mesh.current) {
-        onMove(mesh.current.position)
-      }
-    }
+    setIsMoving(false)
+  }
+
+  const handleResize = (dimension, delta) => {
+    setDimensions(prev => ({
+      ...prev,
+      [dimension]: Math.max(0.5, prev[dimension] + delta)
+    }))
   }
 
   return (
@@ -189,7 +205,7 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
         castShadow
         receiveShadow
       >
-        <boxGeometry args={type === 'door' ? [1, 2, 0.1] : [1, 1, 0.1]} />
+        <boxGeometry args={[dimensions.width, dimensions.height, 0.1]} />
         <meshStandardMaterial 
           color={type === 'door' ? '#8B4513' : '#87CEEB'} 
           roughness={realisticMode ? 0.6 : 0.3}
@@ -197,6 +213,26 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
           map={type === 'door' ? doorTexture : windowTexture}
         />
       </mesh>
+      <group position={[position[0] + dimensions.width / 2 + 0.1, position[1], position[2]]}>
+        <mesh onClick={() => handleResize('width', 0.1)}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="green" />
+        </mesh>
+        <mesh onClick={() => handleResize('width', -0.1)} position={[0, 0.2, 0]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="red" />
+        </mesh>
+      </group>
+      <group position={[position[0], position[1] + dimensions.height / 2 + 0.1, position[2]]}>
+        <mesh onClick={() => handleResize('height', 0.1)}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="green" />
+        </mesh>
+        <mesh onClick={() => handleResize('height', -0.1)} position={[0.2, 0, 0]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="red" />
+        </mesh>
+      </group>
     </group>
   )
 }
@@ -204,11 +240,11 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
 
 // walking camera
 
-function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2 }) {
+function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room }) {
   const { camera, gl } = useThree();
   const controlsRef = useRef();
-  const [moveDirection, setMoveDirection] = useState(new THREE.Vector3());
-  const [isSprinting, setIsSprinting] = useState(false);
+  const moveDirection = useRef(new THREE.Vector3());
+  const isSprinting = useRef(false);
 
   useEffect(() => {
     camera.position.set(...initialPosition);
@@ -219,19 +255,19 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
       switch (event.code) {
         case 'KeyW':
         case 'ArrowUp':
-          setMoveDirection((prev) => prev.setZ(-1));
+          moveDirection.current.z = -1;
           break;
         case 'KeyS':
         case 'ArrowDown':
-          setMoveDirection((prev) => prev.setZ(1));
+          moveDirection.current.z = 1;
           break;
         case 'KeyA':
         case 'ArrowLeft':
-          setMoveDirection((prev) => prev.setX(-1));
+          moveDirection.current.x = -1;
           break;
         case 'KeyD':
         case 'ArrowRight':
-          setMoveDirection((prev) => prev.setX(1));
+          moveDirection.current.x = 1;
           break;
         case 'Space':
           if (camera.position.y === initialPosition[1]) {
@@ -239,12 +275,10 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
           }
           break;
         case 'ShiftLeft':
-          setIsSprinting(true);
+          isSprinting.current = true;
           break;
       }
     };
-
-    // improved version
 
     const handleKeyUp = (event) => {
       switch (event.code) {
@@ -252,16 +286,16 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
         case 'KeyS':
         case 'ArrowUp':
         case 'ArrowDown':
-          setMoveDirection((prev) => prev.setZ(0));
+          moveDirection.current.z = 0;
           break;
         case 'KeyA':
         case 'KeyD':
         case 'ArrowLeft':
         case 'ArrowRight':
-          setMoveDirection((prev) => prev.setX(0));
+          moveDirection.current.x = 0;
           break;
         case 'ShiftLeft':
-          setIsSprinting(false);
+          isSprinting.current = false;
           break;
       }
     };
@@ -273,12 +307,12 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [initialPosition]);
+  }, [camera, initialPosition]);
 
   useFrame(() => {
     if (controlsRef.current) {
-      const speed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
-      const direction = moveDirection.clone().normalize().multiplyScalar(speed);
+      const speed = isSprinting.current ? moveSpeed * sprintMultiplier : moveSpeed;
+      const direction = moveDirection.current.clone().normalize().multiplyScalar(speed);
       const cameraDirection = new THREE.Vector3();
       camera.getWorldDirection(cameraDirection);
       cameraDirection.y = 0;
@@ -290,7 +324,20 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
         .addScaledVector(cameraDirection, -direction.z)
         .addScaledVector(sideways, direction.x);
 
-      camera.position.add(movement);
+      const newPosition = camera.position.clone().add(movement);
+
+      // Check if the new position is within the room boundaries
+      const halfWidth = room.structure.width / 2;
+      const halfDepth = room.structure.depth / 2;
+      const minX = room.position[0] - halfWidth + 0.5; // Add a small buffer
+      const maxX = room.position[0] + halfWidth - 0.5;
+      const minZ = room.position[2] - halfDepth + 0.5;
+      const maxZ = room.position[2] + halfDepth - 0.5;
+
+      newPosition.x = THREE.MathUtils.clamp(newPosition.x, minX, maxX);
+      newPosition.z = THREE.MathUtils.clamp(newPosition.z, minZ, maxZ);
+
+      camera.position.copy(newPosition);
 
       // Simple gravity
       if (camera.position.y > initialPosition[1]) {
@@ -647,7 +694,9 @@ export default function CustomizableRoom() {
       <div className="flex-grow relative">
         <Canvas shadows>
           {isInternalView ? (
-            <WalkingCamera position={cameraPosition} rotation={cameraRotation} />
+            <WalkingCamera position={cameraPosition} 
+            rotation={cameraRotation} 
+            room={rooms[selectedRoom]} />
           ) : (
             <PerspectiveCamera makeDefault position={cameraPosition} rotation={cameraRotation} />
           )}
