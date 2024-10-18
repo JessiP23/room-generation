@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, useTexture, Sky, Environment, Text, Line, PerspectiveCamera } from '@react-three/drei'
+import { OrbitControls, useTexture, Sky, Environment, Text, Line, PerspectiveCamera, PointerLockControls } from '@react-three/drei'
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter'
 import FlowerMenu from '../components/Menu'
 
@@ -140,60 +140,95 @@ function TopViewGrid({ size, divisions }) {
   )
 }
 
-function WalkingCamera({ position, onChange }) {
-  const { camera } = useThree()
-  const [rotation, setRotation] = useState([0, 0, 0])
+function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room }) {
+  const { camera, gl } = useThree();
+  const controlsRef = useRef();
+  const moveDirection = useRef(new THREE.Vector3());
+  const isSprinting = useRef(false);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      const speed = 0.1
-      let newPosition = [...position]
-      switch (e.key) {
-        case 'w':
-          newPosition[2] -= speed * Math.cos(rotation[1])
-          newPosition[0] += speed * Math.sin(rotation[1])
-          break
-        case 's':
-          newPosition[2] += speed * Math.cos(rotation[1])
-          newPosition[0] -= speed * Math.sin(rotation[1])
-          break
-        case 'a':
-          newPosition[0] -= speed * Math.cos(rotation[1])
-          newPosition[2] -= speed * Math.sin(rotation[1])
-          break
-        case 'd':
-          newPosition[0] += speed * Math.cos(rotation[1])
-          newPosition[2] += speed * Math.sin(rotation[1])
-          break
+    camera.position.set(...initialPosition);
+  }, [camera, initialPosition]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      switch (event.code) {
+        case 'KeyW':
+        case 'ArrowUp':
+          moveDirection.current.z = -1;
+          break;
+        case 'KeyS':
+        case 'ArrowDown':
+          moveDirection.current.z = 1;
+          break;
+        case 'KeyA':
+        case 'ArrowLeft':
+          moveDirection.current.x = -1;
+          break;
+        case 'KeyD':
+        case 'ArrowRight':
+          moveDirection.current.x = 1;
+          break;
+        case 'Space':
+          if (camera.position.y === initialPosition[1]) {
+            camera.position.y += 0.5; // Simple jump
+          }
+          break;
+        case 'ShiftLeft':
+          isSprinting.current = true;
+          break;
       }
-      onChange(newPosition)
-    }
+    };
 
-    const handleMouseMove = (e) => {
-      const sensitivity = 0.002
-      const newRotation = [
-        rotation[0] - e.movementY * sensitivity,
-        rotation[1] - e.movementX * sensitivity,
-        0
-      ]
-      setRotation(newRotation)
-    }
+    const handleKeyUp = (event) => {
+      switch (event.code) {
+        case 'KeyW':
+        case 'KeyS':
+        case 'ArrowUp':
+        case 'ArrowDown':
+          moveDirection.current.z = 0;
+          break;
+        case 'KeyA':
+        case 'KeyD':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          moveDirection.current.x = 0;
+          break;
+        case 'ShiftLeft':
+          isSprinting.current = false;
+          break;
+      }
+    };
 
-    document.addEventListener('keydown', handleKeyDown)
-    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('mousemove', handleMouseMove)
-    }
-  }, [position, rotation, onChange])
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [camera, initialPosition]);
 
   useFrame(() => {
-    camera.position.set(...position)
-    camera.rotation.set(...rotation)
-  })
+    if (controlsRef.current) {
+      const speed = isSprinting.current ? moveSpeed * sprintMultiplier : moveSpeed;
+      const direction = moveDirection.current.clone().normalize().multiplyScalar(speed);
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      cameraDirection.y = 0;
+      cameraDirection.normalize();
 
-  return null
+      const sideways = new THREE.Vector3(-cameraDirection.z, 0, cameraDirection.x);
+
+      const movement = new THREE.Vector3()
+        .addScaledVector(cameraDirection, -direction.z)
+        .addScaledVector(sideways, direction.x);
+
+      camera.position.add(movement);
+    }
+  });
+
+  return <PointerLockControls ref={controlsRef} args={[camera, gl.domElement]} />;
 }
 
 function BuildingCreator() {
