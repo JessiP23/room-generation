@@ -157,23 +157,30 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
 
   useFrame(({ mouse }) => {
     if (isMoving && mesh.current) {
-      const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation))
-      const planeIntersect = new THREE.Plane(wallNormal, 0)
-      const raycaster = new THREE.Raycaster()
-      raycaster.setFromCamera(new THREE.Vector2(mouse.x, mouse.y), camera)
-      const intersectPoint = new THREE.Vector3()
-      raycaster.ray.intersectPlane(planeIntersect, intersectPoint)
+        const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation));
+        const planeIntersect = new THREE.Plane(wallNormal, 0);
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(mouse.x, mouse.y), camera);
+        
+        const intersectPoint = new THREE.Vector3();
+        raycaster.ray.intersectPlane(planeIntersect, intersectPoint);
 
-      const halfWidth = wallDimensions[0] / 2
-      const halfHeight = wallDimensions[1] / 2
-      const newX = THREE.MathUtils.clamp(intersectPoint.x - wallPosition[0], -halfWidth + dimensions.width / 2, halfWidth - dimensions.width / 2)
-      const newY = THREE.MathUtils.clamp(intersectPoint.y - wallPosition[1], -halfHeight + dimensions.height / 2, halfHeight - dimensions.height / 2)
+        // Apply the wall's rotation to the intersectPoint
+        const rotatedIntersectPoint = intersectPoint.clone();
+        rotatedIntersectPoint.applyEuler(new THREE.Euler(...wallRotation));
 
-      mesh.current.position.set(newX, newY, 0.05)
-      onMove(mesh.current.position)
+        const localPoint = rotatedIntersectPoint.sub(new THREE.Vector3(...wallPosition));
+        const halfWidth = wallDimensions[0] / 2;
+        const halfHeight = wallDimensions[1] / 2;
+
+        // Flip the direction by negating the localPoint values
+        const newX = THREE.MathUtils.clamp(-localPoint.x, -halfWidth, halfWidth);
+        const newY = THREE.MathUtils.clamp(localPoint.y, -halfHeight, halfHeight);
+
+        mesh.current.position.set(newX, newY, 0.05);
+        onMove(mesh.current.position);
     }
-  })
-
+});
   const handlePointerDown = (e) => {
     e.stopPropagation()
     setIsMoving(true)
