@@ -360,8 +360,8 @@ export default function BuildingCreator() {
       if (updatedPoints.length > 1) {
         const newFloors = [...floors]
         newFloors[selectedFloor].rooms = [
-          ...newFloors[selectedFloor].rooms.filter(room => 
- room.isComplete),
+          
+          ...newFloors[selectedFloor].rooms.filter(room => room.isComplete),
           { points: updatedPoints, isComplete: false }
         ]
         setFloors(newFloors)
@@ -380,6 +380,7 @@ export default function BuildingCreator() {
           ]
           setFloors(newFloors)
           setRoomPoints([])
+          setIsEditingRooms(false)
         }
       }
     }
@@ -544,51 +545,65 @@ export default function BuildingCreator() {
           </div>
         )}
       </div>
-      <div className="flex-grow" onClick={handleCanvasClick} ref={canvasRef}>
-        <Canvas shadows camera={{ position: cameraPosition, fov: 75 }}>
-          {!isInsideView && <OrbitControls enabled={!isEditingRooms} />}
-          {isInsideView && (
-            <WalkingCamera
-              initialPosition={insideViewPosition}
-              room={floors[selectedFloor]}
-            />
-          )}
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} />
-          
-          {isRealisticMode && (
-            <>
-              <Sky sunPosition={[100, 100, 20]} />
-              <Environment preset="sunset" />
-            </>
-          )}
-          
-          {isTopView && <TopViewGrid size={10} divisions={10} />}
-          
-          {floors.map((floor, index) => (
-            <Floor  
-              key={index}
-              structure={floor.structure}
-              wallTextures={floor.wallTextures}
-              features={floor.features}
-              rooms={floor.rooms}
-              floorNumber={index}
-              isSelected={index === selectedFloor}
-              onWallClick={handleWallClick}
-              isTopView={isTopView}
-              realisticMode={isRealisticMode}
-            />
-          ))}
+      <div className="flex-grow bg-gray-200 p-4">
+        <div className="flex">
+          <div className="w-[70vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden" onClick={handleCanvasClick} ref={canvasRef}>
+            <Canvas shadows camera={{ position: cameraPosition, fov: 75 }}>
+              {!isInsideView && <OrbitControls enabled={!isEditingRooms} />}
+              {isInsideView && (
+                <WalkingCamera
+                  initialPosition={insideViewPosition}
+                  room={floors[selectedFloor]}
+                />
+              )}
+              <ambientLight intensity={0.5} />
+              <pointLight position={[10, 10, 10]} />
+              
+              {isRealisticMode && (
+                <>
+                  <Sky sunPosition={[100, 100, 20]} />
+                  <Environment preset="sunset" />
+                </>
+              )}
+              
+              {isTopView && <TopViewGrid size={10} divisions={10} />}
+              
+              {floors.map((floor, index) => (
+                <Floor  
+                  key={index}
+                  structure={floor.structure}
+                  wallTextures={floor.wallTextures}
+                  features={floor.features}
+                  rooms={floor.rooms}
+                  floorNumber={index}
+                  isSelected={index === selectedFloor}
+                  onWallClick={handleWallClick}
+                  isTopView={isTopView}
+                  realisticMode={isRealisticMode}
+                />
+              ))}
 
-          {isEditingRooms && roomPoints.length > 0 && (
-            <Line
-              points={roomPoints.map(point => [point[0], floors[selectedFloor].structure.height/2 + 0.01, point[1]])}
-              color="blue"
-              lineWidth={2}
-            />
+              {isEditingRooms && roomPoints.length > 0 && (
+                <Line
+                  points={roomPoints.map(point => [point[0], floors[selectedFloor].structure.height/2 + 0.01, point[1]])}
+                  color="blue"
+                  lineWidth={2}
+                />
+              )}
+            </Canvas>
+          </div>
+          {isEditingRooms && (
+            <div className="w-[30vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden ml-4 p-4">
+              <h2 className="text-xl font-bold mb-4">Edit Floor {selectedFloor + 1}</h2>
+              <p>Click on the canvas to add points for the room. When youre finished, click Finish Room or close the last point near the starting point.</p>
+            </div>
           )}
-        </Canvas>
+        </div>
       </div>
+      <footer className="bg-gray-800 text-white p-4 text-center">
+        <p>&copy; 2023 Advanced Building Creator. All rights reserved.</p>
+        <p>Created with React, Three.js, and ❤️</p>
+      </footer>
     </div>
   )
 }
