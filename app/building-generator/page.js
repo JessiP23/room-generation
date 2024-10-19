@@ -6,6 +6,25 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useTexture, Sky, Environment, Text, Line, PerspectiveCamera, PointerLockControls } from '@react-three/drei'
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter'
 import FlowerMenu from '../components/Menu'
+import { 
+  ChevronDown, 
+  Plus,
+  Layers,
+  DoorClosed, 
+  PanelsTopLeft, 
+  Eye, 
+  Box, 
+  Download, 
+  Camera, 
+  BrickWall, 
+  TreePine, 
+  Building2, 
+  Move, 
+  Maximize2, 
+  Minus, 
+  Settings, 
+  House
+} from 'lucide-react';
 
 function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick, rooms, isTopView, realisticMode }) {
   const { width, height, depth } = structure
@@ -437,114 +456,77 @@ export default function BuildingCreator() {
   return (
     <div className="h-screen flex flex-col">
       <FlowerMenu />
-      <div className="p-4 bg-gray-800 text-white">
-        <h1 className="text-2xl font-bold mb-4">Advanced Building Creator</h1>
-        <div className="flex space-x-4 mb-4">
-          <button 
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={addFloor}
-          >
-            Add Floor
+      <div className="h-[10vh] bg-gray-800 text-gray-200 font-sans flex flex-col">
+      {/* Main Toolbar */}
+      <div className="flex items-center justify-between px-4 h-[60%] bg-gray-900">
+        <div className="flex items-center space-x-2">
+          <button className="p-1 hover:bg-gray-700 rounded" title="Home">
+            <House size={20} />
           </button>
-          <select 
-            className="bg-gray-700 text-white py-2 px-4 rounded"
-            value={selectedFloor}
-            onChange={(e) => setSelectedFloor(Number(e.target.value))}
-          >
-            {floors.map((_, index) => (
-              <option key={index} value={index}>Floor {index + 1}</option>
-            ))}
+          <select className="bg-gray-700 text-white py-1 pl-2 pr-6 rounded text-sm appearance-none">
+            <option>Floor 1</option>
+            <option>Floor 2</option>
+            <option>Floor 3</option>
           </select>
-          <button 
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => addFeature('door')}
-          >
-            Add Door
+          <button className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-sm">
+            <Plus size={14} />
+            <span>Floor</span>
           </button>
-          <button 
-            className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => addFeature('window')}
-          >
-            Add Window
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <button className="p-1 hover:bg-gray-700 rounded" title="Add Door"><DoorClosed size={20} /></button>
+          <button className="p-1 hover:bg-gray-700 rounded" title="Add Window"><PanelsTopLeft size={20} /></button>
+          <div className="h-6 w-px bg-gray-600 mx-2"></div>
+          <button className="p-1 hover:bg-gray-700 rounded" title="Top View"><Eye size={20} /></button>
+          <button className="p-1 hover:bg-gray-700 rounded" title="3D View"><Box size={20} /></button>
+          <button className="p-1 hover:bg-gray-700 rounded" title="Inside View"><Camera size={20} /></button>
+          <div className="h-6 w-px bg-gray-600 mx-2"></div>
+          <button className="p-1 hover:bg-gray-700 rounded" title="Move"><Move size={20} /></button>
+          <button className="p-1 hover:bg-gray-700 rounded" title="Scale"><Maximize2 size={20} /></button>
+          <button className="p-1 hover:bg-gray-700 rounded" title="Edit Rooms"><Minus size={20} /></button>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <button className="p-1 hover:bg-gray-700 rounded" title="Brick Texture"><BrickWall size={20} /></button>
+          <button className="p-1 hover:bg-gray-700 rounded" title="Wood Texture"><TreePine size={20} /></button>
+          <button className="p-1 hover:bg-gray-700 rounded" title="Concrete Texture"><Building2 size={20} /></button>
+          <div className="h-6 w-px bg-gray-600 mx-2"></div>
+          <button className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded text-sm" title="Export to OBJ">
+            <Download size={14} />
+            <span>Export</span>
           </button>
-          <div className="flex items-center">
-            <input 
-              type="checkbox" 
-              id="realisticMode" 
-              checked={isRealisticMode} 
-              onChange={(e) => setIsRealisticMode(e.target.checked)}
-              className="mr-2"
-            />
+          <button className="p-1 hover:bg-gray-700 rounded" title="Settings">
+            <Settings size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Secondary Toolbar */}
+      <div className="flex items-center justify-between px-4 h-[40%] bg-gray-800 text-sm">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <input type="checkbox" id="realisticMode" className="form-checkbox h-3 w-3 text-blue-600" />
             <label htmlFor="realisticMode">Realistic Mode</label>
           </div>
-          <button 
-            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
-            onClick={toggleTopView}
-          >
-            {isTopView ? "3D View" : "Top View"}
-          </button>
-          {isTopView && (
-            <button 
-              className="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded"
-              onClick={startEditingRooms}
-            >
-              {isEditingRooms ? "Finish Room" : "Edit Rooms"}
-            </button>
-          )}
-          <button 
-            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-            onClick={exportToOBJ}
-          >
-            Export to OBJ
-          </button>
-          <button 
-            className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
-            onClick={toggleInsideView}
-          >
-            {isInsideView ? "Exit Inside View" : "Inside View"}
-          </button>
-        </div>
-        <div className="flex space-x-4 mb-4">
-          <button 
-            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => changeWallTexture('/brick_texture.jpg')}
-          >
-            Brick Texture
-          </button>
-          <button 
-            className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => changeWallTexture('/wood_texture.jpg')}
-          >
-            Wood Texture
-          </button>
-          <button 
-            className="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => changeWallTexture('/concrete_texture.jpg')}
-          >
-            Concrete Texture
-          </button>
-        </div>
-        {selectedFeature !== null && (
-          <div className="flex space-x-4 mb-4">
-            <input
-              type="number"
-              value={floors[selectedFloor].features[selectedFeature].dimensions.width}
-              onChange={(e) => updateFeatureDimensions('width', e.target.value)}
-              className="bg-gray-700 text-white py-2 px-4 rounded"
-              placeholder="Width"
-              step="0.1"
-            />
-            <input
-              type="number"
-              value={floors[selectedFloor].features[selectedFeature].dimensions.height}
-              onChange={(e) => updateFeatureDimensions('height', e.target.value)}
-              className="bg-gray-700 text-white py-2 px-4 rounded"
-              placeholder="Height"
-              step="0.1"
-            />
+          <div className="flex items-center space-x-2">
+            <span>Width:</span>
+            <input type="number" className="bg-gray-700 text-white py-0 px-1 rounded w-16 text-sm" placeholder="Width" step="0.1" />
           </div>
-        )}
+          <div className="flex items-center space-x-2">
+            <span>Height:</span>
+            <input type="number" className="bg-gray-700 text-white py-0 px-1 rounded w-16 text-sm" placeholder="Height" step="0.1" />
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span>Selected: None</span>
+          <span className="text-gray-400">|</span>
+          <span>Floor: 1</span>
+          <span className="text-gray-400">|</span>
+          <span>View: 3D</span>
+        </div>
       </div>
+    </div>
       <div className="flex-grow bg-gray-200 p-4">
         <div className="flex">
           <div className="w-[70vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden" onClick={handleCanvasClick} ref={canvasRef}>
