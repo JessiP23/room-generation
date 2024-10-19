@@ -10,7 +10,7 @@ import FlowerMenu from '../components/Menu'
 // room 
 // Room component
 
-function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures }) {
+function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect }) {
   const { width, height, depth } = structure
 
   const sides = [
@@ -68,6 +68,7 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
           wallPosition={sides[feature.wallIndex]?.pos || [0, 0, 0]}
           realisticMode={realisticMode}
           onMove={(newPosition) => onFeatureMove(index, newPosition)}
+          onSelect={() => onFeatureSelect(index)}
         />
       ))}
       <SpotLight
@@ -143,7 +144,7 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
 
 
 
-function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions, texture, selectedFeature }) {
+function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions, texture, selectedFeature, onSelect }) {
   const mesh = useRef()
   const { camera } = useThree()
   const [isMoving, setIsMoving] = useState(false)
@@ -215,6 +216,7 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
   const handlePointerDown = (e) => {
     e.stopPropagation()
     setIsMoving(true)
+    onSelect()
   }
 
   return (
@@ -379,6 +381,13 @@ export default function CustomizableRoom() {
     '/door_texture6.jpg',
   ]
 
+  const windowTextures = [
+    '/window_texture.jpg',
+    '/window_texture2.jpg',
+    '/window_texture3.jpg',
+  ]
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -431,24 +440,27 @@ export default function CustomizableRoom() {
     }
   }
 
- 
-  const handleFeatureResize = (featureIndex, newDimensions) => {
-    const newRooms = [...rooms]
-    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
-      newRooms[selectedRoom].features[featureIndex].dimensions = newDimensions
-      setRooms(newRooms)
-    }
-  }
 
 
   const handleFeatureSelect = (featureIndex) => {
     setSelectedFeature(featureIndex)
   }
 
-  const handleFeatureTextureChange = (featureIndex, newTexture) => {
+  const handleFeatureResize = (dimension, value) => {
     const newRooms = [...rooms]
-    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
-      newRooms[selectedRoom].features[featureIndex].texture = newTexture
+    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[selectedFeature]) {
+      newRooms[selectedRoom].features[selectedFeature].dimensions = {
+        ...newRooms[selectedRoom].features[selectedFeature].dimensions,
+        [dimension]: Number(value)
+      }
+      setRooms(newRooms)
+    }
+  }
+
+  const handleFeatureTextureChange = (newTexture) => {
+    const newRooms = [...rooms]
+    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[selectedFeature]) {
+      newRooms[selectedRoom].features[selectedFeature].texture = newTexture
       setRooms(newRooms)
     }
   }
@@ -698,10 +710,7 @@ export default function CustomizableRoom() {
             <input
               type="number"
               value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
-              onChange={(e) => handleFeatureResize(selectedFeature, { 
-                ...rooms[selectedRoom].features[selectedFeature].dimensions, 
-                width: Number(e.target.value) 
-              })}
+              onChange={(e) => handleFeatureResize('width', e.target.value)}
               className="w-20 p-2 border rounded text-gray-900"
               placeholder="Width"
               step="0.1"
@@ -709,17 +718,14 @@ export default function CustomizableRoom() {
             <input
               type="number"
               value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
-              onChange={(e) => handleFeatureResize(selectedFeature, { 
-                ...rooms[selectedRoom].features[selectedFeature].dimensions, 
-                height: Number(e.target.value) 
-              })}
+              onChange={(e) => handleFeatureResize('height', e.target.value)}
               className="w-20 p-2 border rounded text-gray-900"
               placeholder="Height"
               step="0.1"
             />
             <select
               value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
-              onChange={(e) => handleFeatureTextureChange(selectedFeature, e.target.value)}
+              onChange={(e) => handleFeatureTextureChange(e.target.value)}
               className="p-2 border rounded text-gray-900"
             >
               {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
@@ -770,7 +776,8 @@ export default function CustomizableRoom() {
                 wallColors={room.wallColors}
                 wallTextures={room.wallTextures}
                 features={room.features}
-                onFeatureMove={(featureIndex, newPosition) => handleFeatureMove(featureIndex, newPosition)}
+                onFeatureMove={handleFeatureMove}
+                onFeatureSelect={handleFeatureSelect}
                 onWallClick={handleWallClick}
                 selectedWall={selectedRoom === index ? selectedWall : null}
                 realisticMode={realisticMode}
