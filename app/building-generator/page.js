@@ -7,7 +7,7 @@ import { OrbitControls, useTexture, Sky, Environment, Text, Line, PerspectiveCam
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter'
 import FlowerMenu from '../components/Menu'
 
-function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick, rooms, isTopView }) {
+function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick, rooms, isTopView, realisticMode }) {
   const { width, height, depth } = structure
   
   const sides = [
@@ -41,6 +41,8 @@ function Floor({ structure, wallTextures, features, floorNumber, isSelected, onW
             color={isSelected ? '#ffcccc' : '#ffffff'}
             map={index === 5 ? floorTexture : wallTextures[index]}
             side={THREE.DoubleSide}
+            roughness={realisticMode ? 0.8 : 0.5}
+            metalness={realisticMode ? 0.2 : 0}
           />
         </mesh>
       ))}
@@ -51,10 +53,11 @@ function Floor({ structure, wallTextures, features, floorNumber, isSelected, onW
           wallDimensions={sides[feature.wallIndex].scale}
           wallRotation={sides[feature.wallIndex].rot}
           wallPosition={sides[feature.wallIndex].pos}
+          realisticMode={realisticMode}
         />
       ))}
       {rooms.map((room, index) => (
-        <Room key={index} {...room} floorHeight={height} isTopView={isTopView} />
+        <Room key={index} {...room} floorHeight={height} isTopView={isTopView} realisticMode={realisticMode} />
       ))}
       <Text
         position={[0, height/2 + 0.5, depth/2 + 0.1]}
@@ -67,13 +70,15 @@ function Floor({ structure, wallTextures, features, floorNumber, isSelected, onW
   )
 }
 
-function Feature({ type, position, wallIndex, wallDimensions, wallRotation, wallPosition }) {
+function Feature({ type, position, wallIndex, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions }) {
   const doorTexture = useTexture('/door_texture.jpg')
   const windowTexture = useTexture('/window_texture.jpg')
 
-  const geometry = type === 'door' 
-    ? new THREE.BoxGeometry(1, 2, 0.1)
-    : new THREE.BoxGeometry(1, 1, 0.1)
+  const geometry = new THREE.BoxGeometry(
+    dimensions?.width || (type === 'door' ? 1 : 1),
+    dimensions?.height || (type === 'door' ? 2 : 1),
+    0.1
+  )
 
   return (
     <group position={wallPosition} rotation={wallRotation}>
@@ -83,14 +88,20 @@ function Feature({ type, position, wallIndex, wallDimensions, wallRotation, wall
       >
         <meshStandardMaterial 
           map={type === 'door' ? doorTexture : windowTexture}
+          roughness={realisticMode ? 0.6 : 0.3}
+          metalness={realisticMode ? 0.1 : 0}
         />
       </mesh>
     </group>
   )
 }
 
-function Room({ points, floorHeight, isTopView }) {
-  const wallMaterial = new THREE.MeshStandardMaterial({ color: '#cccccc' })
+function Room({ points, floorHeight, isTopView, realisticMode }) {
+  const wallMaterial = new THREE.MeshStandardMaterial({ 
+    color: '#cccccc',
+    roughness: realisticMode ? 0.8 : 0.5,
+    metalness: realisticMode ? 0.2 : 0
+  })
 
   return (
     <group>
@@ -231,7 +242,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
   return <PointerLockControls ref={controlsRef} args={[camera, gl.domElement]} />;
 }
 
-function BuildingCreator() {
+export default function BuildingCreator() {
   const [floors, setFloors] = useState([
     {
       structure: { width: 10, height: 3, depth: 10 },
@@ -247,6 +258,7 @@ function BuildingCreator() {
   ])
   const [selectedFloor, setSelectedFloor] = useState(0)
   const [selectedWall, setSelectedWall] = useState(null)
+  const [selectedFeature, setSelectedFeature] = useState(null)
   const [isRealisticMode, setIsRealisticMode] = useState(false)
   const [cameraPosition, setCameraPosition] = useState([15, 15, 15])
   const [isTopView, setIsTopView] = useState(false)
@@ -273,6 +285,7 @@ function BuildingCreator() {
   const handleWallClick = (floorIndex, wallIndex) => {
     setSelectedFloor(floorIndex)
     setSelectedWall(wallIndex)
+    setSelectedFeature(null)
   }
 
   const changeWallTexture = (textureUrl) => {
@@ -289,11 +302,28 @@ function BuildingCreator() {
   const addFeature = (type) => {
     if (selectedFloor !== null && selectedWall !== null) {
       const newFloors = [...floors]
-      newFloors[selectedFloor].features.push({
+      const newFeature = {
         type,
         position: [0, 0, 0.05],
-        wallIndex: selectedWall
-      })
+        wallIndex: selectedWall,
+        dimensions: { width: type === 'door' ? 1 : 1, height: type === 'door' ? 2 : 1 }
+      }
+      newFloors[selectedFloor].features.push(newFeature)
+      setFloors(newFloors)
+      setSelectedFeature(newFloors[selectedFloor].features.length - 1)
+    }
+  }
+
+  const handleFeatureClick = (floorIndex, featureIndex) => {
+    setSelectedFloor(floorIndex)
+    setSelectedFeature(featureIndex)
+    setSelectedWall(null)
+  }
+
+  const updateFeatureDimensions = (dimension, value) => {
+    if (selectedFloor !== null && selectedFeature !== null) {
+      const newFloors = [...floors]
+      newFloors[selectedFloor].features[selectedFeature].dimensions[dimension] = Number(value)
       setFloors(newFloors)
     }
   }
@@ -330,7 +360,8 @@ function BuildingCreator() {
       if (updatedPoints.length > 1) {
         const newFloors = [...floors]
         newFloors[selectedFloor].rooms = [
-          ...newFloors[selectedFloor].rooms.filter(room => room.isComplete),
+          ...newFloors[selectedFloor].rooms.filter(room => 
+ room.isComplete),
           { points: updatedPoints, isComplete: false }
         ]
         setFloors(newFloors)
@@ -370,9 +401,11 @@ function BuildingCreator() {
 
       // Add features (doors and windows)
       floor.features.forEach(feature => {
-        const featureGeometry = feature.type === 'door'
-          ? new THREE.BoxGeometry(1, 2, 0.1)
-          : new THREE.BoxGeometry(1, 1, 0.1)
+        const featureGeometry = new THREE.BoxGeometry(
+          feature.dimensions.width,
+          feature.dimensions.height,
+          0.1
+        )
         const featureMaterial = new THREE.MeshBasicMaterial({ color: feature.type === 'door' ? 0x8B4513 : 0x87CEEB })
         const featureMesh = new THREE.Mesh(featureGeometry, featureMaterial)
         featureMesh.position.set(...feature.position)
@@ -394,14 +427,13 @@ function BuildingCreator() {
     setIsInsideView(!isInsideView)
     setIsTopView(false)
     if (!isInsideView) {
-      setInsideViewPosition([0, 1.7, 0])
+      setInsideViewPosition([0, floors[selectedFloor].structure.height / 2, 0])
     } else {
       setCameraPosition([15, 15, 15])
     }
   }
 
   return (
-    
     <div className="h-screen flex flex-col">
       <FlowerMenu />
       <div className="p-4 bg-gray-800 text-white">
@@ -471,7 +503,7 @@ function BuildingCreator() {
             {isInsideView ? "Exit Inside View" : "Inside View"}
           </button>
         </div>
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 mb-4">
           <button 
             className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
             onClick={() => changeWallTexture('/brick_texture.jpg')}
@@ -491,14 +523,34 @@ function BuildingCreator() {
             Concrete Texture
           </button>
         </div>
+        {selectedFeature !== null && (
+          <div className="flex space-x-4 mb-4">
+            <input
+              type="number"
+              value={floors[selectedFloor].features[selectedFeature].dimensions.width}
+              onChange={(e) => updateFeatureDimensions('width', e.target.value)}
+              className="bg-gray-700 text-white py-2 px-4 rounded"
+              placeholder="Width"
+              step="0.1"
+            />
+            <input
+              type="number"
+              value={floors[selectedFloor].features[selectedFeature].dimensions.height}
+              onChange={(e) => updateFeatureDimensions('height', e.target.value)}
+              className="bg-gray-700 text-white py-2 px-4 rounded"
+              placeholder="Height"
+              step="0.1"
+            />
+          </div>
+        )}
       </div>
       <div className="flex-grow" onClick={handleCanvasClick} ref={canvasRef}>
         <Canvas shadows camera={{ position: cameraPosition, fov: 75 }}>
           {!isInsideView && <OrbitControls enabled={!isEditingRooms} />}
           {isInsideView && (
             <WalkingCamera
-              position={insideViewPosition}
-              onChange={setInsideViewPosition}
+              initialPosition={insideViewPosition}
+              room={floors[selectedFloor]}
             />
           )}
           <ambientLight intensity={0.5} />
@@ -524,6 +576,7 @@ function BuildingCreator() {
               isSelected={index === selectedFloor}
               onWallClick={handleWallClick}
               isTopView={isTopView}
+              realisticMode={isRealisticMode}
             />
           ))}
 
@@ -539,5 +592,3 @@ function BuildingCreator() {
     </div>
   )
 }
-
-export default BuildingCreator
