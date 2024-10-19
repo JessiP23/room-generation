@@ -383,8 +383,10 @@ export default function CustomizableRoom() {
 
   const windowTextures = [
     '/window_texture.jpg',
+    '/window_texture1.jpg',
     '/window_texture2.jpg',
     '/window_texture3.jpg',
+    '/window_texture4.jpg',
   ]
 
 
