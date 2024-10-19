@@ -3,22 +3,23 @@
 import { useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text, PerspectiveCamera, PointerLockControls, useTexture, SpotLight, Sky, Environment } from '@react-three/drei'
+import { OrbitControls, Text, PerspectiveCamera, PointerLockControls, useTexture, SpotLight, Sky, Environment, Html } from '@react-three/drei'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import FlowerMenu from '../components/Menu'
 
 // room 
 // Room component
+
 function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures }) {
   const { width, height, depth } = structure
 
   const sides = [
-    { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, 1] },
-    { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, 1] },
-    { pos: [width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1] },
-    { pos: [-width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1] },
-    { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
-    { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1] },
+    { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, 1], size: [width, height] },
+    { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, 1], size: [width, height] },
+    { pos: [width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1], size: [depth, height] },
+    { pos: [-width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1], size: [depth, height] },
+    { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1], size: [width, depth] },
+    { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1], size: [width, depth] },
   ]
 
   const textureLoader = new THREE.TextureLoader()
@@ -27,37 +28,46 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
   return (
     <group>
       {sides.map((side, index) => (
-        <mesh 
-          key={index} 
-          position={side.pos} 
-          rotation={side.rot} 
-          scale={side.scale}
-          onClick={(e) => {
-            e.stopPropagation()
-            onWallClick(roomIndex, index)
-          }}
-          castShadow
-          receiveShadow
-        >
-          <planeGeometry args={[1, 1]} />
-          <meshStandardMaterial 
-            color={wallColors[index]} 
-            side={THREE.DoubleSide}
-            emissive={selectedRoom === roomIndex && selectedWall === index ? new THREE.Color(0x666666) : undefined}
-            roughness={realisticMode ? 0.8 : 0.5}
-            metalness={realisticMode ? 0.2 : 0}
-            map={loadedTextures[index]}
-          />
-        </mesh>
+        <group key={index}>
+          <mesh 
+            position={side.pos} 
+            rotation={side.rot} 
+            scale={side.scale}
+            onClick={(e) => {
+              e.stopPropagation()
+              onWallClick(roomIndex, index)
+            }}
+            castShadow
+            receiveShadow
+          >
+            <planeGeometry args={[1, 1]} />
+            <meshStandardMaterial 
+              color={wallColors[index]} 
+              side={THREE.DoubleSide}
+              emissive={selectedRoom === roomIndex && selectedWall === index ? new THREE.Color(0x666666) : undefined}
+              roughness={realisticMode ? 0.8 : 0.5}
+              metalness={realisticMode ? 0.2 : 0}
+              map={loadedTextures[index]}
+            />
+          </mesh>
+          {selectedRoom === roomIndex && selectedWall === index && (
+            <Html position={side.pos}>
+              <div className="bg-black text-white px-2 py-1 rounded text-sm">
+                {`${side.size[0].toFixed(2)}m x ${side.size[1].toFixed(2)}m`}
+              </div>
+            </Html>
+          )}
+        </group>
       ))}
       {features.map((feature, index) => (
         <Feature 
           key={index} 
           {...feature} 
-           wallDimensions={sides[feature.wallIndex].scale}
-          wallRotation={sides[feature.wallIndex].rot}
-          wallPosition={sides[feature.wallIndex].pos}
+          wallDimensions={sides[feature.wallIndex]?.scale || [1, 1, 1]}
+          wallRotation={sides[feature.wallIndex]?.rot || [0, 0, 0]}
+          wallPosition={sides[feature.wallIndex]?.pos || [0, 0, 0]}
           realisticMode={realisticMode}
+          onMove={(newPosition) => onFeatureMove(index, newPosition)}
         />
       ))}
       <SpotLight
@@ -73,7 +83,6 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
     </group>
   )
 }
-
 
 
 
@@ -132,11 +141,23 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
 
 
 
-function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode, onResize, selectedFeature, onSelect, texture }) {
+
+
+function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions, texture, selectedFeature }) {
   const mesh = useRef()
-  const { viewport, camera } = useThree()
+  const { camera } = useThree()
   const [isMoving, setIsMoving] = useState(false)
-  const [dimensions, setDimensions] = useState({ width: type === 'door' ? 1 : 1, height: type === 'door' ? 2 : 1 })
+  const [featureDimensions, setFeatureDimensions] = useState({
+    width: dimensions?.width || (type === 'door' ? 1 : 1),
+    height: dimensions?.height || (type === 'door' ? 2 : 1)
+  })
+
+  useEffect(() => {
+    setFeatureDimensions({
+      width: dimensions?.width || (type === 'door' ? 1 : 1),
+      height: dimensions?.height || (type === 'door' ? 2 : 1)
+    })
+  }, [dimensions, type])
 
   const doorTextures = [
     '/door_texture.jpg',
@@ -147,8 +168,13 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
     '/door_texture6.jpg',
   ]
 
-  const doorTexture = useTexture(texture || doorTextures[0])
-  const windowTexture = useTexture('/window_texture.jpg')
+  const windowTextures = [
+    '/window_texture.jpg',
+    '/window_texture2.jpg',
+    '/window_texture3.jpg',
+  ]
+
+  const featureTexture = useTexture(texture || (type === 'door' ? doorTextures[0] : windowTextures[0]))
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -178,19 +204,17 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
       const halfWidth = wallDimensions[0] / 2;
       const halfHeight = wallDimensions[1] / 2;
 
-      const newX = THREE.MathUtils.clamp(-localPoint.x, -halfWidth + dimensions.width / 2, halfWidth - dimensions.width / 2);
-      const newY = THREE.MathUtils.clamp(localPoint.y, -halfHeight + dimensions.height / 2, halfHeight - dimensions.height / 2);
+      const newX = THREE.MathUtils.clamp(-localPoint.x, -halfWidth + featureDimensions.width / 2, halfWidth - featureDimensions.width / 2);
+      const newY = THREE.MathUtils.clamp(localPoint.y, -halfHeight + featureDimensions.height / 2, halfHeight - featureDimensions.height / 2);
 
       mesh.current.position.set(newX, newY, 0.05);
-      onMove(mesh.current.position);
+      onMove([newX, newY, 0.05]);
     }
   });
-
 
   const handlePointerDown = (e) => {
     e.stopPropagation()
     setIsMoving(true)
-    onSelect()
   }
 
   return (
@@ -202,33 +226,25 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[dimensions.width, dimensions.height, 0.1]} />
+        <boxGeometry args={[featureDimensions.width, featureDimensions.height, 0.1]} />
         <meshStandardMaterial 
           color={type === 'door' ? '#8B4513' : '#87CEEB'} 
           roughness={realisticMode ? 0.6 : 0.3}
           metalness={realisticMode ? 0.1 : 0}
-          map={type === 'door' ? doorTexture : windowTexture}
+          map={featureTexture}
         />
       </mesh>
       {selectedFeature && (
-        <group position={[position[0], position[1] - dimensions.height / 2 - 0.5, position[2]]}>
-          <Text
-            color="white"
-            fontSize={0.2}
-            maxWidth={2}
-            lineHeight={1}
-            letterSpacing={0.02}
-            textAlign="left"
-            anchorX="left"
-            anchorY="top"
-          >
-            {`Width: ${dimensions.width.toFixed(2)}\nHeight: ${dimensions.height.toFixed(2)}`}
-          </Text>
-        </group>
+        <Html position={[position[0], position[1] - featureDimensions.height / 2 - 0.5, position[2]]}>
+          <div className="bg-black text-white px-2 py-1 rounded text-sm">
+            {`Width: ${featureDimensions.width.toFixed(2)}m\nHeight: ${featureDimensions.height.toFixed(2)}m`}
+          </div>
+        </Html>
       )}
     </group>
   )
 }
+
 
 
 // walking camera
@@ -410,11 +426,12 @@ export default function CustomizableRoom() {
   const handleFeatureMove = (featureIndex, newPosition) => {
     const newRooms = [...rooms]
     if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
-      newRooms[selectedRoom].features[featureIndex].position = [newPosition.x, newPosition.y, newPosition.z]
+      newRooms[selectedRoom].features[featureIndex].position = newPosition
       setRooms(newRooms)
     }
   }
 
+ 
   const handleFeatureResize = (featureIndex, newDimensions) => {
     const newRooms = [...rooms]
     if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
@@ -423,9 +440,11 @@ export default function CustomizableRoom() {
     }
   }
 
+
   const handleFeatureSelect = (featureIndex) => {
     setSelectedFeature(featureIndex)
   }
+
   const handleFeatureTextureChange = (featureIndex, newTexture) => {
     const newRooms = [...rooms]
     if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
@@ -558,6 +577,27 @@ export default function CustomizableRoom() {
     setRooms(newRooms)
   }
 
+  const enhanceRealisticMode = () => {
+    if (realisticMode) {
+      // Add more realistic lighting
+      const newRooms = [...rooms]
+      newRooms.forEach(room => {
+        if (!room.features.some(f => f.type === 'light')) {
+          room.features.push({
+            type: 'light',
+            position: [0, room.structure.height - 0.5, 0],
+            intensity: 1,
+            color: '#FFFFFF',
+          })
+        }
+      })
+      setRooms(newRooms)
+    }
+  }
+  useEffect(() => {
+    enhanceRealisticMode()
+  }, [realisticMode])
+
   return (
     <div className="flex flex-col h-screen">
       <FlowerMenu />
@@ -658,7 +698,10 @@ export default function CustomizableRoom() {
             <input
               type="number"
               value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
-              onChange={(e) => handleFeatureResize(selectedFeature, { ...rooms[selectedRoom].features[selectedFeature].dimensions, width: Number(e.target.value) })}
+              onChange={(e) => handleFeatureResize(selectedFeature, { 
+                ...rooms[selectedRoom].features[selectedFeature].dimensions, 
+                width: Number(e.target.value) 
+              })}
               className="w-20 p-2 border rounded text-gray-900"
               placeholder="Width"
               step="0.1"
@@ -666,25 +709,26 @@ export default function CustomizableRoom() {
             <input
               type="number"
               value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
-              onChange={(e) => handleFeatureResize(selectedFeature, { ...rooms[selectedRoom].features[selectedFeature].dimensions, height: Number(e.target.value) })}
+              onChange={(e) => handleFeatureResize(selectedFeature, { 
+                ...rooms[selectedRoom].features[selectedFeature].dimensions, 
+                height: Number(e.target.value) 
+              })}
               className="w-20 p-2 border rounded text-gray-900"
               placeholder="Height"
               step="0.1"
             />
-            {rooms[selectedRoom].features[selectedFeature].type === 'door' && (
-              <select
-                value={rooms[selectedRoom].features[selectedFeature].texture || doorTextures[0]}
-                onChange={(e) => handleFeatureTextureChange(selectedFeature, e.target.value)}
-                className="p-2 border rounded text-gray-900"
-              >
-                {doorTextures.map((texture, index) => (
-                  <option key={index} value={texture}>
-                    {`Door Texture ${index + 1}`}
-                  </option>
-                ))}
-              </select>
-            )}
-            </div>
+            <select
+              value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
+              onChange={(e) => handleFeatureTextureChange(selectedFeature, e.target.value)}
+              className="p-2 border rounded text-gray-900"
+            >
+              {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
+                <option key={index} value={texture}>
+                  {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
         <div className="flex gap-2">
           <button onClick={handleDownload} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Download 3D Room</button>
@@ -719,7 +763,23 @@ export default function CustomizableRoom() {
               <Environment preset="sunset" />
             </>
           )}
-          {isTopView ? (
+          {!isTopView && rooms.map((room, index) => (
+            <group key={room.id} position={room.position}>
+              <Room
+                structure={room.structure}
+                wallColors={room.wallColors}
+                wallTextures={room.wallTextures}
+                features={room.features}
+                onFeatureMove={(featureIndex, newPosition) => handleFeatureMove(featureIndex, newPosition)}
+                onWallClick={handleWallClick}
+                selectedWall={selectedRoom === index ? selectedWall : null}
+                realisticMode={realisticMode}
+                roomIndex={index}
+                selectedRoom={selectedRoom}
+              />
+            </group>
+          ))}
+            {isTopView ? (
             rooms.map((room, index) => (
               <TopViewRoom
                 key={room.id}
@@ -752,6 +812,29 @@ export default function CustomizableRoom() {
                 />
               </group>
             ))
+          )}
+           {realisticMode && (
+            <>
+              <Sky sunPosition={[100, 100, 20]} />
+              <Environment preset="sunset" />
+              {rooms.map((room, index) => (
+                room.features.filter(f => f.type === 'light').map((light, lightIndex) => (
+                  <SpotLight
+                    key={`${index}-${lightIndex}`}
+                    position={[
+                      room.position[0] + light.position[0],
+                      room.position[1] + light.position[1],
+                      room.position[2] + light.position[2]
+                    ]}
+                    angle={0.6}
+                    penumbra={0.5}
+                    intensity={light.intensity}
+                    color={light.color}
+                    castShadow
+                  />
+                ))
+              ))}
+            </>
           )}
         </Canvas>
         {notification && (
