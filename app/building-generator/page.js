@@ -775,6 +775,7 @@ export default function BuildingCreator() {
           )}
         </div>
       </div>
+      {/* footer */}
       <footer className="bg-gray-800 text-white p-4 text-center">
         <p>&copy; 2023 Advanced Building Creator. All rights reserved.</p>
         <p>Created with React, Three.js, and ❤️</p>
