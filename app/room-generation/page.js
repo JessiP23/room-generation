@@ -677,36 +677,6 @@ export default function CustomizableRoom() {
             placeholder="Depth"
           />
         </div>
-        {selectedWall !== null && (
-          <div className="flex gap-2 mb-4">
-            <button onClick={() => addFeature('door')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Door</button>
-            <button onClick={() => addFeature('window')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Window</button>
-            <input
-              type="color"
-              value={rooms[selectedRoom].wallColors[selectedWall]}
-              onChange={(e) => handleColorChange(e.target.value)}
-              className="w-12 h-10 border-none"
-            />
-            <input
-              type="text"
-              value={rooms[selectedRoom].wallColors[selectedWall]}
-              onChange={(e) => handleColorChange(e.target.value)}
-              placeholder="Hex color"
-              className="w-28 p-2 border rounded text-gray-900"
-            />
-            <select
-              value={rooms[selectedRoom].wallTextures[selectedWall]}
-              onChange={(e) => handleTextureChange(e.target.value)}
-              className="p-2 border rounded text-gray-900"
-            >
-              {availableTextures.map((texture, index) => (
-                <option key={index} value={texture}>
-                  {texture.split('/').pop().split('.')[0]}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
         {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
   <div className="flex gap-2 mb-4">
     <input
@@ -751,6 +721,36 @@ export default function CustomizableRoom() {
             {isTopView ? 'Normal View' : 'Top View'}
           </button>
         </div>
+        {selectedWall !== null && (
+          <div className="flex gap-2 mt-6">
+            <button onClick={() => addFeature('door')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Door</button>
+            <button onClick={() => addFeature('window')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Window</button>
+            <input
+              type="color"
+              value={rooms[selectedRoom].wallColors[selectedWall]}
+              onChange={(e) => handleColorChange(e.target.value)}
+              className="w-12 h-10 border-none"
+            />
+            <input
+              type="text"
+              value={rooms[selectedRoom].wallColors[selectedWall]}
+              onChange={(e) => handleColorChange(e.target.value)}
+              placeholder="Hex color"
+              className="w-28 p-2 border rounded text-gray-900"
+            />
+            <select
+              value={rooms[selectedRoom].wallTextures[selectedWall]}
+              onChange={(e) => handleTextureChange(e.target.value)}
+              className="p-2 border rounded text-gray-900"
+            >
+              {availableTextures.map((texture, index) => (
+                <option key={index} value={texture}>
+                  {texture.split('/').pop().split('.')[0]}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       <div className="flex-grow relative">
         <Canvas shadows>
