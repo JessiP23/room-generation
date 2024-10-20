@@ -449,9 +449,9 @@ export default function BuildingCreator() {
       const { clientX, clientY } = event
       const { left, top, width, height } = editCanvasRef.current.getBoundingClientRect()
       const x = ((clientX - left) / width) * floors[selectedFloor].structure.width - floors[selectedFloor].structure.width / 2
-      const y = (-(clientY - top) / height) * floors[selectedFloor].structure.depth + floors[selectedFloor].structure.depth / 2
+      const z = (-(clientY - top) / height) * floors[selectedFloor].structure.depth + floors[selectedFloor].structure.depth / 2
 
-      const newPoint = [x, y]
+      const newPoint = [x, z]
       const updatedPoints = [...drawingPoints, newPoint]
       setDrawingPoints(updatedPoints)
 
@@ -459,19 +459,19 @@ export default function BuildingCreator() {
       if (drawingMode === 'line') {
         if (updatedPoints.length === 1) {
           ctx.beginPath()
-          ctx.moveTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-y + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
+          ctx.moveTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-z + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
         } else {
-          ctx.lineTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-y + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
+          ctx.lineTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-z + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
           ctx.stroke()
         }
       } else if (drawingMode === 'circle' && updatedPoints.length === 2) {
-        const [x1, y1] = updatedPoints[0]
-        const [x2, y2] = updatedPoints[1]
-        const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+        const [x1, z1] = updatedPoints[0]
+        const [x2, z2] = updatedPoints[1]
+        const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(z2 - z1, 2))
         ctx.beginPath()
-        ctx.arc((x1 + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-y1 + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth, radius * width / floors[selectedFloor].structure.width, 0, 2 * Math.PI)
+        ctx.arc((x1 + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-z1 + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth, radius * width / floors[selectedFloor].structure.width, 0, 2 * Math.PI)
         ctx.stroke()
-        setCircles([...circles, { center: [x1, y1], radius }])
+        setCircles([...circles, { center: [x1, z1], radius }])
         setDrawingPoints([])
       }
     }
@@ -506,6 +506,7 @@ export default function BuildingCreator() {
 
     setDrawingMode(null);
     setDrawingPoints([]);
+    setIsEditingRooms(false);
 
     // Clear the edit canvas
     const ctx = editCanvasRef.current.getContext('2d');
@@ -518,8 +519,8 @@ export default function BuildingCreator() {
       const end = points[(i + 1) % points.length];
       floor.features.push({
         type: 'wall',
-        start: [...start, 0],
-        end: [...end, 0],
+        start: [start[0], 0, start[1]],
+        end: [end[0], 0, end[1]],
         height: height,
       });
     }
@@ -540,8 +541,8 @@ export default function BuildingCreator() {
       ];
       floor.features.push({
         type: 'wall',
-        start: [...start, 0],
-        end: [...end, 0],
+        start: [start[0], 0, start[1]],
+        end: [end[0], 0, end[1]],
         height: height,
       });
     }
@@ -706,10 +707,12 @@ export default function BuildingCreator() {
       <div className="flex-grow bg-gray-200 p-4">
         <div className="flex">
           <div className="w-[70vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden" ref={canvasRef}>
-            <Canvas shadows camera={{ position: cameraPosition, fov: 75 }}>
-              {!isInsideView && (
+          <Canvas shadows camera={{ position: cameraPosition, fov: 75 }}>
+              {!isInsideView && !isEditingRooms && (
                 <OrbitControls
-                  enabled={!isEditingRooms}
+                  enableRotate={true}
+                  enablePan={true}
+                  enableZoom={true}
                   target={[0, selectedFloor * floors[selectedFloor].structure.height + floors[selectedFloor].structure.height / 2, 0]}
                 />
               )}
