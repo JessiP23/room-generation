@@ -87,13 +87,12 @@ function Feature({ type, position, wallIndex, wallDimensions, wallRotation, wall
     const wallRotation = new THREE.Euler(0, Math.atan2(wallVector.z, wallVector.x), 0)
 
     return (
-      <mesh position={wallCenter} rotation={wallRotation}>
+      <mesh position={[wallCenter.x, wallCenter.y + height / 2, wallCenter.z]} rotation={wallRotation}>
         <boxGeometry args={[wallLength, height, 0.1]} />
         <meshStandardMaterial map={wallTexture} roughness={realisticMode ? 0.8 : 0.5} metalness={realisticMode ? 0.2 : 0} />
       </mesh>
     )
   }
-
   const geometry = new THREE.BoxGeometry(
     dimensions?.width || (type === 'door' ? 1 : 1),
     dimensions?.height || (type === 'door' ? 2 : 1),
@@ -130,7 +129,7 @@ function Room({ points, floorHeight, isTopView, realisticMode }) {
   return (
     <group>
       <Line
-        points={points.map(point => [point[0], floorHeight/2 + 0.01, point[1]])}
+        points={points.map(point => [point[0], 0.01, point[1]])}
         color="red"
         lineWidth={2}
       />
@@ -449,7 +448,7 @@ export default function BuildingCreator() {
       const { clientX, clientY } = event
       const { left, top, width, height } = editCanvasRef.current.getBoundingClientRect()
       const x = ((clientX - left) / width) * floors[selectedFloor].structure.width - floors[selectedFloor].structure.width / 2
-      const z = (-(clientY - top) / height) * floors[selectedFloor].structure.depth + floors[selectedFloor].structure.depth / 2
+      const z = ((clientY - top) / height) * floors[selectedFloor].structure.depth - floors[selectedFloor].structure.depth / 2
 
       const newPoint = [x, z]
       const updatedPoints = [...drawingPoints, newPoint]
@@ -491,7 +490,9 @@ export default function BuildingCreator() {
 
       generateWalls(currentFloor, drawingPoints, floorHeight);
       setFloors(newFloors);
-    } else if (drawingMode === 'circle' && circles.length > 0) {
+    }
+    
+    if (circles.length > 0) {
       const newFloors = [...floors];
       const currentFloor = newFloors[selectedFloor];
       const floorHeight = currentFloor.structure.height;
@@ -519,12 +520,13 @@ export default function BuildingCreator() {
       const end = points[(i + 1) % points.length];
       floor.features.push({
         type: 'wall',
-        start: [start[0], 0, start[1]],
-        end: [end[0], 0, end[1]],
+        start: [start[0], -height / 2, start[1]],
+        end: [end[0], -height / 2, end[1]],
         height: height,
       });
     }
   };
+
 
   const generateCircularWalls = (floor, center, radius, height) => {
     const segments = 32;
@@ -541,12 +543,13 @@ export default function BuildingCreator() {
       ];
       floor.features.push({
         type: 'wall',
-        start: [start[0], 0, start[1]],
-        end: [end[0], 0, end[1]],
+        start: [start[0], -height / 2, start[1]],
+        end: [end[0], -height / 2, end[1]],
         height: height,
       });
     }
   };
+
 
   const toggleInsideView = () => {
     setIsInsideView(!isInsideView);
@@ -738,44 +741,56 @@ export default function BuildingCreator() {
               {isTopView && <TopViewGrid size={10} divisions={10} />}
               
               {floors.map((floor, index) => (
-                <Floor  
-                  key={index}
-                  structure={floor.structure}
-                  wallTextures={floor.wallTextures}
-                  features={floor.features}
-                  rooms={floor.rooms}
-                  floorNumber={index}
-                  isSelected={index === selectedFloor}
-                  onWallClick={handleWallClick}
-                  isTopView={isTopView}
-                  realisticMode={isRealisticMode}
-                />
-              ))}
+              <Floor  
+                key={index}
+                structure={floor.structure}
+                wallTextures={floor.wallTextures}
+                features={floor.features}
+                rooms={floor.rooms}
+                floorNumber={index}
+                isSelected={index === selectedFloor}
+                onWallClick={handleWallClick}
+                isTopView={isTopView}
+                realisticMode={isRealisticMode}
+              />
+            ))}
             </Canvas>
           </div>
           {isEditingRooms && (
-            <div className="w-[30vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden ml-4 p-4">
-              <h2 className="text-xl font-bold mb-4">Edit Floor {selectedFloor + 1}</h2>
-              <canvas
-                ref={editCanvasRef}
-                width={300}
-                height={300}
-                className="border border-gray-300 mb-4"
-                onClick={handleCanvasClick}
-              />
-              <p className="mb-4">
-                {drawingMode === 'line' && "Click on the canvas to draw lines for the room."}
-                {drawingMode === 'circle' && "Click two points to define a circle."}
-                {!drawingMode && "Select a drawing mode to start."}
-              </p>
+          <div className="w-[30vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden ml-4 p-4">
+            <h2 className="text-xl font-bold mb-4">Edit Floor {selectedFloor + 1}</h2>
+            <canvas
+              ref={editCanvasRef}
+              width={300}
+              height={300}
+              className="border border-gray-300 mb-4"
+              onClick={handleCanvasClick}
+            />
+            <p className="mb-4">
+              {drawingMode ? "Click on the canvas to draw. You can create both lines and circles." : "Select a drawing mode to start."}
+            </p>
+            <div className="flex space-x-4 mb-4">
               <button 
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                onClick={finishDrawing}
+                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${drawingMode === 'line' ? 'ring-2 ring-blue-300' : ''}`}
+                onClick={() => setDrawingMode('line')}
               >
-                Done
+                Draw Line
+              </button>
+              <button 
+                className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ${drawingMode === 'circle' ? 'ring-2 ring-green-300' : ''}`}
+                onClick={() => setDrawingMode('circle')}
+              >
+                Draw Circle
               </button>
             </div>
-          )}
+            <button 
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+              onClick={finishDrawing}
+            >
+              Finish Drawing
+            </button>
+          </div>
+        )}
         </div>
       </div>
       {/* footer */}
