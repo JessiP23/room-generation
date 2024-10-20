@@ -6,6 +6,7 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useTexture, Sky, Environment, Text, Line, PerspectiveCamera, PointerLockControls } from '@react-three/drei'
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter'
 import FlowerMenu from '../components/Menu'
+import { Circle, Pencil } from 'lucide-react'
 
 function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick, rooms, isTopView, realisticMode }) {
   const { width, height, depth } = structure
@@ -107,6 +108,10 @@ function Room({ points, floorHeight, isTopView, realisticMode }) {
     metalness: realisticMode ? 0.2 : 0
   })
 
+  const wallTexture = useTexture('/wall_texture.jpg')
+  wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping
+  wallTexture.repeat.set(1, 1)
+
   return (
     <group>
       <Line
@@ -128,7 +133,7 @@ function Room({ points, floorHeight, isTopView, realisticMode }) {
         return (
           <mesh key={index} position={wallCenter} rotation={wallRotation}>
             <boxGeometry args={[wallLength, floorHeight, 0.1]} />
-            <meshStandardMaterial {...wallMaterial} />
+            <meshStandardMaterial {...wallMaterial} map={wallTexture} />
           </mesh>
         )
       })}
@@ -270,8 +275,12 @@ export default function BuildingCreator() {
   const [roomPoints, setRoomPoints] = useState([])
   const [isInsideView, setIsInsideView] = useState(false)
   const [insideViewPosition, setInsideViewPosition] = useState([0, 1.7, 0])
+  const [insideViewFloor, setInsideViewFloor] = useState(0)
   const canvasRef = useRef(null)
   const editCanvasRef = useRef(null)
+  const [drawingMode, setDrawingMode] = useState(null) // 'line' or 'circle'
+  const [drawingPoints, setDrawingPoints] = useState([])
+  const [circles, setCircles] = useState([])
 
   const addFloor = () => {
     setFloors([...floors, {
@@ -350,29 +359,6 @@ export default function BuildingCreator() {
     setRoomPoints([])
   }
 
-  const handleCanvasClick = (event) => {
-    if (isEditingRooms) {
-      const { clientX, clientY } = event
-      const { left, top, width, height } = editCanvasRef.current.getBoundingClientRect()
-      const x = ((clientX - left) / width) * 10 - 5
-      const y = (-(clientY - top) / height) * 10 + 5
-
-      const newPoint = [x, y]
-      const updatedPoints = [...roomPoints, newPoint]
-      
-      setRoomPoints(updatedPoints)
-
-      // Draw the line immediately on the edit canvas
-      const ctx = editCanvasRef.current.getContext('2d')
-      if (updatedPoints.length === 1) {
-        ctx.beginPath()
-        ctx.moveTo(x * width / 10 + width / 2, -y * height / 10 + height / 2)
-      } else {
-        ctx.lineTo(x * width / 10 + width / 2, -y * height / 10 + height / 2)
-        ctx.stroke()
-      }
-    }
-  }
 
   const finishRoom = () => {
     if (roomPoints.length >= 3) {
@@ -430,11 +416,120 @@ export default function BuildingCreator() {
     setIsInsideView(!isInsideView)
     setIsTopView(false)
     if (!isInsideView) {
-      setInsideViewPosition([0, floors[selectedFloor].structure.height / 2, 0])
+      const floorHeight = floors[selectedFloor].structure.height
+      setInsideViewPosition([0, floorHeight / 2, 0])
+      setInsideViewFloor(selectedFloor)
+      setCameraPosition([0, floorHeight / 2, 0])
     } else {
       setCameraPosition([15, 15, 15])
     }
   }
+
+  const handleInsideViewFloorChange = (event) => {
+    const newFloor = Number(event.target.value)
+    setInsideViewFloor(newFloor)
+    const floorHeight = floors[newFloor].structure.height
+    const newPosition = [0, newFloor * floorHeight + floorHeight / 2, 0]
+    setInsideViewPosition(newPosition)
+    setCameraPosition(newPosition)
+  }
+
+  const startDrawingLine = () => {
+    setDrawingMode('line')
+    setDrawingPoints([])
+  }
+
+  const startDrawingCircle = () => {
+    setDrawingMode('circle')
+    setDrawingPoints([])
+  }
+
+  const handleCanvasClick = (event) => {
+    if (drawingMode) {
+      const { clientX, clientY } = event
+      const { left, top, width, height } = editCanvasRef.current.getBoundingClientRect()
+      const x = ((clientX - left) / width) * 10 - 5
+      const y = (-(clientY - top) / height) * 10 + 5
+
+      const newPoint = [x, y]
+      const updatedPoints = [...drawingPoints, newPoint]
+      setDrawingPoints(updatedPoints)
+
+      const ctx = editCanvasRef.current.getContext('2d')
+      if (drawingMode === 'line') {
+        if (updatedPoints.length === 1) {
+          ctx.beginPath()
+          ctx.moveTo(x * width / 10 + width / 2, -y * height / 10 + height / 2)
+        } else {
+          ctx.lineTo(x * width / 10 + width / 2, -y * height / 10 + height / 2)
+          ctx.stroke()
+        }
+      } else if (drawingMode === 'circle' && updatedPoints.length === 2) {
+        const [x1, y1] = updatedPoints[0]
+        const [x2, y2] = updatedPoints[1]
+        const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+        ctx.beginPath()
+        ctx.arc(x1 * width / 10 + width / 2, -y1 * height / 10 + height / 2, radius * width / 10, 0, 2 * Math.PI)
+        ctx.stroke()
+        setCircles([...circles, { center: [x1, y1], radius }])
+        setDrawingPoints([])
+      }
+    }
+  }
+
+  const finishDrawing = () => {
+    if (drawingMode === 'line' && drawingPoints.length >= 2) {
+      const newFloors = [...floors]
+      newFloors[selectedFloor].rooms.push({ points: drawingPoints, isComplete: true })
+      setFloors(newFloors)
+    }
+    setDrawingMode(null)
+    setDrawingPoints([])
+    generateWalls()
+  }
+
+  const generateWalls = () => {
+    const newFloors = [...floors]
+    const currentFloor = newFloors[selectedFloor]
+
+    // Generate walls from lines
+    currentFloor.rooms.forEach(room => {
+      if (room.isComplete) {
+        for (let i = 0; i < room.points.length; i++) {
+          const start = room.points[i]
+          const end = room.points[(i + 1) % room.points.length]
+          currentFloor.features.push({
+            type: 'wall',
+            start,
+            end,
+            height: currentFloor.structure.height
+          })
+        }
+      }
+    })
+
+    // Generate walls from circles
+    circles.forEach(circle => {
+      const { center, radius } = circle
+      const segments = 32
+      for (let i = 0; i < segments; i++) {
+        const angle1 = (i / segments) * Math.PI * 2
+        const angle2 = ((i + 1) / segments) * Math.PI * 2
+        const start = [center[0] + Math.cos(angle1) * radius, center[1] + Math.sin(angle1) * radius]
+        const end = [center[0] + Math.cos(angle2) * radius, center[1] + Math.sin(angle2) * radius]
+        currentFloor.features.push({
+          type: 'wall',
+          start,
+          end,
+          height: currentFloor.structure.height
+        })
+      }
+    })
+
+    setFloors(newFloors)
+    setCircles([])
+  }
+  
 
   return (
     <div className="h-screen flex flex-col">
@@ -503,6 +598,29 @@ export default function BuildingCreator() {
           >
             {isInsideView ? "Exit Inside View" : "Inside View"}
           </button>
+          {isInsideView && (
+            <select 
+              className="bg-gray-700 text-white py-2 px-4 rounded"
+              value={insideViewFloor}
+              onChange={handleInsideViewFloorChange}
+            >
+              {floors.map((_, index) => (
+                <option key={index} value={index}>Floor {index + 1}</option>
+              ))}
+            </select>
+          )}
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center"
+            onClick={startDrawingLine}
+          >
+            <Pencil className="mr-2" size={16} /> Draw Line
+          </button>
+          <button
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center"
+            onClick={startDrawingCircle}
+          >
+            <Circle className="mr-2" size={16} /> Draw Circle
+          </button>
         </div>
         <div className="flex space-x-4 mb-4">
           <button 
@@ -549,15 +667,16 @@ export default function BuildingCreator() {
         <div className="flex">
           <div className="w-[70vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden" ref={canvasRef}>
             <Canvas shadows camera={{ position: cameraPosition, fov: 75 }}>
-              {!isInsideView && <OrbitControls enabled={!isEditingRooms} />}
+              {!isInsideView && (
+                <OrbitControls
+                  enabled={!isEditingRooms}
+                  target={[0, selectedFloor * floors[selectedFloor].structure.height + floors[selectedFloor].structure.height / 2, 0]}
+                />
+              )}
               {isInsideView && (
                 <WalkingCamera
-                  initialPosition={[
-                    0,
-                    floors[selectedFloor].structure.height / 2,
-                    0
-                  ]}
-                  room={floors[selectedFloor]}
+                  initialPosition={insideViewPosition}
+                  room={floors[insideViewFloor]}
                 />
               )}
               <ambientLight intensity={0.5} />
@@ -598,10 +717,14 @@ export default function BuildingCreator() {
                 className="border border-gray-300 mb-4"
                 onClick={handleCanvasClick}
               />
-              <p className="mb-4">Click on the canvas to add points for the room.</p>
+              <p className="mb-4">
+                {drawingMode === 'line' && "Click on the canvas to draw lines for the room."}
+                {drawingMode === 'circle' && "Click two points to define a circle."}
+                {!drawingMode && "Select a drawing mode to start."}
+              </p>
               <button 
                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                onClick={finishRoom}
+                onClick={finishDrawing}
               >
                 Done
               </button>
