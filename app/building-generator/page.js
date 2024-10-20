@@ -207,12 +207,11 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
         case 'Space':
           moveDirection.current.y = 1;
           break;
+        case 'KeyF':
+          moveDirection.current.y = -1;
+          break;
         case 'ShiftLeft':
-          if (event.shiftKey) {
-            moveDirection.current.y = -1;
-          } else {
-            isSprinting.current = true;
-          }
+          isSprinting.current = true;
           break;
       }
     };
@@ -232,7 +231,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
           moveDirection.current.x = 0;
           break;
         case 'Space':
-        case 'ShiftLeft':
+        case 'KeyF':
           moveDirection.current.y = 0;
           break;
         case 'ShiftLeft':
@@ -272,6 +271,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
 
   return <PointerLockControls ref={controlsRef} args={[camera, gl.domElement]} />;
 }
+
 
 export default function BuildingCreator() {
   const [floors, setFloors] = useState([
@@ -459,9 +459,9 @@ export default function BuildingCreator() {
       if (drawingMode === 'line') {
         if (updatedPoints.length === 1) {
           ctx.beginPath()
-          ctx.moveTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-z + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
+          ctx.moveTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (z + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
         } else {
-          ctx.lineTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-z + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
+          ctx.lineTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (z + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
           ctx.stroke()
         }
       } else if (drawingMode === 'circle' && updatedPoints.length === 2) {
@@ -469,7 +469,7 @@ export default function BuildingCreator() {
         const [x2, z2] = updatedPoints[1]
         const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(z2 - z1, 2))
         ctx.beginPath()
-        ctx.arc((x1 + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-z1 + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth, radius * width / floors[selectedFloor].structure.width, 0, 2 * Math.PI)
+        ctx.arc((x1 + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (z1 + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth, radius * width / floors[selectedFloor].structure.width, 0, 2 * Math.PI)
         ctx.stroke()
         setCircles([...circles, { center: [x1, z1], radius }])
         setDrawingPoints([])
