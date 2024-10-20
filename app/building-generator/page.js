@@ -6,25 +6,6 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useTexture, Sky, Environment, Text, Line, PerspectiveCamera, PointerLockControls } from '@react-three/drei'
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter'
 import FlowerMenu from '../components/Menu'
-import { 
-  ChevronDown, 
-  Plus,
-  Layers,
-  DoorClosed, 
-  PanelsTopLeft, 
-  Eye, 
-  Box, 
-  Download, 
-  Camera, 
-  BrickWall, 
-  TreePine, 
-  Building2, 
-  Move, 
-  Maximize2, 
-  Minus, 
-  Settings, 
-  House
-} from 'lucide-react';
 
 function Floor({ structure, wallTextures, features, floorNumber, isSelected, onWallClick, rooms, isTopView, realisticMode }) {
   const { width, height, depth } = structure
@@ -42,6 +23,10 @@ function Floor({ structure, wallTextures, features, floorNumber, isSelected, onW
   floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping
   floorTexture.repeat.set(4, 4)
 
+  const roofTexture = useTexture('/roof_texture.jpg')
+  roofTexture.wrapS = roofTexture.wrapT = THREE.RepeatWrapping
+  roofTexture.repeat.set(4, 4)
+
   return (
     <group position={[0, floorNumber * height, 0]}>
       {sides.map((side, index) => (
@@ -58,7 +43,7 @@ function Floor({ structure, wallTextures, features, floorNumber, isSelected, onW
           <planeGeometry args={[1, 1]} />
           <meshStandardMaterial 
             color={isSelected ? '#ffcccc' : '#ffffff'}
-            map={index === 5 ? floorTexture : wallTextures[index]}
+            map={index === 4 ? roofTexture : (index === 5 ? floorTexture : wallTextures[index])}
             side={THREE.DoubleSide}
             roughness={realisticMode ? 0.8 : 0.5}
             metalness={realisticMode ? 0.2 : 0}
@@ -286,6 +271,7 @@ export default function BuildingCreator() {
   const [isInsideView, setIsInsideView] = useState(false)
   const [insideViewPosition, setInsideViewPosition] = useState([0, 1.7, 0])
   const canvasRef = useRef(null)
+  const editCanvasRef = useRef(null)
 
   const addFloor = () => {
     setFloors([...floors, {
@@ -365,43 +351,40 @@ export default function BuildingCreator() {
   }
 
   const handleCanvasClick = (event) => {
-    if (isEditingRooms && isTopView) {
+    if (isEditingRooms) {
       const { clientX, clientY } = event
-      const { left, top, width, height } = canvasRef.current.getBoundingClientRect()
-      const x = ((clientX - left) / width) * 2 - 1
-      const y = -((clientY - top) / height) * 2 + 1
+      const { left, top, width, height } = editCanvasRef.current.getBoundingClientRect()
+      const x = ((clientX - left) / width) * 10 - 5
+      const y = (-(clientY - top) / height) * 10 + 5
 
-      const newPoint = [x * 5, y * 5]  // Scale the point to match the floor size
+      const newPoint = [x, y]
       const updatedPoints = [...roomPoints, newPoint]
+      
       setRoomPoints(updatedPoints)
 
-      // Draw the line immediately
-      if (updatedPoints.length > 1) {
-        const newFloors = [...floors]
-        newFloors[selectedFloor].rooms = [
-          
-          ...newFloors[selectedFloor].rooms.filter(room => room.isComplete),
-          { points: updatedPoints, isComplete: false }
-        ]
-        setFloors(newFloors)
+      // Draw the line immediately on the edit canvas
+      const ctx = editCanvasRef.current.getContext('2d')
+      if (updatedPoints.length === 1) {
+        ctx.beginPath()
+        ctx.moveTo(x * width / 10 + width / 2, -y * height / 10 + height / 2)
+      } else {
+        ctx.lineTo(x * width / 10 + width / 2, -y * height / 10 + height / 2)
+        ctx.stroke()
       }
+    }
+  }
 
-      // Complete the room if it has at least 3 points and the new point is close to the start
-      if (updatedPoints.length >= 3) {
-        const [startX, startY] = updatedPoints[0]
-        const [endX, endY] = newPoint
-        const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2))
-        if (distance < 0.5) {  // Adjust this threshold as needed
-          const newFloors = [...floors]
-          newFloors[selectedFloor].rooms = [
-            ...newFloors[selectedFloor].rooms.filter(room => room.isComplete),
-            { points: updatedPoints, isComplete: true }
-          ]
-          setFloors(newFloors)
-          setRoomPoints([])
-          setIsEditingRooms(false)
-        }
-      }
+  const finishRoom = () => {
+    if (roomPoints.length >= 3) {
+      const newFloors = [...floors]
+      newFloors[selectedFloor].rooms.push({ points: roomPoints, isComplete: true })
+      setFloors(newFloors)
+      setRoomPoints([])
+      setIsEditingRooms(false)
+
+      // Clear the edit canvas
+      const ctx = editCanvasRef.current.getContext('2d')
+      ctx.clearRect(0, 0, editCanvasRef.current.width, editCanvasRef.current.height)
     }
   }
 
@@ -456,85 +439,124 @@ export default function BuildingCreator() {
   return (
     <div className="h-screen flex flex-col">
       <FlowerMenu />
-      <div className="h-[10vh] bg-gray-800 text-gray-200 font-sans flex flex-col">
-      {/* Main Toolbar */}
-      <div className="flex items-center justify-between px-4 h-[60%] bg-gray-900">
-        <div className="flex items-center space-x-2">
-          <button className="p-1 hover:bg-gray-700 rounded" title="Home">
-            <House size={20} />
+      <div className="p-4 bg-gray-800 text-white">
+        <h1 className="text-2xl font-bold mb-4">Advanced Building Creator</h1>
+        <div className="flex space-x-4 mb-4">
+          <button 
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={addFloor}
+          >
+            Add Floor
           </button>
-          <select className="bg-gray-700 text-white py-1 pl-2 pr-6 rounded text-sm appearance-none">
-            <option>Floor 1</option>
-            <option>Floor 2</option>
-            <option>Floor 3</option>
+          <select 
+            className="bg-gray-700 text-white py-2 px-4 rounded"
+            value={selectedFloor}
+            onChange={(e) => setSelectedFloor(Number(e.target.value))}
+          >
+            {floors.map((_, index) => (
+              <option key={index} value={index}>Floor {index + 1}</option>
+            ))}
           </select>
-          <button className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-sm">
-            <Plus size={14} />
-            <span>Floor</span>
+          <button 
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => addFeature('door')}
+          >
+            Add Door
           </button>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <button className="p-1 hover:bg-gray-700 rounded" title="Add Door"><DoorClosed size={20} /></button>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Add Window"><PanelsTopLeft size={20} /></button>
-          <div className="h-6 w-px bg-gray-600 mx-2"></div>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Top View"><Eye size={20} /></button>
-          <button className="p-1 hover:bg-gray-700 rounded" title="3D View"><Box size={20} /></button>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Inside View"><Camera size={20} /></button>
-          <div className="h-6 w-px bg-gray-600 mx-2"></div>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Move"><Move size={20} /></button>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Scale"><Maximize2 size={20} /></button>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Edit Rooms"><Minus size={20} /></button>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <button className="p-1 hover:bg-gray-700 rounded" title="Brick Texture"><BrickWall size={20} /></button>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Wood Texture"><TreePine size={20} /></button>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Concrete Texture"><Building2 size={20} /></button>
-          <div className="h-6 w-px bg-gray-600 mx-2"></div>
-          <button className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded text-sm" title="Export to OBJ">
-            <Download size={14} />
-            <span>Export</span>
+          <button 
+            className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => addFeature('window')}
+          >
+            Add Window
           </button>
-          <button className="p-1 hover:bg-gray-700 rounded" title="Settings">
-            <Settings size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Secondary Toolbar */}
-      <div className="flex items-center justify-between px-4 h-[40%] bg-gray-800 text-sm">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <input type="checkbox" id="realisticMode" className="form-checkbox h-3 w-3 text-blue-600" />
+          <div className="flex items-center">
+            <input 
+              type="checkbox" 
+              id="realisticMode" 
+              checked={isRealisticMode} 
+              onChange={(e) => setIsRealisticMode(e.target.checked)}
+              className="mr-2"
+            />
             <label htmlFor="realisticMode">Realistic Mode</label>
           </div>
-          <div className="flex items-center space-x-2">
-            <span>Width:</span>
-            <input type="number" className="bg-gray-700 text-white py-0 px-1 rounded w-16 text-sm" placeholder="Width" step="0.1" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <span>Height:</span>
-            <input type="number" className="bg-gray-700 text-white py-0 px-1 rounded w-16 text-sm" placeholder="Height" step="0.1" />
-          </div>
+          <button 
+            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+            onClick={toggleTopView}
+          >
+            {isTopView ? "3D View" : "Top View"}
+          </button>
+          <button 
+            className="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded"
+            onClick={startEditingRooms}
+          >
+            {isEditingRooms ? "Finish Room" : "Edit Floor"}
+          </button>
+          <button 
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            onClick={exportToOBJ}
+          >
+            Export to OBJ
+          </button>
+          <button 
+            className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+            onClick={toggleInsideView}
+          >
+            {isInsideView ? "Exit Inside View" : "Inside View"}
+          </button>
         </div>
-        <div className="flex items-center space-x-2">
-          <span>Selected: None</span>
-          <span className="text-gray-400">|</span>
-          <span>Floor: 1</span>
-          <span className="text-gray-400">|</span>
-          <span>View: 3D</span>
+        <div className="flex space-x-4 mb-4">
+          <button 
+            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => changeWallTexture('/brick_texture.jpg')}
+          >
+            Brick Texture
+          </button>
+          <button 
+            className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => changeWallTexture('/wood_texture.jpg')}
+          >
+            Wood Texture
+          </button>
+          <button 
+            className="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => changeWallTexture('/concrete_texture.jpg')}
+          >
+            Concrete Texture
+          </button>
         </div>
+        {selectedFeature !== null && (
+          <div className="flex space-x-4 mb-4">
+            <input
+              type="number"
+              value={floors[selectedFloor].features[selectedFeature].dimensions.width}
+              onChange={(e) => updateFeatureDimensions('width', e.target.value)}
+              className="bg-gray-700 text-white py-2 px-4 rounded"
+              placeholder="Width"
+              step="0.1"
+            />
+            <input
+              type="number"
+              value={floors[selectedFloor].features[selectedFeature].dimensions.height}
+              onChange={(e) => updateFeatureDimensions('height', e.target.value)}
+              className="bg-gray-700 text-white py-2 px-4 rounded"
+              placeholder="Height"
+              step="0.1"
+            />
+          </div>
+        )}
       </div>
-    </div>
       <div className="flex-grow bg-gray-200 p-4">
         <div className="flex">
-          <div className="w-[70vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden" onClick={handleCanvasClick} ref={canvasRef}>
+          <div className="w-[70vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden" ref={canvasRef}>
             <Canvas shadows camera={{ position: cameraPosition, fov: 75 }}>
               {!isInsideView && <OrbitControls enabled={!isEditingRooms} />}
               {isInsideView && (
                 <WalkingCamera
-                  initialPosition={insideViewPosition}
+                  initialPosition={[
+                    0,
+                    floors[selectedFloor].structure.height / 2,
+                    0
+                  ]}
                   room={floors[selectedFloor]}
                 />
               )}
@@ -564,20 +586,25 @@ export default function BuildingCreator() {
                   realisticMode={isRealisticMode}
                 />
               ))}
-
-              {isEditingRooms && roomPoints.length > 0 && (
-                <Line
-                  points={roomPoints.map(point => [point[0], floors[selectedFloor].structure.height/2 + 0.01, point[1]])}
-                  color="blue"
-                  lineWidth={2}
-                />
-              )}
             </Canvas>
           </div>
           {isEditingRooms && (
             <div className="w-[30vw] h-[calc(100vh-12rem)] bg-white rounded-lg shadow-lg overflow-hidden ml-4 p-4">
               <h2 className="text-xl font-bold mb-4">Edit Floor {selectedFloor + 1}</h2>
-              <p>Click on the canvas to add points for the room. When youre finished, click Finish Room or close the last point near the starting point.</p>
+              <canvas
+                ref={editCanvasRef}
+                width={300}
+                height={300}
+                className="border border-gray-300 mb-4"
+                onClick={handleCanvasClick}
+              />
+              <p className="mb-4">Click on the canvas to add points for the room.</p>
+              <button 
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                onClick={finishRoom}
+              >
+                Done
+              </button>
             </div>
           )}
         </div>
