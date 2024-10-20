@@ -707,37 +707,37 @@ export default function CustomizableRoom() {
             </select>
           </div>
         )}
-        {selectedFeature !== null && (
-          <div className="flex gap-2 mb-4">
-            <input
-              type="number"
-              value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
-              onChange={(e) => handleFeatureResize('width', e.target.value)}
-              className="w-20 p-2 border rounded text-gray-900"
-              placeholder="Width"
-              step="0.1"
-            />
-            <input
-              type="number"
-              value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
-              onChange={(e) => handleFeatureResize('height', e.target.value)}
-              className="w-20 p-2 border rounded text-gray-900"
-              placeholder="Height"
-              step="0.1"
-            />
-            <select
-              value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
-              onChange={(e) => handleFeatureTextureChange(e.target.value)}
-              className="p-2 border rounded text-gray-900"
-            >
-              {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
-                <option key={index} value={texture}>
-                  {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
+  <div className="flex gap-2 mb-4">
+    <input
+      type="number"
+      value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
+      onChange={(e) => handleFeatureResize('width', e.target.value)}
+      className="w-20 p-2 border rounded text-gray-900"
+      placeholder="Width"
+      step="0.1"
+    />
+    <input
+      type="number"
+      value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
+      onChange={(e) => handleFeatureResize('height', e.target.value)}
+      className="w-20 p-2 border rounded text-gray-900"
+      placeholder="Height"
+      step="0.1"
+    />
+    <select
+      value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
+      onChange={(e) => handleFeatureTextureChange(e.target.value)}
+      className="p-2 border rounded text-gray-900"
+    >
+      {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
+        <option key={index} value={texture}>
+          {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
         <div className="flex gap-2">
           <button onClick={handleDownload} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Download 3D Room</button>
           <button onClick={handleSave} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Save Rooms</button>
