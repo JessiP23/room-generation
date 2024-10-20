@@ -55,9 +55,9 @@ function Floor({ structure, wallTextures, features, floorNumber, isSelected, onW
         <Feature 
           key={index} 
           {...feature} 
-          wallDimensions={sides[feature.wallIndex].scale}
-          wallRotation={sides[feature.wallIndex].rot}
-          wallPosition={sides[feature.wallIndex].pos}
+          wallDimensions={feature.wallIndex !== undefined && feature.wallIndex < sides.length ? sides[feature.wallIndex].scale : [1, 1, 1]}
+          wallRotation={feature.wallIndex !== undefined && feature.wallIndex < sides.length ? sides[feature.wallIndex].rot : [0, 0, 0]}
+          wallPosition={feature.wallIndex !== undefined && feature.wallIndex < sides.length ? sides[feature.wallIndex].pos : [0, 0, 0]}
           realisticMode={realisticMode}
         />
       ))}
@@ -75,9 +75,24 @@ function Floor({ structure, wallTextures, features, floorNumber, isSelected, onW
   )
 }
 
-function Feature({ type, position, wallIndex, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions }) {
+function Feature({ type, position, wallIndex, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions, start, end, height }) {
   const doorTexture = useTexture('/door_texture.jpg')
   const windowTexture = useTexture('/window_texture.jpg')
+  const wallTexture = useTexture('/wall_texture.jpg')
+
+  if (type === 'wall') {
+    const wallVector = new THREE.Vector3().subVectors(new THREE.Vector3(...end), new THREE.Vector3(...start))
+    const wallLength = wallVector.length()
+    const wallCenter = new THREE.Vector3().addVectors(new THREE.Vector3(...start), new THREE.Vector3(...end)).multiplyScalar(0.5)
+    const wallRotation = new THREE.Euler(0, Math.atan2(wallVector.z, wallVector.x), 0)
+
+    return (
+      <mesh position={wallCenter} rotation={wallRotation}>
+        <boxGeometry args={[wallLength, height, 0.1]} />
+        <meshStandardMaterial map={wallTexture} roughness={realisticMode ? 0.8 : 0.5} metalness={realisticMode ? 0.2 : 0} />
+      </mesh>
+    )
+  }
 
   const geometry = new THREE.BoxGeometry(
     dimensions?.width || (type === 'door' ? 1 : 1),
@@ -160,7 +175,7 @@ function TopViewGrid({ size, divisions }) {
   )
 }
 
-function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room }) {
+function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room, floors, currentFloor, setCurrentFloor }) {
   const { camera, gl } = useThree();
   const controlsRef = useRef();
   const moveDirection = useRef(new THREE.Vector3());
@@ -190,12 +205,14 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
           moveDirection.current.x = 1;
           break;
         case 'Space':
-          if (camera.position.y === initialPosition[1]) {
-            camera.position.y += 0.5; // Simple jump
-          }
+          moveDirection.current.y = 1;
           break;
         case 'ShiftLeft':
-          isSprinting.current = true;
+          if (event.shiftKey) {
+            moveDirection.current.y = -1;
+          } else {
+            isSprinting.current = true;
+          }
           break;
       }
     };
@@ -214,6 +231,10 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
         case 'ArrowRight':
           moveDirection.current.x = 0;
           break;
+        case 'Space':
+        case 'ShiftLeft':
+          moveDirection.current.y = 0;
+          break;
         case 'ShiftLeft':
           isSprinting.current = false;
           break;
@@ -227,7 +248,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [camera, initialPosition]);
+  }, [setCurrentFloor, floors]);
 
   useFrame(() => {
     if (controlsRef.current) {
@@ -242,7 +263,8 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
 
       const movement = new THREE.Vector3()
         .addScaledVector(cameraDirection, -direction.z)
-        .addScaledVector(sideways, direction.x);
+        .addScaledVector(sideways, direction.x)
+        .addScaledVector(new THREE.Vector3(0, 1, 0), direction.y);
 
       camera.position.add(movement);
     }
@@ -278,9 +300,10 @@ export default function BuildingCreator() {
   const [insideViewFloor, setInsideViewFloor] = useState(0)
   const canvasRef = useRef(null)
   const editCanvasRef = useRef(null)
-  const [drawingMode, setDrawingMode] = useState(null) // 'line' or 'circle'
+  const [drawingMode, setDrawingMode] = useState(null)
   const [drawingPoints, setDrawingPoints] = useState([])
   const [circles, setCircles] = useState([])
+  const [currentFloor, setCurrentFloor] = useState(0);
 
   const addFloor = () => {
     setFloors([...floors, {
@@ -305,7 +328,7 @@ export default function BuildingCreator() {
   const changeWallTexture = (textureUrl) => {
     if (selectedFloor !== null && selectedWall !== null) {
       const newFloors = [...floors]
-      const texture = new THREE.TextureLoader().load(textureUrl)
+      const texture = new  THREE.TextureLoader().load(textureUrl)
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping
       texture.repeat.set(2, 2)
       newFloors[selectedFloor].wallTextures[selectedWall] = texture
@@ -359,7 +382,6 @@ export default function BuildingCreator() {
     setRoomPoints([])
   }
 
-
   const finishRoom = () => {
     if (roomPoints.length >= 3) {
       const newFloors = [...floors]
@@ -412,28 +434,6 @@ export default function BuildingCreator() {
     link.click()
   }
 
-  const toggleInsideView = () => {
-    setIsInsideView(!isInsideView)
-    setIsTopView(false)
-    if (!isInsideView) {
-      const floorHeight = floors[selectedFloor].structure.height
-      setInsideViewPosition([0, floorHeight / 2, 0])
-      setInsideViewFloor(selectedFloor)
-      setCameraPosition([0, floorHeight / 2, 0])
-    } else {
-      setCameraPosition([15, 15, 15])
-    }
-  }
-
-  const handleInsideViewFloorChange = (event) => {
-    const newFloor = Number(event.target.value)
-    setInsideViewFloor(newFloor)
-    const floorHeight = floors[newFloor].structure.height
-    const newPosition = [0, newFloor * floorHeight + floorHeight / 2, 0]
-    setInsideViewPosition(newPosition)
-    setCameraPosition(newPosition)
-  }
-
   const startDrawingLine = () => {
     setDrawingMode('line')
     setDrawingPoints([])
@@ -448,8 +448,8 @@ export default function BuildingCreator() {
     if (drawingMode) {
       const { clientX, clientY } = event
       const { left, top, width, height } = editCanvasRef.current.getBoundingClientRect()
-      const x = ((clientX - left) / width) * 10 - 5
-      const y = (-(clientY - top) / height) * 10 + 5
+      const x = ((clientX - left) / width) * floors[selectedFloor].structure.width - floors[selectedFloor].structure.width / 2
+      const y = (-(clientY - top) / height) * floors[selectedFloor].structure.depth + floors[selectedFloor].structure.depth / 2
 
       const newPoint = [x, y]
       const updatedPoints = [...drawingPoints, newPoint]
@@ -459,9 +459,9 @@ export default function BuildingCreator() {
       if (drawingMode === 'line') {
         if (updatedPoints.length === 1) {
           ctx.beginPath()
-          ctx.moveTo(x * width / 10 + width / 2, -y * height / 10 + height / 2)
+          ctx.moveTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-y + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
         } else {
-          ctx.lineTo(x * width / 10 + width / 2, -y * height / 10 + height / 2)
+          ctx.lineTo((x + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-y + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth)
           ctx.stroke()
         }
       } else if (drawingMode === 'circle' && updatedPoints.length === 2) {
@@ -469,7 +469,7 @@ export default function BuildingCreator() {
         const [x2, y2] = updatedPoints[1]
         const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
         ctx.beginPath()
-        ctx.arc(x1 * width / 10 + width / 2, -y1 * height / 10 + height / 2, radius * width / 10, 0, 2 * Math.PI)
+        ctx.arc((x1 + floors[selectedFloor].structure.width / 2) * width / floors[selectedFloor].structure.width, (-y1 + floors[selectedFloor].structure.depth / 2) * height / floors[selectedFloor].structure.depth, radius * width / floors[selectedFloor].structure.width, 0, 2 * Math.PI)
         ctx.stroke()
         setCircles([...circles, { center: [x1, y1], radius }])
         setDrawingPoints([])
@@ -479,57 +479,97 @@ export default function BuildingCreator() {
 
   const finishDrawing = () => {
     if (drawingMode === 'line' && drawingPoints.length >= 2) {
-      const newFloors = [...floors]
-      newFloors[selectedFloor].rooms.push({ points: drawingPoints, isComplete: true })
-      setFloors(newFloors)
+      const newFloors = [...floors];
+      const currentFloor = newFloors[selectedFloor];
+      const floorHeight = currentFloor.structure.height;
+
+      currentFloor.rooms.push({
+        points: drawingPoints,
+        isComplete: true,
+        height: floorHeight
+      });
+
+      generateWalls(currentFloor, drawingPoints, floorHeight);
+      setFloors(newFloors);
+    } else if (drawingMode === 'circle' && circles.length > 0) {
+      const newFloors = [...floors];
+      const currentFloor = newFloors[selectedFloor];
+      const floorHeight = currentFloor.structure.height;
+
+      circles.forEach(circle => {
+        generateCircularWalls(currentFloor, circle.center, circle.radius, floorHeight);
+      });
+
+      setFloors(newFloors);
+      setCircles([]);
     }
-    setDrawingMode(null)
-    setDrawingPoints([])
-    generateWalls()
-  }
 
-  const generateWalls = () => {
-    const newFloors = [...floors]
-    const currentFloor = newFloors[selectedFloor]
+    setDrawingMode(null);
+    setDrawingPoints([]);
 
-    // Generate walls from lines
-    currentFloor.rooms.forEach(room => {
-      if (room.isComplete) {
-        for (let i = 0; i < room.points.length; i++) {
-          const start = room.points[i]
-          const end = room.points[(i + 1) % room.points.length]
-          currentFloor.features.push({
-            type: 'wall',
-            start,
-            end,
-            height: currentFloor.structure.height
-          })
-        }
-      }
-    })
+    // Clear the edit canvas
+    const ctx = editCanvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, editCanvasRef.current.width, editCanvasRef.current.height);
+  };
 
-    // Generate walls from circles
-    circles.forEach(circle => {
-      const { center, radius } = circle
-      const segments = 32
-      for (let i = 0; i < segments; i++) {
-        const angle1 = (i / segments) * Math.PI * 2
-        const angle2 = ((i + 1) / segments) * Math.PI * 2
-        const start = [center[0] + Math.cos(angle1) * radius, center[1] + Math.sin(angle1) * radius]
-        const end = [center[0] + Math.cos(angle2) * radius, center[1] + Math.sin(angle2) * radius]
-        currentFloor.features.push({
-          type: 'wall',
-          start,
-          end,
-          height: currentFloor.structure.height
-        })
-      }
-    })
+  const generateWalls = (floor, points, height) => {
+    for (let i = 0; i < points.length; i++) {
+      const start = points[i];
+      const end = points[(i + 1) % points.length];
+      floor.features.push({
+        type: 'wall',
+        start: [...start, 0],
+        end: [...end, 0],
+        height: height,
+      });
+    }
+  };
 
-    setFloors(newFloors)
-    setCircles([])
-  }
-  
+  const generateCircularWalls = (floor, center, radius, height) => {
+    const segments = 32;
+    for (let i = 0; i < segments; i++) {
+      const angle1 = (i / segments) * Math.PI * 2;
+      const angle2 = ((i + 1) / segments) * Math.PI * 2;
+      const start = [
+        center[0] + Math.cos(angle1) * radius,
+        center[1] + Math.sin(angle1) * radius
+      ];
+      const end = [
+        center[0] + Math.cos(angle2) * radius,
+        center[1] + Math.sin(angle2) * radius
+      ];
+      floor.features.push({
+        type: 'wall',
+        start: [...start, 0],
+        end: [...end, 0],
+        height: height,
+      });
+    }
+  };
+
+  const toggleInsideView = () => {
+    setIsInsideView(!isInsideView);
+    setIsTopView(false);
+    if (!isInsideView) {
+      const floorHeight = floors[selectedFloor].structure.height;
+      setInsideViewPosition([0, floorHeight / 2, 0]);
+      setInsideViewFloor(selectedFloor);
+      setCurrentFloor(selectedFloor);
+      setCameraPosition([0, floorHeight / 2, 0]);
+    } else {
+      setCameraPosition([15, 15, 15]);
+    }
+  };
+
+  const handleInsideViewFloorChange = (event) => {
+    const newFloor = Number(event.target.value);
+    setInsideViewFloor(newFloor);
+    setCurrentFloor(newFloor);
+    const floorHeight = floors[newFloor].structure.height;
+    const newPosition = [0, newFloor * floorHeight + floorHeight / 2, 0];
+    setInsideViewPosition(newPosition);
+    setCameraPosition(newPosition);
+  };
 
   return (
     <div className="h-screen flex flex-col">
@@ -623,7 +663,7 @@ export default function BuildingCreator() {
           </button>
         </div>
         <div className="flex space-x-4 mb-4">
-          <button 
+        <button 
             className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
             onClick={() => changeWallTexture('/brick_texture.jpg')}
           >
@@ -677,6 +717,9 @@ export default function BuildingCreator() {
                 <WalkingCamera
                   initialPosition={insideViewPosition}
                   room={floors[insideViewFloor]}
+                  floors={floors}
+                  currentFloor={currentFloor}
+                  setCurrentFloor={setCurrentFloor}
                 />
               )}
               <ambientLight intensity={0.5} />
