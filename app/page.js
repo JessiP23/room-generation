@@ -1,12 +1,13 @@
 'use client'
 
 import React, {useState, useEffect} from 'react';
-import { Book, Box, Camera, ChevronRight, Code, Coffee, Flower, Layers, Layout, Moon, Search, Share, Sun, User, Zap } from 'lucide-react';
+import { Book, Box, Camera, ChevronDown, ChevronRight, Code, Coffee, Flower, Layers, Layout, Moon, Search, Share, Sun, User, X, Zap } from 'lucide-react';
 
 const LandingPage = () => {
   const [isDaytime, setIsDaytime] = useState(true);
   const [rotationX, setRotationX] = useState(0);
   const [rotationY, setRotationY] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -26,23 +27,61 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-400 to-pink-300">
-      <nav className="flex justify-between items-center p-4">
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-white rounded-full mr-2"></div>
-          <span className="text-white font-bold">LOGO</span>
+      <nav className=" p-4 relative z-50">
+      <div className="container mx-auto">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-white rounded-full mr-2"></div>
+            <span className="text-white font-bold">LOGO</span>
+          </div>
+          
+          {/* Large screen menu */}
+          <div className="hidden lg:flex space-x-4 text-white">
+            <a href="/room-generation" className="hover:underline">Get started</a>
+            <a href="/contact-us" className="hover:underline">Contact us</a>
+            <a href="/about-us" className="hover:underline">About us</a>
+            <a href="#" className="hover:underline">Portfolio</a>
+          </div>
+          
+          <div className="hidden lg:flex space-x-2 text-white">
+            <Search size={20} />
+            <Share size={20} />
+            <User size={20} />
+          </div>
+          
+          {/* Medium and small screen toggle */}
+          <button
+            className="lg:hidden text-white flex items-center"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? (
+              <X size={24} />
+            ) : (
+              <>
+                Menu <ChevronDown className="ml-1" />
+              </>
+            )}
+          </button>
         </div>
-        <div className="flex space-x-4 text-white">
-          <a href="/room-generation" className="hover:underline">Get started</a>
-          <a href="/contact-us" className="hover:underline">Contact us</a>
-          <a href="/about-us" className="hover:underline">About us</a>
-          <a href="#" className="hover:underline">Portfolio</a>
-        </div>
-        <div className="flex space-x-2 text-white">
-          <Search size={20} />
-          <Share size={20} />
-          <User size={20} />
-        </div>
-      </nav>
+        
+        {/* Overlay menu for medium and small screens */}
+        {isOpen && (
+          <div className="lg:hidden fixed inset-0 bg-purple-900 bg-opacity-95 z-50 flex flex-col justify-center items-center">
+            <div className="text-center space-y-6">
+              <a href="/room-generation" className="block text-white text-2xl hover:text-indigo-300 transition-colors duration-200">Get started</a>
+              <a href="/contact-us" className="block text-white text-2xl hover:text-indigo-300 transition-colors duration-200">Contact us</a>
+              <a href="/about-us" className="block text-white text-2xl hover:text-indigo-300 transition-colors duration-200">About us</a>
+              <a href="#" className="block text-white text-2xl hover:text-indigo-300 transition-colors duration-200">Portfolio</a>
+            </div>
+            <div className="mt-12 flex space-x-8">
+              <Search size={24} className="text-white hover:text-indigo-300 transition-colors duration-200" />
+              <Share size={24} className="text-white hover:text-indigo-300 transition-colors duration-200" />
+              <User size={24} className="text-white hover:text-indigo-300 transition-colors duration-200" />
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
       
       <main className="flex flex-col md:flex-row items-center justify-between px-4 md:px-12 lg:px-20 py-8 md:py-16 bg-gradient-to-b from-purple-400 to-pink-300 min-h-screen">
       <div className="w-full md:w-1/2 mb-8 md:mb-0">
