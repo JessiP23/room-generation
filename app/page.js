@@ -1,25 +1,54 @@
 'use client'
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import { Book, Box, Camera, ChevronDown, ChevronRight, Cloud, Code, Coffee, Compass, Flower, Layers, Layout, Moon, Search, Share, Sun, User, X, Zap } from 'lucide-react';
 
 // interactive
 
 const InteractiveRoom = () => {
-  const [rotation, setRotation] = useState(0);
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
+  const roomRef = useRef(null);
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    const deltaX = e.clientX - startPosition.x;
+    const deltaY = e.clientY - startPosition.y;
+    setRotation(prev => ({
+      x: prev.x + deltaY * 0.5,
+      y: prev.y - deltaX * 0.5
+    }));
+    setStartPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRotation((prev) => (prev + 1) % 360);
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   return (
-    <div className="relative w-full h-[100%] md:h-96 bg-gray-100 rounded-lg overflow-hidden">
+    <div className="relative w-full h-64 md:h-96 bg-gray-100 rounded-lg overflow-hidden" ref={roomRef}>
       <div 
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ transform: `perspective(1000px) rotateY(${rotation}deg)` }}
+        className="absolute inset-0 flex items-center justify-center cursor-move"
+        style={{ 
+          transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+          transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+        }}
+        onMouseDown={handleMouseDown}
       >
         <div className="w-64 h-64 border-4 border-indigo-600 bg-white bg-opacity-20" />
         <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600" />
@@ -28,7 +57,7 @@ const InteractiveRoom = () => {
         <div className="absolute top-0 right-0 bottom-0 w-1 bg-indigo-600" />
       </div>
       <div className="absolute bottom-4 left-4 bg-white bg-opacity-75 rounded p-2">
-        <p className="text-sm text-indigo-600">Click and drag to explore</p>
+        <p className="text-sm text-indigo-600">Click and drag to rotate</p>
       </div>
     </div>
   );
