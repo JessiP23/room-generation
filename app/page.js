@@ -10,6 +10,7 @@ const InteractiveRoom = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
   const roomRef = useRef(null);
+  const animationRef = useRef(null);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -40,13 +41,29 @@ const InteractiveRoom = () => {
     };
   }, [isDragging]);
 
+  useEffect(() => {
+    const autoRotate = () => {
+      setRotation(prev => ({
+        x: prev.x,
+        y: (prev.y + 0.2) % 360
+      }));
+      animationRef.current = requestAnimationFrame(autoRotate);
+    };
+    autoRotate();
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="relative w-full h-64 md:h-96 bg-gray-100 rounded-lg overflow-hidden" ref={roomRef}>
       <div 
         className="absolute inset-0 flex items-center justify-center cursor-move"
         style={{ 
           transform: `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-          transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+          transition: isDragging ? 'none' : 'transform 0.1s ease-out'
         }}
         onMouseDown={handleMouseDown}
       >
@@ -55,9 +72,12 @@ const InteractiveRoom = () => {
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600" />
         <div className="absolute top-0 left-0 bottom-0 w-1 bg-indigo-600" />
         <div className="absolute top-0 right-0 bottom-0 w-1 bg-indigo-600" />
+        {/* Adding some interior elements for better 3D effect */}
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 border-2 border-indigo-400 bg-indigo-100 bg-opacity-30" />
+        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 border-2 border-purple-400 bg-purple-100 bg-opacity-30" />
       </div>
       <div className="absolute bottom-4 left-4 bg-white bg-opacity-75 rounded p-2">
-        <p className="text-sm text-indigo-600">Click and drag to rotate</p>
+        <p className="text-sm text-indigo-600">Click and drag to interact</p>
       </div>
     </div>
   );
