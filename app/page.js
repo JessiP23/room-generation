@@ -1,7 +1,37 @@
 'use client'
 
 import React, {useState, useEffect} from 'react';
-import { Book, Box, Camera, ChevronDown, ChevronRight, Code, Coffee, Flower, Layers, Layout, Moon, Search, Share, Sun, User, X, Zap } from 'lucide-react';
+import { Book, Box, Camera, ChevronDown, ChevronRight, Cloud, Code, Coffee, Compass, Flower, Layers, Layout, Moon, Search, Share, Sun, User, X, Zap } from 'lucide-react';
+
+
+const InteractiveRoom = () => {
+  const [rotation, setRotation] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRotation((prev) => (prev + 1) % 360);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="relative w-full h-64 md:h-96 bg-gray-100 rounded-lg overflow-hidden">
+      <div 
+        className="absolute inset-0 flex items-center justify-center"
+        style={{ transform: `perspective(1000px) rotateY(${rotation}deg)` }}
+      >
+        <div className="w-64 h-64 border-4 border-indigo-600 bg-white bg-opacity-20" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600" />
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600" />
+        <div className="absolute top-0 left-0 bottom-0 w-1 bg-indigo-600" />
+        <div className="absolute top-0 right-0 bottom-0 w-1 bg-indigo-600" />
+      </div>
+      <div className="absolute bottom-4 left-4 bg-white bg-opacity-75 rounded p-2">
+        <p className="text-sm text-indigo-600">Click and drag to explore</p>
+      </div>
+    </div>
+  );
+};
 
 const LandingPage = () => {
   const [isDaytime, setIsDaytime] = useState(true);
@@ -153,29 +183,48 @@ const LandingPage = () => {
 
       {/* Features Section */}
       <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
-    <div className="container mx-auto px-4">
-      <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-        Why Choose Our 3D Architectural Platform
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-        <FeatureCard 
-          icon={<Code className="w-8 h-8 text-white" />}
-          title={<span className='text-blue-950'>Immersive 3D Experiences</span>}
-          description="Create stunning, interactive 3D models of your architectural designs that clients can explore in real-time."
-        />
-        <FeatureCard 
-          icon={<Layout className="w-8 h-8 text-white" />}
-          title={<span className="text-red-500">User-Friendly Interface</span>}
-          description="Our intuitive platform makes it easy for architects and clients alike to navigate and collaborate on projects seamlessly."
-        />
-        <FeatureCard 
-          icon={<Zap className="w-8 h-8 text-white" />}
-          title={<span className='text-gray-900'>Real-time Collaboration</span>}
-          description="Work together with your team and clients in real-time, making changes and getting feedback instantly."
-        />
-      </div>
-    </div>
-  </section>
+        <div className="container mx-auto px-4">
+          <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 animate-pulse">
+            Why Choose Our 3D Architectural Platform
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+            <FeatureCard
+              icon={<Code className="w-8 h-8 text-white" />}
+              title={<span className='text-blue-950'>Immersive 3D Experiences</span>}
+              description="Create stunning, interactive 3D models of your architectural designs that clients can explore in real-time."
+            />
+            <FeatureCard
+              icon={<Layout className="w-8 h-8 text-white" />}
+              title={<span className="text-red-500">User-Friendly Interface</span>}
+              description="Our intuitive platform makes it easy for architects and clients alike to navigate and collaborate on projects seamlessly."
+            />
+            <FeatureCard
+              icon={<Zap className="w-8 h-8 text-white" />}
+              title={<span className='text-gray-900'>Real-time Collaboration</span>}
+              description="Work together with your team and clients in real-time, making changes and getting feedback instantly."
+            />
+            <FeatureCard
+              icon={<Compass className="w-8 h-8 text-white" />}
+              title={<span className='text-green-600'>Virtual Walkthroughs</span>}
+              description="Enable clients to take virtual tours of their future spaces, providing an unparalleled sense of scale and atmosphere."
+            />
+            <FeatureCard
+              icon={<Cloud className="w-8 h-8 text-white" />}
+              title={<span className='text-purple-600'>Cloud-Based Platform</span>}
+              description="Access your projects from anywhere, anytime. Our cloud-based solution ensures your work is always up-to-date and secure."
+            />
+            <FeatureCard
+              icon={<Coffee className="w-8 h-8 text-white" />}
+              title={<span className='text-yellow-600'>24/7 Support</span>}
+              description="Our dedicated support team is always ready to assist you, ensuring a smooth experience throughout your design process."
+            />
+          </div>
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-bold mb-8 text-indigo-600">Experience Our Interactive 3D Room</h3>
+            <InteractiveRoom />
+          </div>
+        </div>
+      </section>
 
       {/* Another 3D Room Section */}
       <section className="py-20 bg-gradient-to-b from-indigo-50 to-purple-100 overflow-hidden">
