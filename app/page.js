@@ -64,19 +64,19 @@ const LandingPage = () => {
           </button>
         </div>
         
-        {/* Overlay menu for medium and small screens */}
+        {/* Compact overlay menu for medium and small screens */}
         {isOpen && (
-          <div className="lg:hidden fixed inset-0 bg-purple-900 bg-opacity-95 z-50 flex flex-col justify-center items-center">
-            <div className="text-center space-y-6">
-              <a href="/room-generation" className="block text-white text-2xl hover:text-indigo-300 transition-colors duration-200">Get started</a>
-              <a href="/contact-us" className="block text-white text-2xl hover:text-indigo-300 transition-colors duration-200">Contact us</a>
-              <a href="/about-us" className="block text-white text-2xl hover:text-indigo-300 transition-colors duration-200">About us</a>
-              <a href="#" className="block text-white text-2xl hover:text-indigo-300 transition-colors duration-200">Portfolio</a>
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-purple-900 bg-opacity-95 shadow-lg z-50 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <div className="p-4 space-y-4">
+              <a href="/room-generation" className="block text-white hover:text-indigo-300 transition-colors duration-200">Get started</a>
+              <a href="/contact-us" className="block text-white hover:text-indigo-300 transition-colors duration-200">Contact us</a>
+              <a href="/about-us" className="block text-white hover:text-indigo-300 transition-colors duration-200">About us</a>
+              <a href="#" className="block text-white hover:text-indigo-300 transition-colors duration-200">Portfolio</a>
             </div>
-            <div className="mt-12 flex space-x-8">
-              <Search size={24} className="text-white hover:text-indigo-300 transition-colors duration-200" />
-              <Share size={24} className="text-white hover:text-indigo-300 transition-colors duration-200" />
-              <User size={24} className="text-white hover:text-indigo-300 transition-colors duration-200" />
+            <div className="bg-purple-800 bg-opacity-50 p-4 flex justify-around">
+              <Search size={20} className="text-white hover:text-indigo-300 transition-colors duration-200" />
+              <Share size={20} className="text-white hover:text-indigo-300 transition-colors duration-200" />
+              <User size={20} className="text-white hover:text-indigo-300 transition-colors duration-200" />
             </div>
           </div>
         )}
