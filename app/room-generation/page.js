@@ -198,14 +198,20 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
       const intersectPoint = new THREE.Vector3();
       raycaster.ray.intersectPlane(planeIntersect, intersectPoint);
 
-      const rotatedIntersectPoint = intersectPoint.clone();
-      rotatedIntersectPoint.applyEuler(new THREE.Euler(...wallRotation));
+      // Transform the intersect point to the wall's local space
+      const localPoint = new THREE.Vector3().copy(intersectPoint).sub(new THREE.Vector3(...wallPosition));
+      
+      // Create an inverted rotation matrix
+      const rotationMatrix = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...wallRotation));
+      const inverseRotationMatrix = rotationMatrix.invert();
+      
+      // Apply the inverse rotation to the local point
+      localPoint.applyMatrix4(inverseRotationMatrix);
 
-      const localPoint = rotatedIntersectPoint.sub(new THREE.Vector3(...wallPosition));
       const halfWidth = wallDimensions[0] / 2;
       const halfHeight = wallDimensions[1] / 2;
 
-      const newX = THREE.MathUtils.clamp(-localPoint.x, -halfWidth + featureDimensions.width / 2, halfWidth - featureDimensions.width / 2);
+      const newX = THREE.MathUtils.clamp(localPoint.x, -halfWidth + featureDimensions.width / 2, halfWidth - featureDimensions.width / 2);
       const newY = THREE.MathUtils.clamp(localPoint.y, -halfHeight + featureDimensions.height / 2, halfHeight - featureDimensions.height / 2);
 
       mesh.current.position.set(newX, newY, 0.05);
@@ -246,6 +252,7 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
     </group>
   )
 }
+
 
 
 
@@ -390,19 +397,6 @@ export default function CustomizableRoom() {
   ]
 
 
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    const newRooms = [...rooms]
-    newRooms[selectedRoom].structure = { 
-      width: Math.random() * 10 + 5, 
-      height: Math.random() * 5 + 3, 
-      depth: Math.random() * 10 + 5 
-    }
-    setRooms(newRooms)
-  }
-
   const handleColorChange = (color) => {
     if (selectedWall !== null) {
       const newRooms = [...rooms]
@@ -446,6 +440,55 @@ export default function CustomizableRoom() {
 
   const handleFeatureSelect = (featureIndex) => {
     setSelectedFeature(featureIndex)
+  }
+
+  const handleRoomSelect = (index) => {
+    setSelectedRoom(index)
+    // Update camera focus to the selected room
+    const selectedRoomPosition = rooms[index].position
+    const cameraOffset = new THREE.Vector3(10, 10, 10) // Adjust this offset as needed
+    setCameraPosition([
+      selectedRoomPosition[0] + cameraOffset.x,
+      selectedRoomPosition[1] + cameraOffset.y,
+      selectedRoomPosition[2] + cameraOffset.z
+    ])
+  }
+
+  const updateRoomDesign = async (prompt) => {
+    // Simulate an API call to get room design based on the prompt
+    const response = await fetch('/api/generate-room-design', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt }),
+    });
+    const data = await response.json();
+
+    // Update the current room with the new design
+    const newRooms = [...rooms];
+    newRooms[selectedRoom] = {
+      ...newRooms[selectedRoom],
+      ...data.roomDesign,
+    };
+    setRooms(newRooms);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const prompt = rooms[selectedRoom]?.prompt || ''
+    if (prompt) {
+      await updateRoomDesign(prompt)
+    } else {
+      // Fallback to random generation if no prompt is provided
+      const newRooms = [...rooms]
+      newRooms[selectedRoom].structure = { 
+        width: Math.random() * 10 + 5, 
+        height: Math.random() * 5 + 3, 
+        depth: Math.random() * 10 + 5 
+      }
+      setRooms(newRooms)
+    }
   }
 
   const handleFeatureResize = (dimension, value) => {
@@ -762,7 +805,7 @@ export default function CustomizableRoom() {
           ) : (
             <PerspectiveCamera makeDefault position={cameraPosition} rotation={cameraRotation} />
           )}
-          {!isInternalView && <OrbitControls />}
+          {!isInternalView && <OrbitControls target={new THREE.Vector3(...rooms[selectedRoom].position)} />}
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} castShadow />
           {realisticMode && (
@@ -788,7 +831,7 @@ export default function CustomizableRoom() {
               />
             </group>
           ))}
-            {isTopView ? (
+          {isTopView ? (
             rooms.map((room, index) => (
               <TopViewRoom
                 key={room.id}
@@ -796,7 +839,7 @@ export default function CustomizableRoom() {
                 position={room.position}
                 onMove={(newPosition) => handleRoomMove(index, newPosition)}
                 isSelected={index === selectedRoom}
-                onSelect={() => setSelectedRoom(index)}
+                onSelect={() => handleRoomSelect(index)}
               />
             ))
           ) : (
