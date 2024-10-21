@@ -15,7 +15,7 @@ const InteractiveRoom = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-64 md:h-96 bg-gray-100 rounded-lg overflow-hidden">
+    <div className="relative w-full h-[100%] md:h-96 bg-gray-100 rounded-lg overflow-hidden">
       <div 
         className="absolute inset-0 flex items-center justify-center"
         style={{ transform: `perspective(1000px) rotateY(${rotation}deg)` }}
