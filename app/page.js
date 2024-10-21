@@ -1,7 +1,7 @@
 'use client'
 
 import React, {useState, useEffect} from 'react';
-import { Book, ChevronRight, Code, Coffee, Flower, Layout, Moon, Search, Share, Sun, User, Zap } from 'lucide-react';
+import { Book, Box, Camera, ChevronRight, Code, Coffee, Flower, Layers, Layout, Moon, Search, Share, Sun, User, Zap } from 'lucide-react';
 
 const LandingPage = () => {
   const [isDaytime, setIsDaytime] = useState(true);
@@ -44,67 +44,73 @@ const LandingPage = () => {
         </div>
       </nav>
       
-      <main className="flex items-center justify-between px-20 py-16">
-        <div className="w-1/2">
-          <h1 className="text-6xl font-bold text-white mb-4">Generation of 3D rooms/building</h1>
-          <p className="text-white mb-8 text-lg">
-            Generate your 3D rooms and building with a few clicks. Take a look to our live demo.
-          </p>
-          <div className="flex justify-center items-center space-x-6 my-8">
-      <a
-        href='/room-generation'
-        className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
-      >
-        Room Generation
-      </a>
-      <a
-        href='/building-generator'
-        className="bg-white bg-gradient-to-r from-purple-500 to-indigo-600 px-8 py-3 rounded-full font-bold hover:bg-purple-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
-      >
-        Building Generation
-      </a>
-    </div>
-
+      <main className="flex flex-col md:flex-row items-center justify-between px-4 md:px-12 lg:px-20 py-8 md:py-16 bg-gradient-to-b from-purple-400 to-pink-300 min-h-screen">
+      <div className="w-full md:w-1/2 mb-8 md:mb-0">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-down">
+          Generation of 3D rooms/building
+        </h1>
+        <p className="text-white mb-8 text-lg animate-fade-in-up">
+          Generate your 3D rooms and building with a few clicks. Take a look at our live demo.
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 my-8">
+          <a
+            href='/room-generation'
+            className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 flex items-center justify-center"
+          >
+            <Camera className="mr-2" size={20} />
+            Room Generation
+          </a>
+          <a
+            href='/building-generator'
+            className="w-full sm:w-auto bg-white text-purple-600 px-8 py-3 rounded-full font-bold hover:bg-purple-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 flex items-center justify-center"
+          >
+            <Layers className="mr-2" size={20} />
+            Building Generation
+          </a>
         </div>
-        <div className="relative w-1/2 h-96">
-          {/* Room container */}
-          <div className="absolute inset-0 bg-gray-100 rounded-lg shadow-2xl overflow-hidden">
-            {/* Wall */}
-            <div className="absolute inset-0 bg-gradient-to-b from-gray-200 to-gray-300"></div>
-            
-            {/* Window */}
-            <div className="absolute top-4 left-4 w-32 h-40 bg-blue-200 rounded-t-lg border-4 border-white">
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-300 to-blue-100 opacity-50"></div>
-              <div className="absolute top-1/2 left-0 w-full h-px bg-white"></div>
-              <div className="absolute top-0 left-1/2 w-px h-full bg-white"></div>
-            </div>
-            
-            {/* Desk */}
-            <div className="absolute bottom-0 left-0 right-0 h-24 bg-yellow-800">
-              <div className="absolute top-0 left-0 right-0 h-2 bg-yellow-900"></div>
-            </div>
-            
-            {/* Chair */}
-            <div className="absolute bottom-8 right-8 w-20 h-28">
-              <div className="absolute bottom-0 w-full h-4 bg-gray-700 rounded-full"></div>
-              <div className="absolute bottom-4 left-2 right-2 h-12 bg-gray-600 rounded-t-lg"></div>
-              <div className="absolute top-0 left-4 right-4 h-12 bg-gray-500 rounded-t-lg"></div>
-            </div>
-            
-            {/* Plant */}
-            <div className="absolute bottom-24 left-4 w-16 h-24">
-              <div className="absolute bottom-0 w-full h-6 bg-green-800 rounded-full"></div>
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-1 h-16 bg-green-700"></div>
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-8 bg-green-500 rounded-full animate-pulse"></div>
-            </div>
-            
-            {/* Floating elements */}
-            <div className="absolute top-8 right-8 w-8 h-8 bg-purple-400 rounded-full animate-bounce"></div>
-            <div className="absolute top-24 right-16 w-6 h-6 bg-pink-400 rounded-full animate-ping"></div>
-            <div className="absolute top-40 right-24 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+      </div>
+      
+      <div className="relative w-full md:w-1/2 h-96 md:h-[450px] lg:h-[500px] animate-float">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg shadow-2xl overflow-hidden transform rotate-3 transition-all duration-300 hover:rotate-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-200 to-gray-300"></div>
+          
+          {/* Window */}
+          <div className="absolute top-4 left-4 w-32 h-40 bg-blue-200 rounded-t-lg border-4 border-white">
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-300 to-blue-100 opacity-50"></div>
+            <div className="absolute top-1/2 left-0 w-full h-px bg-white"></div>
+            <div className="absolute top-0 left-1/2 w-px h-full bg-white"></div>
           </div>
+          
+          {/* Desk */}
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-yellow-800">
+            <div className="absolute top-0 left-0 right-0 h-2 bg-yellow-900"></div>
+          </div>
+          
+          {/* Chair */}
+          <div className="absolute bottom-8 right-8 w-20 h-28">
+            <div className="absolute bottom-0 w-full h-4 bg-gray-700 rounded-full"></div>
+            <div className="absolute bottom-4 left-2 right-2 h-12 bg-gray-600 rounded-t-lg"></div>
+            <div className="absolute top-0 left-4 right-4 h-12 bg-gray-500 rounded-t-lg"></div>
+          </div>
+          
+          {/* Plant */}
+          <div className="absolute bottom-24 left-4 w-16 h-24">
+            <div className="absolute bottom-0 w-full h-6 bg-green-800 rounded-full"></div>
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-1 h-16 bg-green-700"></div>
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-12 h-8 bg-green-500 rounded-full animate-pulse"></div>
+          </div>
+          
+          {/* Floating elements */}
+          <div className="absolute top-8 right-8 w-8 h-8 bg-purple-400 rounded-full animate-bounce"></div>
+          <div className="absolute top-24 right-16 w-6 h-6 bg-pink-400 rounded-full animate-ping"></div>
+          <div className="absolute top-40 right-24 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+          
+          {/* New elements */}
+          <Box className="absolute bottom-32 right-12 text-indigo-600 animate-spin-slow" size={32} />
+          <div className="absolute top-16 left-40 w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-full opacity-50 animate-pulse"></div>
         </div>
-      </main>
+      </div>
+    </main>
 
       {/* Features Section */}
       <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
