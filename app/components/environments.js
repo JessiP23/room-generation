@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { Instances, Instance } from '@react-three/drei'
+import { Color, MathUtils } from 'three'
 
 const randomInRange = (min, max) => Math.random() * (max - min) + min
 
@@ -63,30 +64,144 @@ const City = ({ buildingCount = 50, spread = 30 }) => {
   )
 }
 
-const Desert = ({ duneCount = 20, spread = 40 }) => {
-  const dunes = useMemo(() => {
-    return new Array(duneCount).fill(null).map(() => ({
-      position: [randomInRange(-spread, spread), randomInRange(-2, 2), randomInRange(-spread, spread)],
-      scale: [randomInRange(5, 15), randomInRange(1, 5), randomInRange(5, 15)],
-      rotation: [0, randomInRange(0, Math.PI * 2), 0],
-    }))
-  }, [duneCount, spread])
 
-  return (
-    <group>
-      {dunes.map((dune, i) => (
-        <mesh key={i} position={dune.position} scale={dune.scale} rotation={dune.rotation}>
-          <sphereGeometry args={[1, 16, 16, 0, Math.PI]} />
-          <meshStandardMaterial color="#e6c587" />
+const Desert = ({ duneCount = 20, spread = 40 }) => {
+    // Generate main dunes
+    const dunes = useMemo(() => {
+      return new Array(duneCount).fill(null).map(() => ({
+        position: [randomInRange(-spread, spread), randomInRange(-2, 2), randomInRange(-spread, spread)],
+        scale: [randomInRange(5, 15), randomInRange(1, 5), randomInRange(5, 15)],
+        rotation: [0, randomInRange(0, Math.PI * 2), 0],
+      }));
+    }, [duneCount, spread]);
+  
+    // Generate smaller dunes for detail
+    const smallDunes = useMemo(() => {
+      return new Array(duneCount * 2).fill(null).map(() => ({
+        position: [randomInRange(-spread, spread), randomInRange(-1, 1), randomInRange(-spread, spread)],
+        scale: [randomInRange(2, 4), randomInRange(0.5, 2), randomInRange(2, 4)],
+        rotation: [0, randomInRange(0, Math.PI * 2), 0],
+      }));
+    }, [duneCount, spread]);
+  
+    // Generate rocks for added detail
+    const rocks = useMemo(() => {
+      return new Array(duneCount / 2).fill(null).map(() => ({
+        position: [randomInRange(-spread, spread), 0, randomInRange(-spread, spread)],
+        scale: [randomInRange(0.2, 1), randomInRange(0.2, 1), randomInRange(0.2, 1)],
+        rotation: [
+          randomInRange(0, Math.PI),
+          randomInRange(0, Math.PI),
+          randomInRange(0, Math.PI)
+        ],
+      }));
+    }, [duneCount, spread]);
+  
+    return (
+      <group>
+        {/* Environment lighting */}
+        <ambientLight intensity={0.5} />
+        <directionalLight 
+          position={[5, 5, 5]} 
+          intensity={1} 
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+        />
+  
+        {/* Sky hemisphere light for better ambient lighting */}
+        <hemisphereLight 
+          args={[new Color('#87CEEB'), new Color('#e6c587'), 0.5]}
+        />
+  
+        {/* Main large dunes */}
+        {dunes.map((dune, i) => (
+          <mesh 
+            key={`dune-${i}`}
+            position={dune.position}
+            scale={dune.scale}
+            rotation={dune.rotation}
+            castShadow
+            receiveShadow
+          >
+            <sphereGeometry args={[1, 32, 32, 0, Math.PI]} />
+            <meshStandardMaterial 
+              color="#e6c587"
+              roughness={0.9}
+              metalness={0.1}
+              envMapIntensity={0.5}
+            />
+          </mesh>
+        ))}
+  
+        {/* Smaller detail dunes */}
+        {smallDunes.map((dune, i) => (
+          <mesh
+            key={`small-dune-${i}`}
+            position={dune.position}
+            scale={dune.scale}
+            rotation={dune.rotation}
+            castShadow
+            receiveShadow
+          >
+            <sphereGeometry args={[1, 16, 16, 0, Math.PI]} />
+            <meshStandardMaterial
+              color="#dbb976"
+              roughness={0.8}
+              metalness={0.1}
+            />
+          </mesh>
+        ))}
+  
+        {/* Scattered rocks */}
+        {rocks.map((rock, i) => (
+          <mesh
+            key={`rock-${i}`}
+            position={rock.position}
+            scale={rock.scale}
+            rotation={rock.rotation}
+            castShadow
+            receiveShadow
+          >
+            <dodecahedronGeometry args={[1]} />
+            <meshStandardMaterial
+              color="#b3a17d"
+              roughness={0.9}
+              metalness={0.2}
+            />
+          </mesh>
+        ))}
+  
+        {/* Ground plane */}
+        <mesh 
+          rotation={[-Math.PI / 2, 0, 0]} 
+          position={[0, -0.01, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[100, 100, 50, 50]} />
+          <meshStandardMaterial
+            color="#e6c587"
+            roughness={1}
+            metalness={0}
+            wireframe={false}
+            onBeforeCompile={(shader) => {
+              shader.vertexShader = shader.vertexShader.replace(
+                '#include <begin_vertex>',
+                `
+                  vec3 transformed = vec3(position);
+                  float elevation = sin(position.x * 0.05) * cos(position.z * 0.05) * 0.5;
+                  transformed.y += elevation;
+                  `
+              );
+            }}
+          />
         </mesh>
-      ))}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#e6c587" />
-      </mesh>
-    </group>
-  )
-}
+  
+        {/* Add fog for depth */}
+        <fog attach="fog" args={['#e6c587', 30, 100]} />
+      </group>
+    );
+  };
 
 const Snow = ({ particleCount = 5000, spread = 50 }) => {
   const snowflakes = useMemo(() => {
