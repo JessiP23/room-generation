@@ -8,7 +8,7 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import FlowerMenu from '../components/Menu'
 import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 
 // room 
@@ -386,41 +386,57 @@ export default function CustomizableRoom() {
   const [selectedRoomForRoof, setSelectedRoomForRoof] = useState(null);
   const [selectedRoofStyle, setSelectedRoofStyle] = useState('pyramid'); 
 
-  const [user, setUser] = useState(null);
-  const [subscription, setSubscription] = useState('free');
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [projectName, setProjectName] = useState('');
-
-  const [savedProjects, setSavedProjects] = useState([]);
-  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [user, setUser] = useState(null)
+  const [subscription, setSubscription] = useState('free')
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [projectName, setProjectName] = useState('')
+  const [savedProjects, setSavedProjects] = useState([])
+  const [showLoadModal, setShowLoadModal] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   const fetchSubscription = async (userId) => {
-    const userDoc = await getDocs(query(collection(db, 'users'), where('userId', '==', userId)));
+    const userDoc = await getDocs(query(collection(db, 'users'), where('userId', '==', userId)))
     if (!userDoc.empty) {
-      setSubscription(userDoc.docs[0].data().subscription || 'free');
+      setSubscription(userDoc.docs[0].data().subscription || 'free')
     }
-  };
+  }
+
+  const createOrUpdateUserDocument = async (userId) => {
+    const userRef = doc(db, 'users', userId)
+    const userSnap = await getDoc(userRef)
+
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        userId: userId,
+        subscription: 'free'
+      })
+    }
+
+    const userData = userSnap.data()
+    setSubscription(userData?.subscription || 'free')
+  }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser)
+      setLoading(false)
       if (currentUser) {
-        fetchSubscription(currentUser.uid);
-        fetchSavedProjects(currentUser.uid);
+        await createOrUpdateUserDocument(currentUser.uid)
+        fetchSavedProjects(currentUser.uid)
       } else {
-        router.push('/sign-in');
+        router.push('/sign-in')
       }
-    });
+    })
 
-    return () => unsubscribe();
-  }, [router]);
+    return () => unsubscribe()
+  }, [router])
 
   const fetchSavedProjects = async (userId) => {
-    const q = query(collection(db, 'rooms'), where('userId', '==', userId));
-    const querySnapshot = await getDocs(q);
-    setSavedProjects(querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })));
-  };
+    const userRef = doc(db, 'users', userId)
+    const roomsCollectionRef = collection(userRef, 'rooms')
+    const querySnapshot = await getDocs(roomsCollectionRef)
+    setSavedProjects(querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })))
+  }
 
   const enhanceRealisticMode = () => {
     if (realisticMode) {
@@ -603,71 +619,96 @@ export default function CustomizableRoom() {
 
   const handleSave = async () => {
     if (!user) {
-      setNotification('Please sign in to save rooms');
-      setTimeout(() => setNotification(''), 2000);
-      return;
+      setNotification('Please sign in to save rooms')
+      setTimeout(() => setNotification(''), 2000)
+      return
     }
 
-    const userRoomsQuery = query(collection(db, 'rooms'), where('userId', '==', user.uid));
-    const userRoomsSnapshot = await getDocs(userRoomsQuery);
-    const userRoomsCount = userRoomsSnapshot.size;
+    const userRef = doc(db, 'users', user.uid)
+    const roomsCollectionRef = collection(userRef, 'rooms')
+    const querySnapshot = await getDocs(roomsCollectionRef)
+    const userRoomsCount = querySnapshot.size
 
     if ((subscription === 'free' && userRoomsCount >= 1) || (subscription === 'premium' && userRoomsCount >= 5)) {
-      setNotification('You have reached your room limit. Please upgrade your subscription to save more rooms.');
-      setTimeout(() => setNotification(''), 2000);
-      return;
+      setNotification('You have reached your room limit. Please upgrade your subscription to save more rooms.')
+      setTimeout(() => setNotification(''), 2000)
+      return
     }
 
-    setShowSaveModal(true);
-  };
+    setShowSaveModal(true)
+  }
 
   const confirmSave = async () => {
     if (!projectName) {
-      setNotification('Please enter a project name');
-      return;
+      setNotification('Please enter a project name')
+      return
     }
 
     try {
-      await addDoc(collection(db, 'rooms'), {
-        userId: user.uid,
+      const userRef = doc(db, 'users', user.uid)
+      const roomsCollectionRef = collection(userRef, 'rooms')
+      await addDoc(roomsCollectionRef, {
         name: projectName,
         rooms: rooms,
         createdAt: new Date(),
-      });
-      setNotification('Project saved successfully');
-      setShowSaveModal(false);
-      setProjectName('');
+      })
+      setNotification('Project saved successfully')
+      setShowSaveModal(false)
+      setProjectName('')
+      fetchSavedProjects(user.uid)
     } catch (error) {
-      setNotification('Error saving project: ' + error.message);
+      setNotification('Error saving project: ' + error.message)
     }
-    setTimeout(() => setNotification(''), 2000);
-  };
+    setTimeout(() => setNotification(''), 2000)
+  }
 
   const handleLoad = () => {
     setShowLoadModal(true);
   };
+
   const loadProject = async (projectId) => {
     try {
-      const projectRef = doc(db, 'rooms', projectId);
-      const projectSnap = await getDoc(projectRef);
+      const userRef = doc(db, 'users', user.uid)
+      const projectRef = doc(collection(userRef, 'rooms'), projectId)
+      const projectSnap = await getDoc(projectRef)
       
       if (projectSnap.exists()) {
-        const projectData = projectSnap.data();
-        setRooms(projectData.rooms || []);
-        setSelectedRoom(0);
-        setShowLoadModal(false);
-        setNotification('Project loaded successfully');
-        setTimeout(() => setNotification(''), 2000);
+        const projectData = projectSnap.data()
+        setRooms(projectData.rooms || [])
+        setSelectedRoom(0)
+        setShowLoadModal(false)
+        setNotification('Project loaded successfully')
+        setTimeout(() => setNotification(''), 2000)
       } else {
-        setNotification('Project not found');
-        setTimeout(() => setNotification(''), 2000);
+        setNotification('Project not found')
+        setTimeout(() => setNotification(''), 2000)
       }
     } catch (error) {
-      console.error('Error loading project:', error);
-      setNotification('Error loading project');
-      setTimeout(() => setNotification(''), 2000);
+      console.error('Error loading project:', error)
+      setNotification('Error loading project')
+      setTimeout(() => setNotification(''), 2000)
     }
-  };
+  }
+
+  const handleUpgrade = async () => {
+    setShowUpgradeModal(true)
+  }
+
+  const confirmUpgrade = async () => {
+    try {
+      const userRef = doc(db, 'users', user.uid)
+      await updateDoc(userRef, {
+        subscription: 'premium'
+      })
+      setSubscription('premium')
+      setNotification('Subscription upgraded to premium successfully')
+      setShowUpgradeModal(false)
+    } catch (error) {
+      console.error('Error upgrading subscription:', error)
+      setNotification('Error upgrading subscription')
+    }
+    setTimeout(() => setNotification(''), 2000)
+  }
 
   const addRoom = () => {
     const lastRoom = rooms[rooms.length - 1]
@@ -774,6 +815,17 @@ export default function CustomizableRoom() {
     <div className="flex flex-col h-screen">
       <FlowerMenu />
       <div className="p-4 bg-gradient-to-b from-purple-400 to-pink-300">
+      <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Customizable Room</h1>
+          <div>
+            <span className="mr-4">Status: {subscription === 'premium' ? 'Premium' : 'Free'}</span>
+            {subscription === 'free' && (
+              <button onClick={handleUpgrade} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
+                Upgrade to Premium
+              </button>
+            )}
+          </div>
+        </div>
         <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
           <input
             type="text"
@@ -1103,6 +1155,28 @@ export default function CustomizableRoom() {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg">
+            <h2 className="text-2xl font-bold mb-4">Upgrade to Premium</h2>
+            <p className="mb-4">Upgrade to Premium to save up to 5 rooms and enjoy additional features!</p>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="px-4 py-2 border rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUpgrade}
+                className="px-4 py-2 bg-yellow-500 text-white rounded"
+              >
+                Upgrade
+              </button>
+            </div>
           </div>
         </div>
       )}
