@@ -11,7 +11,7 @@ const FlowerMenu = () => {
 
   const menuItems = [
     { icon: Home, label: 'Home', href: '/' },
-    { icon: Building, label: 'Projects', href: '/projects' },
+    { icon: Building, label: 'Projects', href: '/room-generation/saved-rooms' },
     { icon: Compass, label: 'Explore', href: '/explore' },
     { icon: Users, label: 'Team', href: '/team' },
   ];
