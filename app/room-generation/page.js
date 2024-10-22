@@ -349,6 +349,25 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
 
 
 
+const EnvironmentWrapper = ({ environment, rooms }) => {
+  const { scene } = useThree()
+  const envRef = useRef()
+
+  useEffect(() => {
+    if (envRef.current) {
+      const lowestY = Math.min(...rooms.map(room => room.position[1] - room.structure.height / 2))
+      envRef.current.position.y = lowestY
+    }
+  }, [rooms, environment])
+
+  return (
+    <group ref={envRef}>
+      <EnvironmentScene environment={environment} />
+    </group>
+  )
+}
+
+
 
 
 export default function CustomizableRoom() {
@@ -1150,7 +1169,7 @@ export default function CustomizableRoom() {
               <Environment preset="sunset" />
             </>
           )}
-          <EnvironmentScene environment={environment} />
+          <EnvironmentWrapper environment={environment} rooms={rooms} />
           {!isTopView && rooms.map((room, index) => (
             <group key={room.id} position={room.position}>
               <Room
