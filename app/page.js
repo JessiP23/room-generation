@@ -421,9 +421,6 @@ const FeatureCard = ({ icon, title, description }) => (
       <h3 className="text-xl font-semibold">{title}</h3>
     </div>
     <p className="text-gray-600 mb-4">{description}</p>
-    <a href="#" className="inline-flex items-center text-indigo-600 hover:text-indigo-800 transition-colors duration-200">
-      Learn more <ChevronRight className="ml-1 w-4 h-4" />
-    </a>
   </div>
 );
 
