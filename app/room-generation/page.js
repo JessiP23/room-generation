@@ -1170,7 +1170,7 @@ export default function CustomizableRoom() {
           </div>
         )}
       </div>
-      <div className="flex-grow relative">
+      <div className="flex-grow relative min-h-screen p-4">
         <Canvas shadows>
           {isInternalView ? (
             <WalkingCamera
