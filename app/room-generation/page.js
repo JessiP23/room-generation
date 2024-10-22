@@ -1054,7 +1054,7 @@ export default function CustomizableRoom() {
         )}
       </div>
       {showSaveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center text-gray-900">
           <div className="bg-white p-6 rounded-lg">
             <h2 className="text-2xl font-bold mb-4">Save Project</h2>
             <input
