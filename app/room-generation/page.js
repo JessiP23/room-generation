@@ -16,16 +16,16 @@ import { EnvironmentScene } from '../components/environments'
 // room 
 // Room component
 
-function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect }) {
+function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness }) {
   const { width, height, depth } = structure
 
   const sides = [
-    { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, 1], size: [width, height] },
-    { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, 1], size: [width, height] },
-    { pos: [width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1], size: [depth, height] },
-    { pos: [-width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, 1], size: [depth, height] },
-    { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1], size: [width, depth] },
-    { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, 1], size: [width, depth] },
+    { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, wallThickness], size: [width, height] },
+    { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, wallThickness], size: [width, height] },
+    { pos: [width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, wallThickness], size: [depth, height] },
+    { pos: [-width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, wallThickness], size: [depth, height] },
+    { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, wallThickness], size: [width, depth] },
+    { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, wallThickness], size: [width, depth] },
   ]
 
   const textureLoader = new THREE.TextureLoader()
@@ -46,7 +46,7 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
             castShadow
             receiveShadow
           >
-            <planeGeometry args={[1, 1]} />
+            <boxGeometry args={[1, 1, 1]} />
             <meshStandardMaterial 
               color={wallColors[index]} 
               side={THREE.DoubleSide}
@@ -371,6 +371,13 @@ const EnvironmentWrapper = ({ environment, rooms }) => {
 
 
 export default function CustomizableRoom() {
+
+  const [wallThickness, setWallThickness] = useState(0.2)
+
+  const handleWallThicknessChange = (e) => {
+    setWallThickness(Number(e.target.value))
+  }
+
   const [rooms, setRooms] = useState([
     {
       id: 1,
@@ -380,6 +387,7 @@ export default function CustomizableRoom() {
       wallTextures: Array(6).fill('/wall_texture.jpg'),
       features: [],
       position: [0, 0, 0],
+      wallThickness: 0.2, // Add default wall thickness
     }
   ])
   const [selectedRoom, setSelectedRoom] = useState(0)
@@ -393,7 +401,6 @@ export default function CustomizableRoom() {
   const [selectedFeature, setSelectedFeature] = useState(null)
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
 
   // handling roof
   const [roofs, setRoofs] = useState([]);
@@ -410,6 +417,7 @@ export default function CustomizableRoom() {
 
   const [environment, setEnvironment] = useState('forest')
   const [price, setPrice] = useState(0)
+
 
   const fetchSubscription = async (userId) => {
     const userDoc = await getDocs(query(collection(db, 'users'), where('userId', '==', userId)))
@@ -1044,6 +1052,18 @@ export default function CustomizableRoom() {
             <option value="dome">Dome</option>
           </select>
         </div>
+        <div className="flex gap-2 mb-4">
+          <label htmlFor="wall-thickness" className="text-gray-700">Wall Thickness</label>
+          <input
+            type="number"
+            id="wall-thickness"
+            value={wallThickness}
+            onChange={handleWallThicknessChange}
+            className="w-20 p-2 border rounded text-gray-900"
+            placeholder="Thickness"
+            step="0.1"
+          />
+        </div>
         {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
   <div className="flex gap-2 mb-4">
     <input
@@ -1184,6 +1204,7 @@ export default function CustomizableRoom() {
                 realisticMode={realisticMode}
                 roomIndex={index}
                 selectedRoom={selectedRoom}
+                wallThickness={wallThickness} // Pass wall thickness to Room component
               />
             </group>
           ))}
