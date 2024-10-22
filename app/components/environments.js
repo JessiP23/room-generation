@@ -38,51 +38,47 @@ const Forest = ({ count = 100, spread = 20 }) => {
   )
 }
 
-const City = ({ buildingCount = 50, spread = 30 }) => {
+const City = ({ buildingCount = 10, spread = 20 }) => {
     const buildings = useMemo(() => {
       const buildingsArray = [];
-      const gridSize = Math.ceil(Math.sqrt(buildingCount)); // Create a grid layout
-      const cornerSize = gridSize / 2; // Calculate the size of each corner
+      
+      for (let i = 0; i < buildingCount; i++) {
+        let positionX, positionZ;
   
-      for (let quadrant = 0; quadrant < 4; quadrant++) {
-        for (let x = 0; x < cornerSize; x++) {
-          for (let z = 0; z < cornerSize; z++) {
-            if (buildingsArray.length < buildingCount) {
-              let positionX, positionZ;
+        // Randomly select a corner position while avoiding the center
+        const corner = Math.floor(Math.random() * 4); // Randomly choose a corner
   
-              // Determine the quadrant and adjust positions accordingly
-              switch (quadrant) {
-                case 0: // Top-left
-                  positionX = -spread + x * 5;
-                  positionZ = spread - z * 5;
-                  break;
-                case 1: // Top-right
-                  positionX = spread - x * 5;
-                  positionZ = spread - z * 5;
-                  break;
-                case 2: // Bottom-left
-                  positionX = -spread + x * 5;
-                  positionZ = -spread + z * 5;
-                  break;
-                case 3: // Bottom-right
-                  positionX = spread - x * 5;
-                  positionZ = -spread + z * 5;
-                  break;
-                default:
-                  break;
-              }
-  
-              const height = randomInRange(1, 5); // Vary building height
-  
-              buildingsArray.push({
-                position: [positionX, height / 2, positionZ], // Adjust Y position for height
-                scale: [1, height, 1], // Scale according to height
-                color: new THREE.Color(randomInRange(0.3, 0.8), randomInRange(0.3, 0.8), randomInRange(0.3, 0.8)),
-              });
-            }
-          }
+        switch (corner) {
+          case 0: // Top-left corner
+            positionX = randomInRange(-spread, -spread / 2);
+            positionZ = randomInRange(spread / 2, spread);
+            break;
+          case 1: // Top-right corner
+            positionX = randomInRange(spread / 2, spread);
+            positionZ = randomInRange(spread / 2, spread);
+            break;
+          case 2: // Bottom-left corner
+            positionX = randomInRange(-spread, -spread / 2);
+            positionZ = randomInRange(-spread, -spread / 2);
+            break;
+          case 3: // Bottom-right corner
+            positionX = randomInRange(spread / 2, spread);
+            positionZ = randomInRange(-spread, -spread / 2);
+            break;
+          default:
+            break;
         }
+  
+        const height = randomInRange(8, 25); // Set height range for buildings
+        const width = randomInRange(1, 8); // Set width range for buildings
+  
+        buildingsArray.push({
+          position: [positionX, height / 2, positionZ], // Adjust Y position for height
+          scale: [width, height, width], // Scale according to width and height
+          color: new THREE.Color(randomInRange(0.3, 0.8), randomInRange(0.3, 0.8), randomInRange(0.3, 0.8)),
+        });
       }
+  
       return buildingsArray;
     }, [buildingCount, spread]);
   
@@ -103,6 +99,8 @@ const City = ({ buildingCount = 50, spread = 30 }) => {
       </group>
     );
   };
+  
+  
   
 
 
