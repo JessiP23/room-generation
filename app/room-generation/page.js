@@ -10,7 +10,7 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import { Crown, Sparkles } from 'lucide-react'
+import { Crown, Sparkles, DollarSign } from 'lucide-react'
 
 // room 
 // Room component
@@ -346,14 +346,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
   return <PointerLockControls ref={controlsRef} args={[camera, gl.domElement]} />;
 }
 
-function Roof({ width, depth, height, position }) {
-  return (
-    <mesh position={position}>
-      <boxGeometry args={[width, height, depth]} />
-      <meshStandardMaterial color="#8B4513" />
-    </mesh>
-  );
-}
+
 
 
 
