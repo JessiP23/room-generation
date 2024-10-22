@@ -296,7 +296,7 @@ const LandingPage = () => {
                 <span className="text-4xl font-bold text-gray-900">$0</span>
                 <span className="text-gray-600">/month</span>
               </div>
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-4 mb-8 text-gray-800">
                 <li className="flex items-center">
                   <Check className="w-5 h-5 text-green-500 mr-2" />
                   <span>Basic 3D model viewing</span>
