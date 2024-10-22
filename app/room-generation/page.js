@@ -8,7 +8,7 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import FlowerMenu from '../components/Menu'
 import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import { getFirestore, collection, addDoc, query, where, getDocs, limit } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 
 // room 
@@ -647,13 +647,24 @@ export default function CustomizableRoom() {
     setShowLoadModal(true);
   };
   const loadProject = async (projectId) => {
-    const projectDoc = await getDocs(query(collection(db, 'rooms'), where('id', '==', projectId)));
-    if (!projectDoc.empty) {
-      const projectData = projectDoc.docs[0].data();
-      setRooms(projectData.rooms);
-      setSelectedRoom(0);
-      setShowLoadModal(false);
-      setNotification('Project loaded successfully');
+    try {
+      const projectRef = doc(db, 'rooms', projectId);
+      const projectSnap = await getDoc(projectRef);
+      
+      if (projectSnap.exists()) {
+        const projectData = projectSnap.data();
+        setRooms(projectData.rooms || []);
+        setSelectedRoom(0);
+        setShowLoadModal(false);
+        setNotification('Project loaded successfully');
+        setTimeout(() => setNotification(''), 2000);
+      } else {
+        setNotification('Project not found');
+        setTimeout(() => setNotification(''), 2000);
+      }
+    } catch (error) {
+      console.error('Error loading project:', error);
+      setNotification('Error loading project');
       setTimeout(() => setNotification(''), 2000);
     }
   };
@@ -1071,7 +1082,7 @@ export default function CustomizableRoom() {
         </div>
       )}
       {showLoadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center text-gray-800">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg">
             <h2 className="text-2xl font-bold mb-4">Load Project</h2>
             <ul className="max-h-60 overflow-y-auto">
