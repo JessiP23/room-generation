@@ -1,18 +1,38 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Home, Building, Compass, Users, Menu } from 'lucide-react';
+import { Home, Building, Compass, Users, Menu, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { getAuth, signOut } from 'firebase/auth';
 
 const FlowerMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const auth = getAuth();
 
   const toggleMenu = () => setIsOpen(!isOpen);
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await signOut(auth);
+      router.push('/'); // Redirect to login page after logout
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const menuItems = [
     { icon: Home, label: 'Home', href: '/' },
     { icon: Building, label: 'Projects', href: '/room-generation/saved-rooms' },
-    { icon: Compass, label: 'Explore', href: '/explore' },
+    { 
+      icon: LogOut,
+      label: 'Logout',
+      href: '#',
+      onClick: handleLogout,
+      className: "bg-gradient-to-b from-red-400 to-orange-400 hover:from-red-500 hover:to-orange-500"
+    },
     { icon: Users, label: 'Team', href: '/team' },
   ];
 
@@ -22,7 +42,8 @@ const FlowerMenu = () => {
         {/* Main menu button */}
         <button
           onClick={toggleMenu}
-          className="absolute inset-0 bg-gradient-to-b from-purple-400 to-pink-300 rounded-full shadow-lg focus:outline-none transform transition-all duration-300 ease-in-out hover:scale-110 z-10"
+          className="absolute inset-0 bg-gradient-to-b from-purple-400 to-pink-300 rounded-full shadow-lg 
+                   focus:outline-none transform transition-all duration-300 ease-in-out hover:scale-110 z-10"
         >
           <Menu className="w-8 h-8 mx-auto text-white" />
         </button>
@@ -32,9 +53,11 @@ const FlowerMenu = () => {
           <Link
             key={index}
             href={item.href}
-            className={`group absolute w-12 h-12 rounded-full bg-gradient-to-b from-purple-300 to-pink-200 shadow-lg transform transition-all duration-500 ease-in-out ${
-              isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-            } hover:from-purple-400 hover:to-pink-300 flex items-center justify-center`}
+            onClick={item.onClick}
+            className={`group absolute w-12 h-12 rounded-full shadow-lg transform transition-all duration-500 
+                      ease-in-out ${isOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0'} 
+                      ${item.className || 'bg-gradient-to-b from-purple-300 to-pink-200 hover:from-purple-400 hover:to-pink-300'} 
+                      flex items-center justify-center`}
             style={{
               transform: isOpen
                 ? `translate(${Math.cos((Math.PI * 2 * index) / menuItems.length) * 80}px, ${
@@ -43,11 +66,13 @@ const FlowerMenu = () => {
                 : 'scale(0)',
             }}
           >
-            <item.icon className="w-6 h-6 text-white" />
+            <item.icon className={`w-6 h-6 text-white ${
+              item.label === 'Logout' ? 'group-hover:rotate-12 transition-transform duration-300' : ''
+            }`} />
             <span className="absolute w-auto p-2 min-w-max rounded-md shadow-md
-                             text-white bg-gray-900 text-xs font-bold
-                             transition-all duration-100 scale-0 origin-left
-                             group-hover:scale-100 -top-10 left-1/2 -translate-x-1/2">
+                           text-white bg-gray-900 text-xs font-bold
+                           transition-all duration-100 scale-0 origin-left
+                           group-hover:scale-100 -top-10 left-1/2 -translate-x-1/2">
               {item.label}
             </span>
           </Link>
@@ -65,7 +90,7 @@ const FlowerMenu = () => {
               top: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 2}s`,
             }}
-          ></div>
+          />
         ))}
       </div>
     </div>
