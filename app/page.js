@@ -310,7 +310,7 @@ const LandingPage = () => {
                   <span>Community support</span>
                 </li>
               </ul>
-              <a href='/room-generation' className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity duration-300">
+              <a href='/room-generation' className="block w-full text-center py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity duration-300">
                 Get Started
               </a>
             </div>
