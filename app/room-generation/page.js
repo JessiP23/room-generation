@@ -989,7 +989,7 @@ export default function CustomizableRoom() {
             <option value="snow">Snow</option>
           </select>
         </div>
-        <div className="flex items-center gap-4 mb-4">
+        {/* <div className="flex items-center gap-4 mb-4">
           <label htmlFor="price" className="text-gray-700">
             Price
           </label>
@@ -1008,7 +1008,7 @@ export default function CustomizableRoom() {
             <DollarSign className="mr-2" />
             List for Sale
           </button>
-        </div>
+        </div> */}
         <div className="flex gap-2 mb-4">
           <input
             type="number"
