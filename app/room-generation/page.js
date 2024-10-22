@@ -821,7 +821,7 @@ export default function CustomizableRoom() {
         Customizable Room
       </h1>
       
-      <div className="flex items-center gap-6 p-4 bg-gradient-to-r from-gray-900/50 to-slate-900/50 
+      <div className="flex items-center gap-6 p-4  
                       backdrop-blur-md rounded-xl shadow-2xl border border-white/10 
                       hover:shadow-purple-500/20 transition-all duration-300">
         <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-800/40 to-slate-900/40 
