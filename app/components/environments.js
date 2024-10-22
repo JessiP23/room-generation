@@ -66,7 +66,7 @@ const City = ({ buildingCount = 50, spread = 30 }) => {
 
 
 const Desert = ({ duneCount = 20, spread = 40 }) => {
-    // Generate main dunes
+    // Previous dunes generation code remains the same
     const dunes = useMemo(() => {
       return new Array(duneCount).fill(null).map(() => ({
         position: [randomInRange(-spread, spread), randomInRange(-2, 2), randomInRange(-spread, spread)],
@@ -75,7 +75,6 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
       }));
     }, [duneCount, spread]);
   
-    // Generate smaller dunes for detail
     const smallDunes = useMemo(() => {
       return new Array(duneCount * 2).fill(null).map(() => ({
         position: [randomInRange(-spread, spread), randomInRange(-1, 1), randomInRange(-spread, spread)],
@@ -84,7 +83,6 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
       }));
     }, [duneCount, spread]);
   
-    // Generate rocks for added detail
     const rocks = useMemo(() => {
       return new Array(duneCount / 2).fill(null).map(() => ({
         position: [randomInRange(-spread, spread), 0, randomInRange(-spread, spread)],
@@ -96,6 +94,39 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
         ],
       }));
     }, [duneCount, spread]);
+  
+    // Generate distant mountains
+    const mountains = useMemo(() => {
+      // Create multiple mountain ranges
+      const ranges = [];
+      const rangeCount = 3; // Number of mountain ranges
+      
+      for (let range = 0; range < rangeCount; range++) {
+        const mountainCount = 15; // Mountains per range
+        const rangeDistance = 150 + range * 50; // Each range is further back
+        const rangeHeight = 30 - range * 5; // Each range is shorter (for perspective)
+        
+        for (let i = 0; i < mountainCount; i++) {
+          const angle = (i / mountainCount) * Math.PI * 2;
+          const radius = rangeDistance + randomInRange(-10, 10);
+          
+          ranges.push({
+            position: [
+              Math.sin(angle) * radius,
+              randomInRange(-2, 2),
+              Math.cos(angle) * radius
+            ],
+            scale: [
+              randomInRange(15, 25),
+              randomInRange(rangeHeight - 5, rangeHeight + 5),
+              randomInRange(15, 25)
+            ],
+            rotation: [0, angle + Math.PI, 0],
+          });
+        }
+      }
+      return ranges;
+    }, []);
   
     return (
       <group>
@@ -113,6 +144,25 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
         <hemisphereLight 
           args={[new Color('#87CEEB'), new Color('#e6c587'), 0.5]}
         />
+  
+        {/* Distant Mountains */}
+        {mountains.map((mountain, i) => (
+          <mesh
+            key={`mountain-${i}`}
+            position={mountain.position}
+            scale={mountain.scale}
+            rotation={mountain.rotation}
+          >
+            <coneGeometry args={[1, 2, 4]} />
+            <meshStandardMaterial
+              color="#8b7355"
+              roughness={1}
+              metalness={0}
+              // Fog affects mountains more for distance effect
+              fog={true}
+            />
+          </mesh>
+        ))}
   
         {/* Main large dunes */}
         {dunes.map((dune, i) => (
@@ -197,8 +247,8 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
           />
         </mesh>
   
-        {/* Add fog for depth */}
-        <fog attach="fog" args={['#e6c587', 30, 100]} />
+        {/* Enhanced fog for better distance effect */}
+        <fog attach="fog" args={['#e6c587', 50, 250]} />
       </group>
     );
   };
