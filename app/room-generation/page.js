@@ -11,6 +11,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { Crown, Sparkles, DollarSign } from 'lucide-react'
+import { EnvironmentScene } from '../components/environments'
 
 // room 
 // Room component
@@ -388,11 +389,46 @@ export default function CustomizableRoom() {
   const [showLoadModal, setShowLoadModal] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
+  const [environment, setEnvironment] = useState('forest')
+  const [price, setPrice] = useState(0)
+
   const fetchSubscription = async (userId) => {
     const userDoc = await getDocs(query(collection(db, 'users'), where('userId', '==', userId)))
     if (!userDoc.empty) {
       setSubscription(userDoc.docs[0].data().subscription || 'free')
     }
+  }
+
+  const handleEnvironmentChange = (e) => {
+    setEnvironment(e.target.value)
+  }
+
+  const handlePriceChange = (e) => {
+    setPrice(Number(e.target.value))
+  }
+
+  const sellRoom = async () => {
+    if (!user) {
+      setNotification('Please sign in to sell rooms')
+      setTimeout(() => setNotification(''), 2000)
+      return
+    }
+
+    try {
+      const userRef = doc(db, 'users', user.uid)
+      const roomsCollectionRef = collection(userRef, 'rooms')
+      await addDoc(roomsCollectionRef, {
+        name: `Room for Sale - $${price}`,
+        rooms: rooms,
+        price: price,
+        createdAt: new Date(),
+        status: 'for sale'
+      })
+      setNotification('Room listed for sale successfully')
+    } catch (error) {
+      setNotification('Error listing room for sale: ' + error.message)
+    }
+    setTimeout(() => setNotification(''), 2000)
   }
 
   const createOrUpdateUserDocument = async (userId) => {
@@ -918,6 +954,42 @@ export default function CustomizableRoom() {
             ></div>
           </label>
         </div>
+        <div className="flex items-center gap-4 mb-4">
+          <label htmlFor="environment" className="text-gray-700">
+            Environment
+          </label>
+          <select
+            id="environment"
+            value={environment}
+            onChange={handleEnvironmentChange}
+            className="p-2 border rounded text-gray-900"
+          >
+            <option value="forest">Forest</option>
+            <option value="city">City</option>
+            <option value="desert">Desert</option>
+            <option value="snow">Snow</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-4 mb-4">
+          <label htmlFor="price" className="text-gray-700">
+            Price
+          </label>
+          <input
+            type="number"
+            id="price"
+            value={price}
+            onChange={handlePriceChange}
+            className="w-32 p-2 border rounded text-gray-900"
+            placeholder="Enter price"
+          />
+          <button
+            onClick={sellRoom}
+            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
+          >
+            <DollarSign className="mr-2" />
+            List for Sale
+          </button>
+        </div>
         <div className="flex gap-2 mb-4">
           <input
             type="number"
@@ -1078,6 +1150,7 @@ export default function CustomizableRoom() {
               <Environment preset="sunset" />
             </>
           )}
+          <EnvironmentScene environment={environment} />
           {!isTopView && rooms.map((room, index) => (
             <group key={room.id} position={room.position}>
               <Room
