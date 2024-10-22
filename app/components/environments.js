@@ -39,30 +39,71 @@ const Forest = ({ count = 100, spread = 20 }) => {
 }
 
 const City = ({ buildingCount = 50, spread = 30 }) => {
-  const buildings = useMemo(() => {
-    return new Array(buildingCount).fill(null).map(() => ({
-        position: [randomInRange(-spread, spread), 0, randomInRange(-spread, spread)],
-        scale: randomInRange(0.5, 1.5),
-      color: new THREE.Color(randomInRange(0.3, 0.8), randomInRange(0.3, 0.8), randomInRange(0.3, 0.8)),
-    }))
-  }, [buildingCount, spread])
-
-  return (
-    <group>
-      <Instances>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial />
-        {buildings.map((building, i) => (
-          <Instance key={i} position={building.position} scale={building.scale} color={building.color} />
-        ))}
-      </Instances>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#555555" />
-      </mesh>
-    </group>
-  )
-}
+    const buildings = useMemo(() => {
+      const buildingsArray = [];
+      const gridSize = Math.ceil(Math.sqrt(buildingCount)); // Create a grid layout
+      const cornerSize = gridSize / 2; // Calculate the size of each corner
+  
+      for (let quadrant = 0; quadrant < 4; quadrant++) {
+        for (let x = 0; x < cornerSize; x++) {
+          for (let z = 0; z < cornerSize; z++) {
+            if (buildingsArray.length < buildingCount) {
+              let positionX, positionZ;
+  
+              // Determine the quadrant and adjust positions accordingly
+              switch (quadrant) {
+                case 0: // Top-left
+                  positionX = -spread + x * 5;
+                  positionZ = spread - z * 5;
+                  break;
+                case 1: // Top-right
+                  positionX = spread - x * 5;
+                  positionZ = spread - z * 5;
+                  break;
+                case 2: // Bottom-left
+                  positionX = -spread + x * 5;
+                  positionZ = -spread + z * 5;
+                  break;
+                case 3: // Bottom-right
+                  positionX = spread - x * 5;
+                  positionZ = -spread + z * 5;
+                  break;
+                default:
+                  break;
+              }
+  
+              const height = randomInRange(1, 5); // Vary building height
+  
+              buildingsArray.push({
+                position: [positionX, height / 2, positionZ], // Adjust Y position for height
+                scale: [1, height, 1], // Scale according to height
+                color: new THREE.Color(randomInRange(0.3, 0.8), randomInRange(0.3, 0.8), randomInRange(0.3, 0.8)),
+              });
+            }
+          }
+        }
+      }
+      return buildingsArray;
+    }, [buildingCount, spread]);
+  
+    return (
+      <group>
+        <Instances>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial />
+          {buildings.map((building, i) => (
+            <Instance key={i} position={building.position} scale={building.scale} color={building.color} />
+          ))}
+        </Instances>
+        {/* Create streets */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+          <planeGeometry args={[100, 100]} />
+          <meshStandardMaterial color="#555555" />
+        </mesh>
+      </group>
+    );
+  };
+  
 
 
 const Desert = ({ duneCount = 20, spread = 40 }) => {
