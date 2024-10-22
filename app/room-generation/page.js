@@ -10,6 +10,7 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
+import { Sparkles } from 'lucide-react'
 
 // room 
 // Room component
@@ -817,14 +818,35 @@ export default function CustomizableRoom() {
       <div className="p-4 bg-gradient-to-b from-purple-400 to-pink-300">
       <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Customizable Room</h1>
-          <div>
-            <span className="mr-4">Status: {subscription === 'premium' ? 'Premium' : 'Free'}</span>
-            {subscription === 'free' && (
-              <button onClick={handleUpgrade} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
-                Upgrade to Premium
-              </button>
-            )}
-          </div>
+          <div className="flex items-center gap-6 p-4 bg-gradient-to-r from-slate-800 to-slate-900 rounded-lg shadow-xl">
+      <div className="flex items-center gap-2">
+        <div className={`h-2 w-2 rounded-full ${
+          subscription === 'premium' ? 'bg-yellow-400 animate-pulse' : 'bg-gray-400'
+        }`} />
+        <span className={`font-medium ${
+          subscription === 'premium' ? 'text-yellow-400' : 'text-gray-300'
+        }`}>
+          Status: {subscription === 'premium' ? 'Premium' : 'Free'}
+        </span>
+      </div>
+      
+      {subscription === 'free' && (
+        <button
+          onClick={handleUpgrade}
+          className="group relative flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 
+                   hover:from-yellow-500 hover:to-yellow-600 text-white font-semibold py-2 px-6 rounded-full
+                   transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-yellow-500/25
+                   active:scale-95"
+        >
+          <span className="relative z-10">Upgrade to Premium</span>
+          <Sparkles 
+            className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12"
+          />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 
+                        blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
+        </button>
+      )}
+    </div>
         </div>
         <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
           <input
