@@ -10,7 +10,7 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import { Sparkles } from 'lucide-react'
+import { Crown, Sparkles } from 'lucide-react'
 
 // room 
 // Room component
@@ -817,37 +817,76 @@ export default function CustomizableRoom() {
       <FlowerMenu />
       <div className="p-4 bg-gradient-to-b from-purple-400 to-pink-300">
       <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Customizable Room</h1>
-          <div className="flex items-center gap-6 p-4 bg-gradient-to-r from-slate-800 to-slate-900 rounded-lg shadow-xl">
-      <div className="flex items-center gap-2">
-        <div className={`h-2 w-2 rounded-full ${
-          subscription === 'premium' ? 'bg-yellow-400 animate-pulse' : 'bg-gray-400'
-        }`} />
-        <span className={`font-medium ${
-          subscription === 'premium' ? 'text-yellow-400' : 'text-gray-300'
-        }`}>
-          Status: {subscription === 'premium' ? 'Premium' : 'Free'}
-        </span>
-      </div>
+      <h1 className="text-2xl font-bold text-white drop-shadow-lg">
+        Customizable Room
+      </h1>
       
-      {subscription === 'free' && (
-        <button
-          onClick={handleUpgrade}
-          className="group relative flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 
-                   hover:from-yellow-500 hover:to-yellow-600 text-white font-semibold py-2 px-6 rounded-full
-                   transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-yellow-500/25
-                   active:scale-95"
-        >
-          <span className="relative z-10">Upgrade to Premium</span>
-          <Sparkles 
-            className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12"
-          />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 
-                        blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
-        </button>
-      )}
-    </div>
+      <div className="flex items-center gap-6 p-4 bg-gradient-to-r from-gray-900/50 to-slate-900/50 
+                      backdrop-blur-md rounded-xl shadow-2xl border border-white/10 
+                      hover:shadow-purple-500/20 transition-all duration-300">
+        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-800/40 to-slate-900/40 
+                        backdrop-blur-md rounded-full shadow-lg border border-white/10 
+                        hover:border-white/20 transition-all duration-300">
+          <div className="flex items-center gap-3">
+            {subscription === 'premium' ? (
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 
+                              rounded-full blur opacity-75 animate-pulse" />
+                <Crown 
+                  className="relative w-5 h-5 text-yellow-300 animate-bounce" 
+                  style={{ animationDuration: '2s' }}
+                />
+              </div>
+            ) : (
+              <div className="relative group">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-r from-slate-700 to-gray-800 
+                              flex items-center justify-center shadow-inner">
+                  <div className="w-2 h-2 rounded-full bg-gray-400/50 group-hover:bg-gray-300/50 
+                                transition-colors duration-300" />
+                </div>
+              </div>
+            )}
+            
+            <div className="flex flex-col">
+              <span className="text-xs text-white/40">Status</span>
+              <span className={`font-semibold ${
+                subscription === 'premium'
+                  ? 'bg-gradient-to-r from-yellow-300 to-amber-400 text-transparent bg-clip-text'
+                  : 'text-gray-300 hover:text-gray-200 transition-colors duration-300'
+              }`}>
+                {subscription === 'premium' ? (
+                  <div className="flex items-center gap-1">
+                    Premium
+                    <Sparkles className="w-4 h-4 text-yellow-300 animate-spin" 
+                             style={{ animationDuration: '3s' }} />
+                  </div>
+                ) : (
+                  'Free'
+                )}
+              </span>
+            </div>
+          </div>
         </div>
+        
+        {subscription === 'free' && (
+          <button
+            onClick={handleUpgrade}
+            className="group relative flex items-center gap-2 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 
+                      text-white font-semibold py-2.5 px-6 rounded-full transition-all duration-300 
+                      hover:scale-105 hover:shadow-lg hover:shadow-yellow-500/25 active:scale-95
+                      hover:from-yellow-300 hover:via-amber-400 hover:to-yellow-300"
+          >
+            <span className="relative z-10 text-gray-900 font-bold">Upgrade to Premium</span>
+            <Sparkles 
+              className="w-4 h-4 text-gray-900 transition-all duration-300 
+                         group-hover:rotate-12 group-hover:scale-110" 
+            />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 
+                           blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300" />
+          </button>
+        )}
+      </div>
+    </div>
         <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
           <input
             type="text"
