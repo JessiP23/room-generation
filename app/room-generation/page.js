@@ -391,6 +391,9 @@ export default function CustomizableRoom() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [projectName, setProjectName] = useState('');
 
+  const [savedProjects, setSavedProjects] = useState([]);
+  const [showLoadModal, setShowLoadModal] = useState(false);
+
   const fetchSubscription = async (userId) => {
     const userDoc = await getDocs(query(collection(db, 'users'), where('userId', '==', userId)));
     if (!userDoc.empty) {
@@ -404,6 +407,7 @@ export default function CustomizableRoom() {
       setLoading(false);
       if (currentUser) {
         fetchSubscription(currentUser.uid);
+        fetchSavedProjects(currentUser.uid);
       } else {
         router.push('/sign-in');
       }
@@ -411,6 +415,12 @@ export default function CustomizableRoom() {
 
     return () => unsubscribe();
   }, [router]);
+
+  const fetchSavedProjects = async (userId) => {
+    const q = query(collection(db, 'rooms'), where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    setSavedProjects(querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })));
+  };
 
   const enhanceRealisticMode = () => {
     if (realisticMode) {
@@ -632,14 +642,21 @@ export default function CustomizableRoom() {
     }
     setTimeout(() => setNotification(''), 2000);
   };
+
   const handleLoad = () => {
-    const savedRooms = localStorage.getItem('savedRooms')
-    if (savedRooms) {
-      setRooms(JSON.parse(savedRooms))
-      setNotification('Rooms loaded successfully')
-      setTimeout(() => setNotification(''), 2000)
+    setShowLoadModal(true);
+  };
+  const loadProject = async (projectId) => {
+    const projectDoc = await getDocs(query(collection(db, 'rooms'), where('id', '==', projectId)));
+    if (!projectDoc.empty) {
+      const projectData = projectDoc.docs[0].data();
+      setRooms(projectData.rooms);
+      setSelectedRoom(0);
+      setShowLoadModal(false);
+      setNotification('Project loaded successfully');
+      setTimeout(() => setNotification(''), 2000);
     }
-  }
+  };
 
   const addRoom = () => {
     const lastRoom = rooms[rooms.length - 1]
@@ -1050,6 +1067,31 @@ export default function CustomizableRoom() {
                 Save
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showLoadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center text-gray-800">
+          <div className="bg-white p-6 rounded-lg">
+            <h2 className="text-2xl font-bold mb-4">Load Project</h2>
+            <ul className="max-h-60 overflow-y-auto">
+              {savedProjects.map((project) => (
+                <li key={project.id} className="mb-2">
+                  <button
+                    onClick={() => loadProject(project.id)}
+                    className="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded"
+                  >
+                    {project.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setShowLoadModal(false)}
+              className="mt-4 px-4 py-2 bg-gray-300 rounded"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
