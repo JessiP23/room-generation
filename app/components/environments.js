@@ -66,67 +66,56 @@ const City = ({ buildingCount = 50, spread = 30 }) => {
 
 
 const Desert = ({ duneCount = 20, spread = 40 }) => {
-    // Previous dunes generation code remains the same
-    const dunes = useMemo(() => {
-      return new Array(duneCount).fill(null).map(() => ({
-        position: [randomInRange(-spread, spread), randomInRange(-2, 2), randomInRange(-spread, spread)],
-        scale: [randomInRange(5, 15), randomInRange(1, 5), randomInRange(5, 15)],
-        rotation: [0, randomInRange(0, Math.PI * 2), 0],
-      }));
-    }, [duneCount, spread]);
-  
-    const smallDunes = useMemo(() => {
-      return new Array(duneCount * 2).fill(null).map(() => ({
-        position: [randomInRange(-spread, spread), randomInRange(-1, 1), randomInRange(-spread, spread)],
-        scale: [randomInRange(2, 4), randomInRange(0.5, 2), randomInRange(2, 4)],
-        rotation: [0, randomInRange(0, Math.PI * 2), 0],
-      }));
-    }, [duneCount, spread]);
-  
-    const rocks = useMemo(() => {
-      return new Array(duneCount / 2).fill(null).map(() => ({
-        position: [randomInRange(-spread, spread), 0, randomInRange(-spread, spread)],
-        scale: [randomInRange(0.2, 1), randomInRange(0.2, 1), randomInRange(0.2, 1)],
-        rotation: [
-          randomInRange(0, Math.PI),
-          randomInRange(0, Math.PI),
-          randomInRange(0, Math.PI)
-        ],
-      }));
-    }, [duneCount, spread]);
-  
-    // Generate distant mountains
+    // Generate mountains for the corners
     const mountains = useMemo(() => {
-      // Create multiple mountain ranges
-      const ranges = [];
-      const rangeCount = 3; // Number of mountain ranges
-      
-      for (let range = 0; range < rangeCount; range++) {
-        const mountainCount = 15; // Mountains per range
-        const rangeDistance = 150 + range * 50; // Each range is further back
-        const rangeHeight = 30 - range * 5; // Each range is shorter (for perspective)
+      const cornerMountains = [];
+      const corners = [
+        [-spread * 2, -spread * 2], // Back left
+        [spread * 2, -spread * 2],  // Back right
+        [-spread * 2, spread * 2],  // Front left
+        [spread * 2, spread * 2]    // Front right
+      ];
+  
+      corners.forEach((corner, cornerIndex) => {
+        // Generate a cluster of mountains for each corner
+        const mountainCount = 8; // Mountains per corner
         
         for (let i = 0; i < mountainCount; i++) {
-          const angle = (i / mountainCount) * Math.PI * 2;
-          const radius = rangeDistance + randomInRange(-10, 10);
+          // Create variation in mountain positions around the corner
+          const offsetX = randomInRange(-15, 15);
+          const offsetZ = randomInRange(-15, 15);
+          const height = randomInRange(20, 35);
+          const baseWidth = randomInRange(8, 15);
           
-          ranges.push({
-            position: [
-              Math.sin(angle) * radius,
-              randomInRange(-2, 2),
-              Math.cos(angle) * radius
-            ],
-            scale: [
-              randomInRange(15, 25),
-              randomInRange(rangeHeight - 5, rangeHeight + 5),
-              randomInRange(15, 25)
-            ],
-            rotation: [0, angle + Math.PI, 0],
-          });
+          // Create multiple peaks per mountain for more natural look
+          const peakCount = Math.floor(randomInRange(2, 4));
+          for (let peak = 0; peak < peakCount; peak++) {
+            const peakOffset = {
+              x: randomInRange(-3, 3),
+              z: randomInRange(-3, 3),
+              height: randomInRange(0.7, 1) * height
+            };
+  
+            cornerMountains.push({
+              position: [
+                corner[0] + offsetX + peakOffset.x,
+                0,
+                corner[1] + offsetZ + peakOffset.z
+              ],
+              scale: [
+                baseWidth * randomInRange(0.8, 1.2),
+                peakOffset.height,
+                baseWidth * randomInRange(0.8, 1.2)
+              ],
+              rotation: [0, randomInRange(0, Math.PI * 2), 0],
+              color: `rgb(${139 + randomInRange(-20, 20)}, ${115 + randomInRange(-20, 20)}, ${85 + randomInRange(-20, 20)})`
+            });
+          }
         }
-      }
-      return ranges;
-    }, []);
+      });
+      
+      return cornerMountains;
+    }, [spread]);
   
     return (
       <group>
@@ -145,7 +134,7 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
           args={[new Color('#87CEEB'), new Color('#e6c587'), 0.5]}
         />
   
-        {/* Distant Mountains */}
+        {/* Corner Mountains with varied shapes */}
         {mountains.map((mountain, i) => (
           <mesh
             key={`mountain-${i}`}
@@ -153,71 +142,21 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
             scale={mountain.scale}
             rotation={mountain.rotation}
           >
-            <coneGeometry args={[1, 2, 4]} />
+            {/* Use different geometries for variety */}
+            {i % 3 === 0 ? (
+              // Jagged peak
+              <cylinderGeometry args={[0.7, 1, 2, 4]} />
+            ) : i % 3 === 1 ? (
+              // Rounded peak
+              <coneGeometry args={[1, 2, 6]} />
+            ) : (
+              // Sharp peak
+              <coneGeometry args={[1, 2, 4]} />
+            )}
             <meshStandardMaterial
-              color="#8b7355"
+              color={mountain.color}
               roughness={1}
               metalness={0}
-              // Fog affects mountains more for distance effect
-              fog={true}
-            />
-          </mesh>
-        ))}
-  
-        {/* Main large dunes */}
-        {dunes.map((dune, i) => (
-          <mesh 
-            key={`dune-${i}`}
-            position={dune.position}
-            scale={dune.scale}
-            rotation={dune.rotation}
-            castShadow
-            receiveShadow
-          >
-            <sphereGeometry args={[1, 32, 32, 0, Math.PI]} />
-            <meshStandardMaterial 
-              color="#e6c587"
-              roughness={0.9}
-              metalness={0.1}
-              envMapIntensity={0.5}
-            />
-          </mesh>
-        ))}
-  
-        {/* Smaller detail dunes */}
-        {smallDunes.map((dune, i) => (
-          <mesh
-            key={`small-dune-${i}`}
-            position={dune.position}
-            scale={dune.scale}
-            rotation={dune.rotation}
-            castShadow
-            receiveShadow
-          >
-            <sphereGeometry args={[1, 16, 16, 0, Math.PI]} />
-            <meshStandardMaterial
-              color="#dbb976"
-              roughness={0.8}
-              metalness={0.1}
-            />
-          </mesh>
-        ))}
-  
-        {/* Scattered rocks */}
-        {rocks.map((rock, i) => (
-          <mesh
-            key={`rock-${i}`}
-            position={rock.position}
-            scale={rock.scale}
-            rotation={rock.rotation}
-            castShadow
-            receiveShadow
-          >
-            <dodecahedronGeometry args={[1]} />
-            <meshStandardMaterial
-              color="#b3a17d"
-              roughness={0.9}
-              metalness={0.2}
             />
           </mesh>
         ))}
@@ -228,30 +167,19 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
           position={[0, -0.01, 0]}
           receiveShadow
         >
-          <planeGeometry args={[100, 100, 50, 50]} />
+          <planeGeometry args={[spread * 4, spread * 4]} />
           <meshStandardMaterial
             color="#e6c587"
             roughness={1}
             metalness={0}
-            wireframe={false}
-            onBeforeCompile={(shader) => {
-              shader.vertexShader = shader.vertexShader.replace(
-                '#include <begin_vertex>',
-                `
-                  vec3 transformed = vec3(position);
-                  float elevation = sin(position.x * 0.05) * cos(position.z * 0.05) * 0.5;
-                  transformed.y += elevation;
-                  `
-              );
-            }}
           />
         </mesh>
   
         {/* Enhanced fog for better distance effect */}
-        <fog attach="fog" args={['#e6c587', 50, 250]} />
+        <fog attach="fog" args={['#e6c587', 60, 300]} />
       </group>
     );
-  };
+};
 
 const Snow = ({ particleCount = 5000, spread = 50 }) => {
   const snowflakes = useMemo(() => {
