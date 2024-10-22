@@ -1,7 +1,7 @@
 'use client'
 
 import React, {useState, useEffect, useRef} from 'react';
-import { Book, Box, Camera, ChevronDown, ChevronRight, Cloud, Code, Coffee, Compass, Flower, Layers, Layout, Moon, Search, Share, Sun, User, X, Zap } from 'lucide-react';
+import { Book, Box, Camera, Check, ChevronDown, ChevronRight, Cloud, Code, Coffee, Compass, Crown, Flower, Layers, Layout, Moon, Search, Share, Star, Sun, User, X, Zap } from 'lucide-react';
 
 // interactive
 
@@ -275,6 +275,92 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+        {/* membership */}
+        <section className="py-20 bg-gradient-to-b from-white to-indigo-50 overflow-hidden">
+      <div className="container mx-auto px-4">
+        <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 animate-pulse">
+          Choose Your Membership Plan
+        </h2>
+        
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {/* Free Tier */}
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative p-8 bg-white rounded-2xl shadow-xl hover:transform hover:-translate-y-2 transition-transform duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Free</h3>
+                <Star className="w-8 h-8 text-blue-500" />
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-gray-900">$0</span>
+                <span className="text-gray-600">/month</span>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center">
+                  <Check className="w-5 h-5 text-green-500 mr-2" />
+                  <span>Basic 3D model viewing</span>
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-5 h-5 text-green-500 mr-2" />
+                  <span>Limited cloud storage</span>
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-5 h-5 text-green-500 mr-2" />
+                  <span>Community support</span>
+                </li>
+              </ul>
+              <button className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity duration-300">
+                Get Started
+              </button>
+            </div>
+          </div>
+
+          {/* Premium Tier */}
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative p-8 bg-white rounded-2xl shadow-xl hover:transform hover:-translate-y-2 transition-transform duration-300">
+              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-1 rounded-full text-sm font-semibold animate-bounce">
+                Popular
+              </div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Premium</h3>
+                <Crown className="w-8 h-8 text-purple-500" />
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-gray-900">$29</span>
+                <span className="text-gray-600">/month</span>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center">
+                  <Check className="w-5 h-5 text-green-500 mr-2" />
+                  <span>Advanced 3D modeling tools</span>
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-5 h-5 text-green-500 mr-2" />
+                  <span>Unlimited cloud storage</span>
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-5 h-5 text-green-500 mr-2" />
+                  <span>Real-time collaboration</span>
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-5 h-5 text-green-500 mr-2" />
+                  <span>24/7 Priority support</span>
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-5 h-5 text-green-500 mr-2" />
+                  <span>Custom exports</span>
+                </li>
+              </ul>
+              <button className="w-full py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity duration-300">
+                Upgrade Now
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
       {/* Another 3D Room Section */}
       <section className="py-20 bg-gradient-to-b from-indigo-50 to-purple-100 overflow-hidden">
