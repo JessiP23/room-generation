@@ -533,6 +533,9 @@ export default function CustomizableRoom() {
     '/brick_texture.jpg',
     '/wood_texture.jpg',
     '/stone_texture.jpg',
+    '/plaster.jpg',
+    '/plaster1.jpg',
+    '/plaster2.jpg',
   ]
 
   const doorTextures = [
