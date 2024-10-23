@@ -147,6 +147,7 @@ const LandingPage = () => {
         {/* Compact overlay menu for medium and small screens */}
         {isOpen && (
           <div className="lg:hidden absolute top-full left-0 right-0 bg-purple-900 bg-opacity-95 shadow-lg z-50 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            {/* get started data pipeline */}
             <div className="p-4 space-y-4">
               <a href="/room-generation" className="block text-white hover:text-indigo-300 transition-colors duration-200">Get started</a>
               <a href="/contact-us" className="block text-white hover:text-indigo-300 transition-colors duration-200">Contact us</a>

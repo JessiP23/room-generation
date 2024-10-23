@@ -8,6 +8,7 @@ const randomInRange = (min, max) => Math.random() * (max - min) + min
 
 const Forest = ({ count = 100, spread = 20 }) => {
   const trees = useMemo(() => {
+    // array pipeline for filling the trees position
     return new Array(count).fill(null).map(() => ({
       position: [randomInRange(-spread, spread), 0, randomInRange(-spread, spread)],
       scale: randomInRange(0.5, 1.5),
