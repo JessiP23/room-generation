@@ -12,11 +12,12 @@ import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, ge
 import { useRouter } from 'next/navigation'
 import { Crown, Sparkles, DollarSign } from 'lucide-react'
 import { EnvironmentScene } from '../components/environments'
+import { CSG } from 'three-csg-ts'
 
 // room 
 // Room component
 
-function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness }) {
+function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls }) {
   const { width, height, depth } = structure
 
   const sides = [
@@ -34,30 +35,32 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
   return (
     <group>
       {sides.map((side, index) => (
-        <group key={index}>
-          <mesh 
-            position={side.pos} 
-            rotation={side.rot} 
-            scale={side.scale}
-            onClick={(e) => {
-              e.stopPropagation()
-              onWallClick(roomIndex, index)
-            }}
-            castShadow
-            receiveShadow
-          >
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial 
-              color={wallColors[index]} 
-              side={THREE.DoubleSide}
-              emissive={selectedRoom === roomIndex && selectedWall === index ? new THREE.Color(0x666666) : undefined}
-              roughness={realisticMode ? 0.8 : 0.5}
-              metalness={realisticMode ? 0.2 : 0}
-              map={loadedTextures[index]}
-            />
-          </mesh>
+        <group key={index} position={side.pos} rotation={side.rot}>
+          {modifiedWalls && modifiedWalls[index] ? (
+            <primitive object={modifiedWalls[index]} />
+          ) : (
+            <mesh 
+              scale={side.scale}
+              onClick={(e) => {
+                e.stopPropagation()
+                onWallClick(roomIndex, index)
+              }}
+              castShadow
+              receiveShadow
+            >
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial 
+                color={wallColors[index]} 
+                side={THREE.DoubleSide}
+                emissive={selectedRoom === roomIndex && selectedWall === index ? new THREE.Color(0x666666) : undefined}
+                roughness={realisticMode ? 0.8 : 0.5}
+                metalness={realisticMode ? 0.2 : 0}
+                map={loadedTextures[index]}
+              />
+            </mesh>
+          )}
           {selectedRoom === roomIndex && selectedWall === index && (
-            <Html position={side.pos}>
+            <Html>
               <div className="bg-black text-white px-2 py-1 rounded text-sm">
                 {`${side.size[0].toFixed(2)}m x ${side.size[1].toFixed(2)}m`}
               </div>
@@ -388,6 +391,7 @@ export default function CustomizableRoom() {
       features: [],
       position: [0, 0, 0],
       wallThickness: 0.2, // Add default wall thickness
+      modifiedWalls: {}
     }
   ])
   const [selectedRoom, setSelectedRoom] = useState(0)
@@ -418,6 +422,112 @@ export default function CustomizableRoom() {
   const [environment, setEnvironment] = useState('forest')
   const [price, setPrice] = useState(0)
 
+  const [selectedHallway, setSelectedHallway] = useState(null)
+  const [hallwayDimensions, setHallwayDimensions] = useState({ width: 2, height: 2.5 })
+  const [modifiedWalls, setModifiedWalls] = useState({})
+
+
+  const addHallway = () => {
+    if (selectedWall === null) return
+    const newRooms = [...rooms]
+    const newHallway = {
+      type: 'hallway',
+      position: [0, 0, 0.05],
+      wallIndex: selectedWall,
+      dimensions: { ...hallwayDimensions }
+    }
+    newRooms[selectedRoom].features.push(newHallway)
+    setRooms(newRooms)
+    setSelectedHallway(newRooms[selectedRoom].features.length - 1)
+  }
+
+  const handleHallwayMove = (hallwayIndex, newPosition) => {
+    const newRooms = [...rooms]
+    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[hallwayIndex]) {
+      newRooms[selectedRoom].features[hallwayIndex].position = newPosition
+      setRooms(newRooms)
+    }
+  }
+
+  const handleHallwayResize = (dimension, value) => {
+    setHallwayDimensions(prev => ({ ...prev, [dimension]: Number(value) }))
+    if (selectedHallway !== null) {
+      const newRooms = [...rooms]
+      if (newRooms[selectedRoom] && newRooms[selectedRoom].features[selectedHallway]) {
+        newRooms[selectedRoom].features[selectedHallway].dimensions = {
+          ...newRooms[selectedRoom].features[selectedHallway].dimensions,
+          [dimension]: Number(value)
+        }
+        setRooms(newRooms)
+      }
+    }
+  }
+
+  const confirmHallway = () => {
+    if (selectedHallway !== null) {
+      const newRooms = [...rooms]
+      const hallway = newRooms[selectedRoom].features[selectedHallway]
+      const wallIndex = hallway.wallIndex
+      const wallDimensions = [
+        newRooms[selectedRoom].structure.width,
+        newRooms[selectedRoom].structure.height,
+        newRooms[selectedRoom].structure.depth
+      ]
+
+      // Calculate the area to remove from the wall
+      const removeWidth = hallway.dimensions.width
+      const removeHeight = hallway.dimensions.height
+      const removeDepth = wallThickness
+
+      // Create a new mesh to represent the removed area
+      const removeMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(removeWidth, removeHeight, removeDepth),
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
+      )
+
+      // Position the remove mesh relative to the wall
+      removeMesh.position.set(
+        hallway.position[0],
+        hallway.position[1],
+        0
+      )
+
+      // Create the wall geometry
+      const wallGeometry = new THREE.BoxGeometry(
+        wallIndex % 2 === 0 ? wallDimensions[0] : wallThickness,
+        wallDimensions[1],
+        wallIndex % 2 === 0 ? wallThickness : wallDimensions[2]
+      )
+      const wallMesh = new THREE.Mesh(wallGeometry)
+
+      // Perform CSG operation to remove the hallway area from the wall
+      const wallCSG = CSG.fromMesh(wallMesh)
+      const removeCSG = CSG.fromMesh(removeMesh)
+      const resultCSG = wallCSG.subtract(removeCSG)
+
+      // Create a new mesh from the result
+      const resultMesh = CSG.toMesh(resultCSG, wallMesh.matrix)
+      resultMesh.material = new THREE.MeshStandardMaterial({
+        color: newRooms[selectedRoom].wallColors[wallIndex],
+        side: THREE.DoubleSide,
+        roughness: realisticMode ? 0.8 : 0.5,
+        metalness: realisticMode ? 0.2 : 0,
+        map: new THREE.TextureLoader().load(newRooms[selectedRoom].wallTextures[wallIndex])
+      })
+
+      // Update the modified walls
+      newRooms[selectedRoom].modifiedWalls = {
+        ...newRooms[selectedRoom].modifiedWalls,
+        [wallIndex]: resultMesh
+      }
+
+      // Remove the hallway feature
+      newRooms[selectedRoom].features = newRooms[selectedRoom].features.filter((_, index) => index !== selectedHallway)
+
+      setRooms(newRooms)
+      setSelectedHallway(null)
+    }
+  }
 
   const fetchSubscription = async (userId) => {
     const userDoc = await getDocs(query(collection(db, 'users'), where('userId', '==', userId)))
@@ -1148,6 +1258,7 @@ export default function CustomizableRoom() {
           <div className="flex gap-2 mt-6">
             <button onClick={() => addFeature('door')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Door</button>
             <button onClick={() => addFeature('window')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Window</button>
+            <button onClick={addHallway} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Hallway</button>
             <input
               type="color"
               value={rooms[selectedRoom].wallColors[selectedWall]}
@@ -1174,6 +1285,27 @@ export default function CustomizableRoom() {
             </select>
           </div>
         )}
+        {selectedHallway !== null && (
+        <div className="flex gap-2 mt-6">
+          <input
+            type="number"
+            value={hallwayDimensions.width}
+            onChange={(e) => handleHallwayResize('width', e.target.value)}
+            className="w-20 p-2 border rounded text-gray-900"
+            placeholder="Width"
+            step="0.1"
+          />
+          <input
+            type="number"
+            value={hallwayDimensions.height}
+            onChange={(e) => handleHallwayResize('height', e.target.value)}
+            className="w-20 p-2 border rounded text-gray-900"
+            placeholder="Height"
+            step="0.1"
+          />
+          <button onClick={confirmHallway} className="bg-green-500 hover:bg-green-400 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Confirm Hallway</button>
+        </div>
+      )}
       </div>
       <div className="flex-grow relative min-h-screen p-4">
         <Canvas shadows>
@@ -1209,7 +1341,8 @@ export default function CustomizableRoom() {
                 realisticMode={realisticMode}
                 roomIndex={index}
                 selectedRoom={selectedRoom}
-                wallThickness={wallThickness} // Pass wall thickness to Room component
+                wallThickness={wallThickness}
+                modifiedWalls={room.modifiedWalls}
               />
             </group>
           ))}
