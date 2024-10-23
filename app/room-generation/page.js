@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Text, PerspectiveCamera, PointerLockControls, useTexture, SpotLight, Sky, Environment, Html } from '@react-three/drei'
@@ -17,7 +17,7 @@ import { CSG } from 'three-csg-ts'
 // room 
 // Room component
 
-function Room({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls }) {
+const Room = React.memo(({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls }) => {
   const { width, height, depth } = structure
 
   const sides = [
@@ -92,7 +92,7 @@ function Room({ structure, wallColors, features, onFeatureMove, onWallClick, sel
       <pointLight position={[0, height / 2, 0]} intensity={0.5} />
     </group>
   )
-}
+})
 
 
 
@@ -115,7 +115,7 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.code === 'Space' && isSelected) {
+      if (e.code === 'KeyR' && isSelected) {
         setIsDragging(false);
         onMove([mesh.current.position.x, 0, mesh.current.position.z]);
       }
@@ -153,7 +153,7 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
 
 
 
-function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions, texture, selectedFeature, onSelect }) {
+const Feature = React.memo(({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions, texture, selectedFeature, onSelect }) => {
   const mesh = useRef()
   const { camera } = useThree()
   const [isMoving, setIsMoving] = useState(false)
@@ -188,7 +188,7 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.code === 'Space') {
+      if (e.code === 'KeyR') {
         setIsMoving(false)
       }
     }
@@ -254,12 +254,12 @@ function Feature({ type, position, wallIndex, onMove, wallDimensions, wallRotati
       )}
     </group>
   )
-}
+})
 
 
 
 // walking camera
-function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room }) {
+const WalkingCamera = React.memo(({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room }) => {
   const { camera, gl } = useThree();
   const controlsRef = useRef();
   const moveDirection = useRef(new THREE.Vector3());
@@ -288,7 +288,7 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
         case 'ArrowRight':
           moveDirection.current.x = 1;
           break;
-        case 'Space':
+        case 'KeyR':
           if (camera.position.y === initialPosition[1]) {
             camera.position.y += 0.5; // Simple jump
           }
@@ -348,11 +348,11 @@ function WalkingCamera({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintM
   });
 
   return <PointerLockControls ref={controlsRef} args={[camera, gl.domElement]} />;
-}
+})
 
 
 
-const EnvironmentWrapper = ({ environment, rooms }) => {
+const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
   const { scene } = useThree()
   const envRef = useRef()
 
@@ -368,7 +368,7 @@ const EnvironmentWrapper = ({ environment, rooms }) => {
       <EnvironmentScene environment={environment} />
     </group>
   )
-}
+})
 
 
 
@@ -425,6 +425,11 @@ export default function CustomizableRoom() {
   const [selectedHallway, setSelectedHallway] = useState(null)
   const [hallwayDimensions, setHallwayDimensions] = useState({ width: 2, height: 2.5 })
   const [modifiedWalls, setModifiedWalls] = useState({})
+
+  // Memoize expensive computations
+  const memoizedRooms = useMemo(() => rooms, [rooms])
+  const memoizedEnvironment = useMemo(() => environment, [environment])
+  
 
 
   const addHallway = () => {
@@ -627,6 +632,58 @@ export default function CustomizableRoom() {
     enhanceRealisticMode()
   }, [realisticMode])
 
+  const handleFeatureMove = (featureIndex, newPosition) => {
+    const newRooms = [...rooms]
+    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
+      newRooms[selectedRoom].features[featureIndex].position = newPosition
+      setRooms(newRooms)
+    }
+  }
+
+  const handleFeatureSelect = (featureIndex) => {
+    setSelectedFeature(featureIndex)
+  }
+  const handleWallClick = (roomIndex, wallIndex) => {
+    setSelectedRoom(roomIndex)
+    setSelectedWall(wallIndex)
+    setNotification(`Room ${roomIndex + 1}, Wall ${wallIndex + 1} selected`)
+    setTimeout(() => setNotification(''), 2000)
+  }
+  
+
+  const renderRooms = useCallback(() => {
+    return !isTopView ? memoizedRooms.map((room, index) => (
+      <group key={room.id} position={room.position}>
+        <Room
+          structure={room.structure}
+          wallColors={room.wallColors}
+          wallTextures={room.wallTextures}
+          features={room.features}
+          onFeatureMove={handleFeatureMove}
+          onFeatureSelect={handleFeatureSelect}
+          onWallClick={handleWallClick}
+          selectedWall={selectedRoom === index ? selectedWall : null}
+          realisticMode={realisticMode}
+          roomIndex={index}
+          
+          selectedRoom={selectedRoom}
+          wallThickness={wallThickness}
+          modifiedWalls={room.modifiedWalls}
+        />
+      </group>
+    )) : memoizedRooms.map((room, index) => (
+      <TopViewRoom
+        key={room.id}
+        structure={room.structure}
+        position={room.position}
+        onMove={(newPosition) => handleRoomMove(index, newPosition)}
+        isSelected={index === selectedRoom}
+        onSelect={() => setSelectedRoom(index)}
+      />
+    ))
+  }, [isTopView, memoizedRooms, selectedRoom, selectedWall, realisticMode, wallThickness])
+
+
   
   if (loading) {
     return (
@@ -701,12 +758,6 @@ export default function CustomizableRoom() {
     }
   }
 
-  const handleWallClick = (roomIndex, wallIndex) => {
-    setSelectedRoom(roomIndex)
-    setSelectedWall(wallIndex)
-    setNotification(`Room ${roomIndex + 1}, Wall ${wallIndex + 1} selected`)
-    setTimeout(() => setNotification(''), 2000)
-  }
 
   const addFeature = (type) => {
     if (selectedWall === null) return
@@ -716,19 +767,6 @@ export default function CustomizableRoom() {
     setRooms(newRooms)
   }
 
-  const handleFeatureMove = (featureIndex, newPosition) => {
-    const newRooms = [...rooms]
-    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
-      newRooms[selectedRoom].features[featureIndex].position = newPosition
-      setRooms(newRooms)
-    }
-  }
-
-
-
-  const handleFeatureSelect = (featureIndex) => {
-    setSelectedFeature(featureIndex)
-  }
 
   const handleFeatureResize = (dimension, value) => {
     const newRooms = [...rooms]
@@ -1331,6 +1369,7 @@ export default function CustomizableRoom() {
             </>
           )}
           <EnvironmentWrapper environment={environment} rooms={rooms} />
+          {renderRooms()}
           {!isTopView && rooms.map((room, index) => (
             <group key={room.id} position={room.position}>
               <Room
@@ -1388,7 +1427,7 @@ export default function CustomizableRoom() {
             <>
               <Sky sunPosition={[100, 100, 20]} />
               <Environment preset="sunset" />
-              {rooms.map((room, index) => (
+              {memoizedRooms.map((room, index) => (
                 room.features.filter(f => f.type === 'light').map((light, lightIndex) => (
                   <SpotLight
                     key={`${index}-${lightIndex}`}
