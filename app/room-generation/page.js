@@ -426,6 +426,10 @@ export default function CustomizableRoom() {
   const [hallwayDimensions, setHallwayDimensions] = useState({ width: 2, height: 2.5 })
   const [modifiedWalls, setModifiedWalls] = useState({})
 
+  const [fenceMode, setFenceMode] = useState(false)
+  const [fencePoints, setFencePoints] = useState([])
+  const [fenceDesign, setFenceDesign] = useState('wooden')
+
   // Memoize expensive computations
   const memoizedRooms = useMemo(() => rooms, [rooms])
   const memoizedEnvironment = useMemo(() => environment, [environment])
@@ -852,29 +856,48 @@ export default function CustomizableRoom() {
     setShowSaveModal(true)
   }
 
+  
   const confirmSave = async () => {
     if (!projectName) {
-      setNotification('Please enter a project name')
-      return
+      setNotification('Please enter a project name');
+      return;
     }
-
+  
     try {
-      const userRef = doc(db, 'users', user.uid)
-      const roomsCollectionRef = collection(userRef, 'rooms')
-      await addDoc(roomsCollectionRef, {
+      const userRef = doc(db, 'users', user.uid);
+      const roomsCollectionRef = collection(userRef, 'rooms');
+  
+      // Create the project object
+      const projectData = {
         name: projectName,
         rooms: rooms,
         createdAt: new Date(),
-      })
-      setNotification('Project saved successfully')
-      setShowSaveModal(false)
-      setProjectName('')
-      fetchSavedProjects(user.uid)
+        // Use optional chaining to safely add properties if they exist
+        environment: environment ?? undefined,
+        fencePoints: fencePoints ?? undefined,
+        fenceDesign: fenceDesign ?? undefined,
+      };
+  
+      // Remove undefined properties from projectData
+      Object.keys(projectData).forEach(key => {
+        if (projectData[key] === undefined) {
+          delete projectData[key];
+        }
+      });
+  
+      // Save the project to Firestore
+      await addDoc(roomsCollectionRef, projectData);
+      setNotification('Project saved successfully');
+      setShowSaveModal(false);
+      setProjectName('');
+      fetchSavedProjects(user.uid);
     } catch (error) {
-      setNotification('Error saving project: ' + error.message)
+      setNotification('Error saving project: ' + error.message);
     }
-    setTimeout(() => setNotification(''), 2000)
-  }
+    
+    // Clear notification after 2 seconds
+    setTimeout(() => setNotification(''), 2000);
+  };
 
   const handleLoad = () => {
     setShowLoadModal(true);
@@ -889,6 +912,9 @@ export default function CustomizableRoom() {
       if (projectSnap.exists()) {
         const projectData = projectSnap.data()
         setRooms(projectData.rooms || [])
+        setEnvironment(projectData.environment || 'forest')
+        setFencePoints(projectData.fencePoints || [])
+        setFenceDesign(projectData.fenceDesign || 'wooden')
         setSelectedRoom(0)
         setShowLoadModal(false)
         setNotification('Project loaded successfully')
@@ -903,6 +929,7 @@ export default function CustomizableRoom() {
       setTimeout(() => setNotification(''), 2000)
     }
   }
+
 
   const handleUpgrade = async () => {
     setShowUpgradeModal(true)
@@ -954,20 +981,6 @@ export default function CustomizableRoom() {
 
   const handleRoomClick = (roomIndex) => {
     setSelectedRoomForRoof(roomIndex);
-  };
-  
-  const addRoofToRoom = () => {
-    if (selectedRoomForRoof !== null) {
-      const newRoofs = [...roofs];
-      const room = rooms[selectedRoomForRoof];
-      const roofGeometry = roofStyles[selectedRoofStyle](room.structure.width, room.structure.height);
-      const roofMaterial = new THREE.MeshStandardMaterial({ color: '#8B4513' });
-      const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-      roof.position.set(room.position[0], room.position[1] + room.structure.height / 2, room.position[2]);
-      newRoofs.push({ roomIndex: selectedRoomForRoof, roof });
-      setRoofs(newRoofs);
-      setSelectedRoomForRoof(null); // Reset selection
-    }
   };
 
   const handleDimensionChange = (dimension, value) => {
@@ -1196,18 +1209,6 @@ export default function CustomizableRoom() {
             className="w-20 p-2 border rounded text-gray-900"
             placeholder="Depth"
           />
-          <label htmlFor="roof-style" className="text-gray-700">Roof Style</label>
-          <select
-            id="roof-style"
-            value={selectedRoofStyle}
-            onChange={handleRoofStyleChange}
-            className="p-2 border rounded text-gray-900"
-          >
-            <option value="pyramid">Pyramid</option>
-            <option value="gable">Gable</option>
-            <option value="flat">Flat</option>
-            <option value="dome">Dome</option>
-          </select>
         </div>
         <div className="flex gap-2 mb-4">
           <label htmlFor="wall-thickness" className="text-gray-700">Wall Thickness</label>
@@ -1264,38 +1265,7 @@ export default function CustomizableRoom() {
           <button onClick={toggleTopView} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
             {isTopView ? 'Normal View' : 'Top View'}
           </button>
-          <button
-            onClick={addRoofToRoom}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Add Roof
-          </button>
         </div>
-        {selectedRoomForRoof !== null && (
-  <div className="flex gap-2 mb-4">
-    <label htmlFor="roof-style" className="text-gray-700">Roof Style</label>
-    <select
-      id="roof-style"
-      value={selectedRoofStyle}
-      onChange={handleRoofStyleChange}
-      className="p-2 border rounded text-gray-900"
-    >
-      <option value="pyramid">Pyramid</option>
-      <option value="gable">Gable</option>
-      <option value="flat">Flat</option>
-      <option value="dome">Dome</option>
-    </select>
-    <button
-      onClick={addRoofToRoom}
-      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    >
-      Add Roof
-    </button>
-  </div>
-)}
-{roofs.map(({ roomIndex, roof }, index) => (
-  <primitive key={index} object={roof} />
-))}
         {selectedWall !== null && (
           <div className="flex gap-2 mt-6">
             <button onClick={() => addFeature('door')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Door</button>
