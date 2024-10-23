@@ -528,6 +528,7 @@ export default function CustomizableRoom() {
 
 
 
+  // textures
   const availableTextures = [
     '/wall_texture.jpg',
     '/brick_texture.jpg',
