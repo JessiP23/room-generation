@@ -8,12 +8,25 @@ const randomInRange = (min, max) => Math.random() * (max - min) + min
 
 const Forest = ({ count = 100, spread = 20 }) => {
   const trees = useMemo(() => {
-    // array pipeline for filling the trees position
-    return new Array(count).fill(null).map(() => ({
-      position: [randomInRange(-spread, spread), 0, randomInRange(-spread, spread)],
-      scale: randomInRange(0.5, 1.5),
-      rotation: [0, randomInRange(0, Math.PI * 2), 0],
-    }))
+    return new Array(count).fill(null).map(() => {
+      let x, z
+      // Distribute trees in the corners
+      if (Math.random() < 0.5) {
+        x = randomInRange(-spread, -spread/2)
+      } else {
+        x = randomInRange(spread/2, spread)
+      }
+      if (Math.random() < 0.5) {
+        z = randomInRange(-spread, -spread/2)
+      } else {
+        z = randomInRange(spread/2, spread)
+      }
+      return {
+        position: [x, 0, z],
+        scale: randomInRange(0.5, 1.5),
+        rotation: [0, randomInRange(0, Math.PI * 2), 0],
+      }
+    })
   }, [count, spread])
 
   return (
@@ -39,301 +52,198 @@ const Forest = ({ count = 100, spread = 20 }) => {
   )
 }
 
-const City = ({ buildingCount = 10, spread = 20 }) => {
-    const buildings = useMemo(() => {
-      const buildingsArray = [];
-      
-      for (let i = 0; i < buildingCount; i++) {
-        let positionX, positionZ;
-  
-        // Randomly select a corner position while avoiding the center
-        const corner = Math.floor(Math.random() * 4); // Randomly choose a corner
-  
-        switch (corner) {
-          case 0: // Top-left corner
-            positionX = randomInRange(-spread, -spread / 2);
-            positionZ = randomInRange(spread / 2, spread);
-            break;
-          case 1: // Top-right corner
-            positionX = randomInRange(spread / 2, spread);
-            positionZ = randomInRange(spread / 2, spread);
-            break;
-          case 2: // Bottom-left corner
-            positionX = randomInRange(-spread, -spread / 2);
-            positionZ = randomInRange(-spread, -spread / 2);
-            break;
-          case 3: // Bottom-right corner
-            positionX = randomInRange(spread / 2, spread);
-            positionZ = randomInRange(-spread, -spread / 2);
-            break;
-          default:
-            break;
-        }
-  
-        const height = randomInRange(8, 25); // Set height range for buildings
-        const width = randomInRange(1, 8); // Set width range for buildings
-  
-        buildingsArray.push({
-          position: [positionX, height / 2, positionZ], // Adjust Y position for height
-          scale: [width, height, width], // Scale according to width and height
-          color: new THREE.Color(randomInRange(0.3, 0.8), randomInRange(0.3, 0.8), randomInRange(0.3, 0.8)),
-        });
+
+const City = ({ buildingCount = 40, spread = 20 }) => {
+  const buildings = useMemo(() => {
+    const buildingsArray = [];
+    
+    for (let i = 0; i < buildingCount; i++) {
+      let positionX, positionZ;
+
+      // Randomly select a corner
+      const corner = Math.floor(Math.random() * 4);
+
+      switch (corner) {
+        case 0: // Top-left corner
+          positionX = randomInRange(-spread, -spread / 2);
+          positionZ = randomInRange(spread / 2, spread);
+          break;
+        case 1: // Top-right corner
+          positionX = randomInRange(spread / 2, spread);
+          positionZ = randomInRange(spread / 2, spread);
+          break;
+        case 2: // Bottom-left corner
+          positionX = randomInRange(-spread, -spread / 2);
+          positionZ = randomInRange(-spread, -spread / 2);
+          break;
+        case 3: // Bottom-right corner
+          positionX = randomInRange(spread / 2, spread);
+          positionZ = randomInRange(-spread, -spread / 2);
+          break;
       }
-  
-      return buildingsArray;
-    }, [buildingCount, spread]);
-  
-    return (
-      <group>
-        <Instances>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial />
-          {buildings.map((building, i) => (
-            <Instance key={i} position={building.position} scale={building.scale} color={building.color} />
-          ))}
-        </Instances>
-        {/* Create streets */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-          <planeGeometry args={[100, 100]} />
-          <meshStandardMaterial color="#555555" />
-        </mesh>
-      </group>
-    );
-  };
-  
+
+      const height = randomInRange(8, 25);
+      const width = randomInRange(1, 8);
+
+      buildingsArray.push({
+        position: [positionX, height / 2, positionZ],
+        scale: [width, height, width],
+        color: new THREE.Color(randomInRange(0.3, 0.8), randomInRange(0.3, 0.8), randomInRange(0.3, 0.8)),
+      });
+    }
+
+    return buildingsArray;
+  }, [buildingCount, spread]);
+
+  return (
+    <group>
+      <Instances>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial />
+        {buildings.map((building, i) => (
+          <Instance key={i} position={building.position} scale={building.scale} color={building.color} />
+        ))}
+      </Instances>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+        <planeGeometry args={[100, 100]} />
+        <meshStandardMaterial color="#555555" />
+      </mesh>
+    </group>
+  );
+};
+
+
   
   
 
 
 const Desert = ({ duneCount = 20, spread = 40 }) => {
-    // Generate fewer, smaller dunes for corners
-    const sandMountains = useMemo(() => {
-      const cornerDunes = [];
-      // Define corners where we want dunes
-      const corners = [
-        [spread, -spread],     // Back right
-        [-spread, -spread],    // Back left
-        [spread, spread],      // Front right
-        [-spread, spread]      // Front left
-      ];
-      
-      // Fewer dunes per corner
-      const dunesPerCorner = 2; // 2 dunes per corner = 8 total dunes
-      
-      corners.forEach(corner => {
-        for (let i = 0; i < dunesPerCorner; i++) {
-          // Calculate position with natural variation
-          const angle = (i / dunesPerCorner) * Math.PI / 2 + randomInRange(-0.3, 0.3);
-          const radius = randomInRange(10, 20); // Smaller radius for tighter clustering
-          
-          // Create main dune with smaller proportions
-          const mainDune = {
-            position: [
-              corner[0] + Math.cos(angle) * radius,
-              randomInRange(-1, 0), // Less height variation
-              corner[1] + Math.sin(angle) * radius
-            ],
-            scale: [
-              randomInRange(10, 15), // Smaller width
-              randomInRange(15, 20), // Smaller height
-              randomInRange(10, 15)  // Smaller depth
-            ],
-            rotation: [0, angle + randomInRange(-0.15, 0.15), 0],
-            color: `hsl(43, ${randomInRange(35, 45)}%, ${randomInRange(65, 75)}%)`
-          };
-          cornerDunes.push(mainDune);
+  const sandMountains = useMemo(() => {
+    const cornerDunes = [];
+    const corners = [
+      [spread, -spread],
+      [-spread, -spread],
+      [spread, spread],
+      [-spread, spread]
+    ];
+    
+    const dunesPerCorner = 5;
+    
+    corners.forEach(corner => {
+      for (let i = 0; i < dunesPerCorner; i++) {
+        const angle = (i / dunesPerCorner) * Math.PI / 2 + randomInRange(-0.3, 0.3);
+        const radius = randomInRange(10, 20);
+        
+        const mainDune = {
+          position: [
+            corner[0] + Math.cos(angle) * radius,
+            randomInRange(-1, 0),
+            corner[1] + Math.sin(angle) * radius
+          ],
+          scale: [
+            randomInRange(10, 15),
+            randomInRange(15, 20),
+            randomInRange(10, 15)
+          ],
+          rotation: [0, angle + randomInRange(-0.15, 0.15), 0],
+          color: `hsl(43, ${randomInRange(35, 45)}%, ${randomInRange(65, 75)}%)`
+        };
+        cornerDunes.push(mainDune);
 
-          // Add one small companion dune
-          const companionRadius = radius + randomInRange(-5, 5);
-          const companionAngle = angle + randomInRange(-0.2, 0.2);
-          cornerDunes.push({
-            position: [
-              corner[0] + Math.cos(companionAngle) * companionRadius,
-              randomInRange(-0.5, 0),
-              corner[1] + Math.sin(companionAngle) * companionRadius
-            ],
-            scale: [
-              randomInRange(5, 8),   // Very small width
-              randomInRange(8, 12),  // Very small height
-              randomInRange(5, 8)    // Very small depth
-            ],
-            rotation: [0, companionAngle + randomInRange(-0.2, 0.2), 0],
-            color: `hsl(43, ${randomInRange(40, 50)}%, ${randomInRange(70, 80)}%)`
-          });
-        }
-      });
-      
-      return cornerDunes;
-    }, [spread]);
+        const companionRadius = radius + randomInRange(-5, 5);
+        const companionAngle = angle + randomInRange(-0.2, 0.2);
+        cornerDunes.push({
+          position: [
+            corner[0] + Math.cos(companionAngle) * companionRadius,
+            randomInRange(-0.5, 0),
+            corner[1] + Math.sin(companionAngle) * companionRadius
+          ],
+          scale: [
+            randomInRange(5, 8),
+            randomInRange(8, 12),
+            randomInRange(5, 8)
+          ],
+          rotation: [0, companionAngle + randomInRange(-0.2, 0.2), 0],
+          color: `hsl(43, ${randomInRange(40, 50)}%, ${randomInRange(70, 80)}%)`
+        });
+      }
+    });
+    
+    return cornerDunes;
+  }, [spread]);
 
-    return (
-      <group>
-        {/* Enhanced lighting for desert environment */}
-        <ambientLight intensity={0.5} />
-        <directionalLight 
-          position={[50, 50, 0]} 
-          intensity={1.4} 
+  return (
+    <group>
+      <ambientLight intensity={0.5} />
+      <directionalLight 
+        position={[50, 50, 0]} 
+        intensity={1.4} 
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={300}
+        shadow-camera-left={-100}
+        shadow-camera-right={100}
+        shadow-camera-top={100}
+        shadow-camera-bottom={-100}
+      />
+      <hemisphereLight 
+        args={[new Color('#ffd700'), new Color('#e6c587'), 0.4]}
+      />
+      {sandMountains.map((dune, i) => (
+        <mesh
+          key={`dune-${i}`}
+          position={dune.position}
+          scale={dune.scale}
+          rotation={dune.rotation}
           castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-far={300}
-          shadow-camera-left={-100}
-          shadow-camera-right={100}
-          shadow-camera-top={100}
-          shadow-camera-bottom={-100}
-        />
-
-        {/* Desert-specific sky lighting */}
-        <hemisphereLight 
-          args={[new Color('#ffd700'), new Color('#e6c587'), 0.4]}
-        />
-
-        {/* Render the dunes */}
-        {sandMountains.map((dune, i) => (
-          <mesh
-            key={`dune-${i}`}
-            position={dune.position}
-            scale={dune.scale}
-            rotation={dune.rotation}
-            castShadow
-            receiveShadow
-          >
-            <sphereGeometry args={[1, 32, 32, 0, Math.PI, 0, Math.PI]} />
-            <meshStandardMaterial
-              color={dune.color}
-              roughness={0.95}
-              metalness={0.05}
-              envMapIntensity={0.6}
-            />
-          </mesh>
-        ))}
-
-        {/* Enhanced ground plane with desert styling */}
-        <mesh 
-          rotation={[-Math.PI / 2, 0, 0]} 
-          position={[0, -0.01, 0]}
           receiveShadow
         >
-          <planeGeometry args={[spread * 4, spread * 4, 128, 128]} />
+          <sphereGeometry args={[1, 32, 32, 0, Math.PI, 0, Math.PI]} />
           <meshStandardMaterial
-            color="#e6c587"
-            roughness={1}
-            metalness={0}
-            onBeforeCompile={(shader) => {
-              shader.uniforms.time = { value: 0 };
-              shader.vertexShader = `
-                uniform float time;
-                
-                //  Simplex 3D Noise 
-                //  by Ian McEwan, Ashima Arts
-                vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
-                vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
-                
-                float snoise(vec3 v){ 
-                  const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
-                  const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
-                  
-                  vec3 i  = floor(v + dot(v, C.yyy) );
-                  vec3 x0 =   v - i + dot(i, C.xxx) ;
-                  
-                  vec3 g = step(x0.yzx, x0.xyz);
-                  vec3 l = 1.0 - g;
-                  vec3 i1 = min( g.xyz, l.zxy );
-                  vec3 i2 = max( g.xyz, l.zxy );
-                  
-                  vec3 x1 = x0 - i1 + 1.0 * C.xxx;
-                  vec3 x2 = x0 - i2 + 2.0 * C.xxx;
-                  vec3 x3 = x0 - 1. + 3.0 * C.xxx;
-                  
-                  i = mod(i, 289.0 ); 
-                  vec4 p = permute( permute( permute( 
-                             i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-                           + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
-                           + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
-                           
-                  float n_ = 1.0/7.0;
-                  vec3  ns = n_ * D.wyz - D.xzx;
-                  
-                  vec4 j = p - 49.0 * floor(p * ns.z *ns.z);
-                  
-                  vec4 x_ = floor(j * ns.z);
-                  vec4 y_ = floor(j - 7.0 * x_ );
-                  
-                  vec4 x = x_ *ns.x + ns.yyyy;
-                  vec4 y = y_ *ns.x + ns.yyyy;
-                  vec4 h = 1.0 - abs(x) - abs(y);
-                  
-                  vec4 b0 = vec4( x.xy, y.xy );
-                  vec4 b1 = vec4( x.zw, y.zw );
-                  
-                  vec4 s0 = floor(b0)*2.0 + 1.0;
-                  vec4 s1 = floor(b1)*2.0 + 1.0;
-                  vec4 sh = -step(h, vec4(0.0));
-                  
-                  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-                  vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
-                  
-                  vec3 p0 = vec3(a0.xy,h.x);
-                  vec3 p1 = vec3(a0.zw,h.y);
-                  vec3 p2 = vec3(a1.xy,h.z);
-                  vec3 p3 = vec3(a1.zw,h.w);
-                  
-                  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-                  p0 *= norm.x;
-                  p1 *= norm.y;
-                  p2 *= norm.z;
-                  p3 *= norm.w;
-                  
-                  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-                  m = m * m;
-                  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
-                                                dot(p2,x2), dot(p3,x3) ) );
-                }
-                ${shader.vertexShader}
-              `;
-              
-              shader.vertexShader = shader.vertexShader.replace(
-                '#include <begin_vertex>',
-                `
-                  vec3 transformed = vec3(position);
-                  
-                  // Base terrain undulation
-                  float noise = snoise(vec3(position.x * 0.02, position.z * 0.02, time * 0.1)) * 0.5;
-                  noise += snoise(vec3(position.x * 0.1, position.z * 0.1, time * 0.05)) * 0.25;
-                  
-                  // Add ripple effect for sand texture
-                  float ripples = sin(position.x * 2.0 + position.z * 2.0 + time) * 0.05;
-                  ripples *= smoothstep(0.0, 10.0, abs(position.x)) * smoothstep(0.0, 10.0, abs(position.z));
-                  
-                  transformed.y += noise + ripples;
-                  
-                  // Add elevation near corners
-                  vec2 cornerDist = abs(position.xz);
-                  float cornerElevation = smoothstep(80.0, 20.0, length(cornerDist)) * 0.5;
-                  transformed.y += cornerElevation;
-                `
-              );
-            }}
+            color={dune.color}
+            roughness={0.95}
+            metalness={0.05}
+            envMapIntensity={0.6}
           />
         </mesh>
-
-        {/* Desert atmosphere */}
-        <fog attach="fog" args={['#ffd700', 100, 400]} />
-      </group>
-    );
+      ))}
+      <mesh 
+        rotation={[-Math.PI / 2, 0, 0]} 
+        position={[0, -0.01, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[spread * 4, spread * 4, 128, 128]} />
+        <meshStandardMaterial
+          color="#e6c587"
+          roughness={1}
+          metalness={0}
+        />
+      </mesh>
+      <fog attach="fog" args={['#ffd700', 100, 400]} />
+    </group>
+  );
 };
-
 
 const Snow = ({ particleCount = 5000, spread = 50 }) => {
   const snowflakes = useMemo(() => {
-    return new Array(particleCount).fill(null).map(() => ({
-      position: [
-        randomInRange(-spread, spread),
-        randomInRange(0, spread),
-        randomInRange(-spread, spread),
-      ],
-      speed: randomInRange(0.01, 0.05),
-    }))
+    return new Array(particleCount).fill(null).map(() => {
+      let x, z;
+      if (Math.random() < 0.5) {
+        x = randomInRange(-spread, -spread/2)
+      } else {
+        x = randomInRange(spread/2, spread)
+      }
+      if (Math.random() < 0.5) {
+        z = randomInRange(-spread, -spread/2)
+      } else {
+        z = randomInRange(spread/2, spread)
+      }
+      return {
+        position: [x, randomInRange(0, spread), z],
+        speed: randomInRange(0.01, 0.05),
+      }
+    })
   }, [particleCount, spread])
 
   useFrame((state) => {
@@ -361,6 +271,7 @@ const Snow = ({ particleCount = 5000, spread = 50 }) => {
     </group>
   )
 }
+
 
 export const EnvironmentScene = ({ environment }) => {
   switch (environment) {
