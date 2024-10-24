@@ -13,11 +13,14 @@ import { useRouter } from 'next/navigation'
 import { Crown, Sparkles, DollarSign } from 'lucide-react'
 import { EnvironmentScene } from '../components/environments'
 import { CSG } from 'three-csg-ts'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // room 
 // Room component
 
-const Room = React.memo(({ structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls }) => {
+const Room = React.memo(({ 
+  structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls 
+}) => {
   const { width, height, depth } = structure
 
   const sides = [
@@ -78,18 +81,9 @@ const Room = React.memo(({ structure, wallColors, features, onFeatureMove, onWal
           realisticMode={realisticMode}
           onMove={(newPosition) => onFeatureMove(index, newPosition)}
           onSelect={() => onFeatureSelect(index)}
+          wallThickness={wallThickness}
         />
       ))}
-      <SpotLight
-        castShadow
-        position={[0, height - 0.5, 0]}
-        angle={0.6}
-        penumbra={0.5}
-        intensity={1}
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-      />
-      <pointLight position={[0, height / 2, 0]} intensity={0.5} />
     </group>
   )
 })
@@ -153,7 +147,21 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
 
 
 
-const Feature = React.memo(({ type, position, wallIndex, onMove, wallDimensions, wallRotation, wallPosition, realisticMode, dimensions, texture, selectedFeature, onSelect }) => {
+const Feature = React.memo(({ 
+  type, 
+  position, 
+  wallIndex, 
+  onMove, 
+  wallDimensions, 
+  wallRotation, 
+  wallPosition, 
+  realisticMode, 
+  dimensions, 
+  texture, 
+  selectedFeature, 
+  onSelect,
+  wallThickness
+}) => {
   const mesh = useRef()
   const { camera } = useThree()
   const [isMoving, setIsMoving] = useState(false)
@@ -197,6 +205,12 @@ const Feature = React.memo(({ type, position, wallIndex, onMove, wallDimensions,
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  const handleMove = useCallback((newPosition) => {
+    if (onMove) {
+      onMove(newPosition)
+    }
+  }, [onMove])
+
   useFrame(({ mouse }) => {
     if (isMoving && mesh.current) {
       const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation));
@@ -217,15 +231,17 @@ const Feature = React.memo(({ type, position, wallIndex, onMove, wallDimensions,
       const newX = THREE.MathUtils.clamp(-localPoint.x, -halfWidth + featureDimensions.width / 2, halfWidth - featureDimensions.width / 2);
       const newY = THREE.MathUtils.clamp(localPoint.y, -halfHeight + featureDimensions.height / 2, halfHeight - featureDimensions.height / 2);
 
-      mesh.current.position.set(newX, newY, 0.05);
-      onMove([newX, newY, 0.05]);
+      mesh.current.position.set(newX, newY, wallThickness / 2 + 0.001);
+      handleMove([newX, newY, wallThickness / 2 + 0.001]);
     }
   });
 
   const handlePointerDown = (e) => {
     e.stopPropagation()
     setIsMoving(true)
-    onSelect()
+    if (onSelect) {
+      onSelect()
+    }
   }
 
   return (
@@ -237,7 +253,7 @@ const Feature = React.memo(({ type, position, wallIndex, onMove, wallDimensions,
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[featureDimensions.width, featureDimensions.height, 0.1]} />
+        <boxGeometry args={[featureDimensions.width, featureDimensions.height, wallThickness + 0.003]} />
         <meshStandardMaterial 
           color={type === 'door' ? '#8B4513' : '#87CEEB'} 
           roughness={realisticMode ? 0.6 : 0.3}
@@ -255,6 +271,7 @@ const Feature = React.memo(({ type, position, wallIndex, onMove, wallDimensions,
     </group>
   )
 })
+
 
 
 
@@ -433,6 +450,16 @@ export default function CustomizableRoom() {
   // Memoize expensive computations
   const memoizedRooms = useMemo(() => rooms, [rooms])
   const memoizedEnvironment = useMemo(() => environment, [environment])
+
+  const [showNotification, setShowNotification] = useState(false)
+
+  useEffect(() => {
+    if (notification) {
+      setShowNotification(true)
+      const timer = setTimeout(() => setShowNotification(false), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
   
 
 
@@ -1041,286 +1068,242 @@ export default function CustomizableRoom() {
   return (
     <div className="flex flex-col h-screen">
       <FlowerMenu />
-      <div className="p-4 bg-gradient-to-b from-purple-400 to-pink-300">
-      <div className="flex justify-between items-center mb-4">
-      <h1 className="text-2xl font-bold text-white drop-shadow-lg">
-        Customizable Room
-      </h1>
-      
-      <div className="flex items-center gap-6 p-4  
-                      backdrop-blur-md rounded-xl shadow-2xl border border-white/10 
-                      hover:shadow-purple-500/20 transition-all duration-300">
-        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-800/40 to-slate-900/40 
-                        backdrop-blur-md rounded-full shadow-lg border border-white/10 
-                        hover:border-white/20 transition-all duration-300">
-          <div className="flex items-center gap-3">
-            {subscription === 'premium' ? (
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 
-                              rounded-full blur opacity-75 animate-pulse" />
-                <Crown 
-                  className="relative w-5 h-5 text-yellow-300 animate-bounce" 
-                  style={{ animationDuration: '2s' }}
-                />
-              </div>
-            ) : (
-              <div className="relative group">
-                <div className="w-5 h-5 rounded-full bg-gradient-to-r from-slate-700 to-gray-800 
-                              flex items-center justify-center shadow-inner">
-                  <div className="w-2 h-2 rounded-full bg-gray-400/50 group-hover:bg-gray-300/50 
-                                transition-colors duration-300" />
-                </div>
-              </div>
-            )}
-            
-            <div className="flex flex-col">
-              <span className="text-xs text-white/40">Status</span>
-              <span className={`font-semibold ${
-                subscription === 'premium'
-                  ? 'bg-gradient-to-r from-yellow-300 to-amber-400 text-transparent bg-clip-text'
-                  : 'text-gray-300 hover:text-gray-200 transition-colors duration-300'
-              }`}>
-                {subscription === 'premium' ? (
-                  <div className="flex items-center gap-1">
-                    Premium
-                    <Sparkles className="w-4 h-4 text-yellow-300 animate-spin" 
-                             style={{ animationDuration: '3s' }} />
-                  </div>
-                ) : (
-                  'Free'
-                )}
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 text-white p-6 overflow-y-auto">
+      <div className="max-w-7xl mx-auto bg-black/30 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 p-8 transition-all duration-300 hover:shadow-purple-500/20">
+        <h1 className="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 animate-pulse">
+          Customizable Room Designer
+        </h1>
+        
+        <div className="flex items-center justify-between mb-8 bg-gradient-to-r from-blue-500/20 to-purple-500/20 p-4 rounded-2xl backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <div className={`p-2 rounded-full ${subscription === 'premium' ? 'bg-yellow-400 animate-bounce' : 'bg-gray-600'}`}>
+              {subscription === 'premium' ? (
+                <Crown className="w-6 h-6 text-gray-900" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-gray-500" />
+              )}
+            </div>
+            <span className={`font-semibold text-lg ${
+              subscription === 'premium'
+                ? 'text-yellow-400'
+                : 'text-gray-300'
+            }`}>
+              {subscription === 'premium' ? 'Premium' : 'Free'}
+            </span>
+          </div>
+          
+          {subscription === 'free' && (
+            <button
+              onClick={handleUpgrade}
+              className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white font-semibold text-lg transition-all duration-300 hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50 transform hover:scale-105"
+            >
+              <span className="relative z-10 flex items-center">
+                Upgrade to Premium
+                <Sparkles className="w-5 h-5 ml-2 animate-spin" />
               </span>
+              <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </button>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
+          <div className="flex flex-wrap gap-4 mb-4">
+            <input
+              type="text"
+              value={rooms[selectedRoom]?.prompt || ''}
+              onChange={(e) => {
+                const newRooms = [...rooms]
+                newRooms[selectedRoom].prompt = e.target.value
+                setRooms(newRooms)
+              }}
+              placeholder="Describe the house or room..."
+              className="flex-grow p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+            />
+            <button type="submit" className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl text-white font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">
+              Generate
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-6 mb-4">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={realisticMode}
+                onChange={(e) => setRealisticMode(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              <span className="ml-3 text-sm font-medium text-gray-300">Realistic Mode</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <label htmlFor="environment" className="text-sm font-medium text-gray-300">Environment</label>
+              <select
+                id="environment"
+                value={environment}
+                onChange={handleEnvironmentChange}
+                className="p-2 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              >
+                <option value="forest">Forest</option>
+                <option value="city">City</option>
+                <option value="desert">Desert</option>
+                <option value="snow">Snow</option>
+              </select>
             </div>
           </div>
-        </div>
-        
-        {subscription === 'free' && (
-          <button
-            onClick={handleUpgrade}
-            className="group relative flex items-center gap-2 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 
-                      text-white font-semibold py-2.5 px-6 rounded-full transition-all duration-300 
-                      hover:scale-105 hover:shadow-lg hover:shadow-yellow-500/25 active:scale-95
-                      hover:from-yellow-300 hover:via-amber-400 hover:to-yellow-300"
-          >
-            <span className="relative z-10 text-gray-900 font-bold">Upgrade to Premium</span>
-            <Sparkles 
-              className="w-4 h-4 text-gray-900 transition-all duration-300 
-                         group-hover:rotate-12 group-hover:scale-110" 
-            />
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 
-                           blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300" />
-          </button>
-        )}
-      </div>
-    </div>
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
-          <input
-            type="text"
-            value={rooms[selectedRoom]?.prompt || ''}
-            onChange={(e) => {
-              const newRooms = [...rooms]
-              newRooms[selectedRoom].prompt = e.target.value
-              setRooms(newRooms)
-            }}
-            placeholder="Describe the house or room..."
-            className="flex-grow p-2 border rounded text-gray-900"
-          />
-          <button type="submit" className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Generate</button>
-        </form>
-        <div className="flex items-center gap-4 mb-4">
-          <label htmlFor="realistic-mode" className="text-gray-700">
-            Realistic Mode
-          </label>
-          <label className="relative inline-block w-10 h-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <input
-              type="checkbox"
-              id="realistic-mode"
-              checked={realisticMode}
-              onChange={(e) => setRealisticMode(e.target.checked)}
-              className="sr-only"
+              type="number"
+              value={rooms[selectedRoom].structure.width}
+              onChange={(e) => handleDimensionChange('width', e.target.value)}
+              placeholder="Width"
+              className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
             />
-            <div
-              className={`block bg-gradient-to-b from-purple-400 to-pink-300 w-full h-full rounded-full cursor-pointer ${
-                realisticMode ? 'bg-blue-600' : ''
-              }`}
-            ></div>
-            <div
-              className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform transform ${
-                realisticMode ? 'translate-x-4' : ''
-              }`}
-            ></div>
-          </label>
-        </div>
-        <div className="flex items-center gap-4 mb-4">
-          <label htmlFor="environment" className="text-gray-700">
-            Environment
-          </label>
-          <select
-            id="environment"
-            value={environment}
-            onChange={handleEnvironmentChange}
-            className="p-2 border rounded text-gray-900"
-          >
-            <option value="forest">Forest</option>
-            <option value="city">City</option>
-            <option value="desert">Desert</option>
-            <option value="snow">Snow</option>
-          </select>
-        </div>
-        {/* <div className="flex items-center gap-4 mb-4">
-          <label htmlFor="price" className="text-gray-700">
-            Price
-          </label>
-          <input
-            type="number"
-            id="price"
-            value={price}
-            onChange={handlePriceChange}
-            className="w-32 p-2 border rounded text-gray-900"
-            placeholder="Enter price"
-          />
-          <button
-            onClick={sellRoom}
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
-          >
-            <DollarSign className="mr-2" />
-            List for Sale
-          </button>
-        </div> */}
-        <div className="flex gap-2 mb-4">
-          <input
-            type="number"
-            value={rooms[selectedRoom].structure.width}
-            onChange={(e) => handleDimensionChange('width', e.target.value)}
-            className="w-20 p-2 border rounded text-gray-900"
-            placeholder="Width"
-          />
-          <input
-            type="number"
-            value={rooms[selectedRoom].structure.height}
-            onChange={(e) => handleDimensionChange('height', e.target.value)}
-            className="w-20 p-2 border rounded text-gray-900"
-            placeholder="Height"
-          />
-          <input
-            type="number"
-            value={rooms[selectedRoom].structure.depth}
-            onChange={(e) => handleDimensionChange('depth', e.target.value)}
-            className="w-20 p-2 border rounded text-gray-900"
-            placeholder="Depth"
-          />
-        </div>
-        <div className="flex gap-2 mb-4">
-          <label htmlFor="wall-thickness" className="text-gray-700">Wall Thickness</label>
-          <input
-            type="number"
-            id="wall-thickness"
-            value={wallThickness}
-            onChange={handleWallThicknessChange}
-            className="w-20 p-2 border rounded text-gray-900"
-            placeholder="Thickness"
-            step="0.1"
-          />
-        </div>
+            <input
+              type="number"
+              value={rooms[selectedRoom].structure.height}
+              onChange={(e) => handleDimensionChange('height', e.target.value)}
+              placeholder="Height"
+              className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+            />
+            <input
+              type="number"
+              value={rooms[selectedRoom].structure.depth}
+              onChange={(e) => handleDimensionChange('depth', e.target.value)}
+              placeholder="Depth"
+              className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <label htmlFor="wall-thickness" className="text-sm font-medium text-gray-300">Wall Thickness</label>
+            <input
+              type="number"
+              id="wall-thickness"
+              value={wallThickness}
+              onChange={handleWallThicknessChange}
+              placeholder="Thickness"
+              step="0.1"
+              className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+            />
+          </div>
+        </form>
+
         {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
-  <div className="flex gap-2 mb-4">
-    <input
-      type="number"
-      value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
-      onChange={(e) => handleFeatureResize('width', e.target.value)}
-      className="w-20 p-2 border rounded text-gray-900"
-      placeholder="Width"
-      step="0.1"
-    />
-    <input
-      type="number"
-      value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
-      onChange={(e) => handleFeatureResize('height', e.target.value)}
-      className="w-20 p-2 border rounded text-gray-900"
-      placeholder="Height"
-      step="0.1"
-    />
-    <select
-      value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
-      onChange={(e) => handleFeatureTextureChange(e.target.value)}
-      className="p-2 border rounded text-gray-900"
-    >
-      {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
-        <option key={index} value={texture}>
-          {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
-        <div className="flex gap-2">
-          <button onClick={handleDownload} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Download 3D Room</button>
-          <button onClick={handleSave} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Save Rooms</button>
-          <button onClick={handleLoad} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Load Rooms</button>
-          <button onClick={addRoom} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Room</button>
-          <button onClick={joinRooms} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Join Rooms</button>
-          <button onClick={toggleView} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          <div className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
+            <h3 className="text-xl font-semibold mb-4 text-purple-300">Feature Settings</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <input
+                type="number"
+                value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
+                onChange={(e) => handleFeatureResize('width', e.target.value)}
+                placeholder="Width"
+                step="0.1"
+                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              />
+              <input
+                type="number"
+                value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
+                onChange={(e) => handleFeatureResize('height', e.target.value)}
+                placeholder="Height"
+                step="0.1"
+                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              />
+              <select
+                value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
+                onChange={(e) => handleFeatureTextureChange(e.target.value)}
+                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              >
+                {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
+                  <option key={index} value={texture}>
+                    {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8">
+          <button onClick={handleDownload} className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl text-white font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">Download 3D Room</button>
+          <button onClick={handleSave} className="p-3 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl text-white font-semibold hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50">Save Rooms</button>
+          <button onClick={handleLoad} className="p-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl text-white font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50">Load Rooms</button>
+          <button onClick={addRoom} className="p-3 bg-gradient-to-r from-pink-500 to-red-500 rounded-xl text-white font-semibold hover:from-pink-600 hover:to-red-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50">Add Room</button>
+          <button onClick={joinRooms} className="p-3 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-xl text-white font-semibold hover:from-indigo-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-50">Join Rooms</button>
+          <button onClick={() => {
+            toggleView()
+            setIsInternalView(!isInternalView)
+          }} className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">
             {isInternalView ? 'External View' : 'Internal View'}
           </button>
-          <button onClick={toggleTopView} className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+          <button onClick={() => {
+            toggleTopView()
+            setIsTopView(!isTopView)
+          }} className="p-3 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-teal-400  focus:ring-opacity-50">
             {isTopView ? 'Normal View' : 'Top View'}
           </button>
         </div>
+
         {selectedWall !== null && (
-          <div className="flex gap-2 mt-6">
-            <button onClick={() => addFeature('door')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Door</button>
-            <button onClick={() => addFeature('window')} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Window</button>
-            <button onClick={addHallway} className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Add Hallway</button>
-            <input
-              type="color"
-              value={rooms[selectedRoom].wallColors[selectedWall]}
-              onChange={(e) => handleColorChange(e.target.value)}
-              className="w-12 h-10 border-none"
-            />
-            <input
-              type="text"
-              value={rooms[selectedRoom].wallColors[selectedWall]}
-              onChange={(e) => handleColorChange(e.target.value)}
-              placeholder="Hex color"
-              className="w-28 p-2 border rounded text-gray-900"
-            />
-            <select
-              value={rooms[selectedRoom].wallTextures[selectedWall]}
-              onChange={(e) => handleTextureChange(e.target.value)}
-              className="p-2 border rounded text-gray-900"
-            >
-              {availableTextures.map((texture, index) => (
-                <option key={index} value={texture}>
-                  {texture.split('/').pop().split('.')[0]}
-                </option>
-              ))}
-            </select>
+          <div className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
+            <h3 className="text-xl font-semibold mb-4 text-purple-300">Wall Settings</h3>
+            <div className="flex flex-wrap gap-4">
+              <button onClick={() => addFeature('door')} className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl text-white font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-opacity-50">Add Door</button>
+              <button onClick={() => addFeature('window')} className="p-3 bg-gradient-to-r from-sky-500 to-blue-500 rounded-xl text-white font-semibold hover:from-sky-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-opacity-50">Add Window</button>
+              <button onClick={addHallway} className="p-3 bg-gradient-to-r from-lime-500 to-green-500 rounded-xl text-white font-semibold hover:from-lime-600 hover:to-green-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-opacity-50">Add Hallway</button>
+              <input
+                type="color"
+                value={rooms[selectedRoom].wallColors[selectedWall]}
+                onChange={(e) => handleColorChange(e.target.value)}
+                className="w-12 h-12 rounded-xl border-2 border-white/20 cursor-pointer transition-all duration-300 hover:scale-110"
+              />
+              <input
+                type="text"
+                value={rooms[selectedRoom].wallColors[selectedWall]}
+                onChange={(e) => handleColorChange(e.target.value)}
+                placeholder="Hex color"
+                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              />
+              <select
+                value={rooms[selectedRoom].wallTextures[selectedWall]}
+                onChange={(e) => handleTextureChange(e.target.value)}
+                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              >
+                {availableTextures.map((texture, index) => (
+                  <option key={index} value={texture}>
+                    {texture.split('/').pop().split('.')[0]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
+
         {selectedHallway !== null && (
-        <div className="flex gap-2 mt-6">
-          <input
-            type="number"
-            value={hallwayDimensions.width}
-            onChange={(e) => handleHallwayResize('width', e.target.value)}
-            className="w-20 p-2 border rounded text-gray-900"
-            placeholder="Width"
-            step="0.1"
-          />
-          <input
-            type="number"
-            value={hallwayDimensions.height}
-            onChange={(e) => handleHallwayResize('height', e.target.value)}
-            className="w-20 p-2 border rounded text-gray-900"
-            placeholder="Height"
-            step="0.1"
-          />
-          <button onClick={confirmHallway} className="bg-green-500 hover:bg-green-400 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Confirm Hallway</button>
-        </div>
-      )}
+          <div className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
+            <h3 className="text-xl font-semibold mb-4 text-purple-300">Hallway Settings</h3>
+            <div className="flex flex-wrap gap-4 mb-4">
+              <input
+                type="number"
+                value={hallwayDimensions.width}
+                onChange={(e) => handleHallwayResize('width', e.target.value)}
+                placeholder="Width"
+                step="0.1"
+                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              />
+              <input
+                type="number"
+                value={hallwayDimensions.height}
+                onChange={(e) => handleHallwayResize('height', e.target.value)}
+                placeholder="Height"
+                step="0.1"
+                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              />
+            </div>
+            <button onClick={confirmHallway} className="p-3 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl text-white font-semibold hover:from-emerald-600 hover:to-green-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-50">Confirm Hallway</button>
+          </div>
+        )}
       </div>
-      <div className="flex-grow relative min-h-screen p-4">
-        <Canvas shadows>
+      </div>
+      <div className="flex-grow relative min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-4">
+        <Canvas shadows className="w-full h-full rounded-3xl overflow-hidden border-4 border-purple-500/30">
           {isInternalView ? (
             <WalkingCamera
               initialPosition={cameraPosition}
@@ -1359,7 +1342,7 @@ export default function CustomizableRoom() {
               />
             </group>
           ))}
-            {isTopView ? (
+          {isTopView ? (
             rooms.map((room, index) => (
               <TopViewRoom
                 key={room.id}
@@ -1389,11 +1372,13 @@ export default function CustomizableRoom() {
                   realisticMode={realisticMode}
                   roomIndex={index}
                   selectedRoom={selectedRoom}
+                  wallThickness={wallThickness}
+                  modifiedWalls={room.modifiedWalls}
                 />
               </group>
             ))
           )}
-           {realisticMode && (
+          {realisticMode && (
             <>
               <Sky sunPosition={[100, 100, 20]} />
               <Environment preset="sunset" />
@@ -1417,87 +1402,119 @@ export default function CustomizableRoom() {
             </>
           )}
         </Canvas>
-        {notification && (
-          <div className="absolute top-4 right-4 bg-green-500 text-white p-2 rounded">
-            {notification}
-          </div>
-        )}
-      </div>
-      {showSaveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center text-gray-900">
-          <div className="bg-white p-6 rounded-lg">
-            <h2 className="text-2xl font-bold mb-4">Save Project</h2>
-            <input
-              type="text"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              placeholder="Enter project name"
-              className="w-full px-3 py-2 border rounded mb-4"
-            />
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowSaveModal(false)}
-                className="px-4 py-2 border rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmSave}
-                className="px-4 py-2 bg-indigo-600 text-white rounded"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showLoadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center text-gray-900">
-          <div className="bg-white p-6 rounded-lg">
-            <h2 className="text-2xl font-bold mb-4">Load Project</h2>
-            <ul className="max-h-60 overflow-y-auto">
-              {savedProjects.map((project) => (
-                <li key={project.id} className="mb-2">
-                  <button
-                    onClick={() => loadProject(project.id)}
-                    className="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded"
-                  >
-                    {project.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => setShowLoadModal(false)}
-              className="mt-4 px-4 py-2 bg-gray-300 rounded"
+
+        <AnimatePresence>
+          {showNotification && (
+            <motion.div
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="absolute top-4 right-4 bg-gradient-to-r from-green-400 to-blue-500 text-white p-3 rounded-lg shadow-lg"
             >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg">
-            <h2 className="text-2xl font-bold mb-4">Upgrade to Premium</h2>
-            <p className="mb-4">Upgrade to Premium to save up to 5 rooms and enjoy additional features!</p>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="px-4 py-2 border rounded"
-              >
+              {notification}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showSaveModal && (
+            <Modal title="Save Project" onClose={() => setShowSaveModal(false)}>
+              <input
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Enter project name"
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              />
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button onClick={() => setShowSaveModal(false)} variant="secondary">
+                  Cancel
+                </Button>
+                <Button onClick={confirmSave} variant="primary">
+                  Save
+                </Button>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showLoadModal && (
+            <Modal title="Load Project" onClose={() => setShowLoadModal(false)}>
+              <ul className="max-h-60 overflow-y-auto space-y-2">
+                {savedProjects.map((project) => (
+                  <li key={project.id}>
+                    <button
+                      onClick={() => loadProject(project.id)}
+                      className="w-full text-left px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-all duration-300"
+                    >
+                      {project.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <Button onClick={() => setShowLoadModal(false)} variant="secondary" className="mt-4">
                 Cancel
-              </button>
-              <button
-                onClick={confirmUpgrade}
-                className="px-4 py-2 bg-yellow-500 text-white rounded"
-              >
-                Upgrade
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              </Button>
+            </Modal>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showUpgradeModal && (
+            <Modal title="Upgrade to Premium" onClose={() => setShowUpgradeModal(false)}>
+              <p className="text-gray-300 mb-4">
+                Upgrade to Premium to save up to 5 rooms and enjoy additional features!
+              </p>
+              <div className="flex justify-end space-x-2">
+                <Button onClick={() => setShowUpgradeModal(false)} variant="secondary">
+                  Cancel
+                </Button>
+                <Button onClick={confirmUpgrade} variant="premium">
+                  Upgrade
+                </Button>
+              </div>
+            </Modal>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
+  )
+}
+
+const Modal = ({ title, children, onClose }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+  >
+    <motion.div
+      initial={{ scale: 0.9, y: 20 }}
+      animate={{ scale: 1, y: 0 }}
+      exit={{ scale: 0.9, y: 20 }}
+      className="bg-gray-900 p-6 rounded-2xl shadow-2xl border border-purple-500/30 max-w-md w-full"
+    >
+      <h2 className="text-2xl font-bold mb-4 text-white">{title}</h2>
+      {children}
+    </motion.div>
+  </motion.div>
+)
+
+const Button = ({ children, onClick, variant = 'primary', className = '' }) => {
+  const baseStyle = "px-4 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+  const variants = {
+    primary: "bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700 focus:ring-purple-400",
+    secondary: "bg-gray-700 text-white hover:bg-gray-600 focus:ring-gray-400",
+    premium: "bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 hover:from-yellow-500 hover:to-orange-600 focus:ring-yellow-400",
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={`${baseStyle} ${variants[variant]} ${className}`}
+    >
+      {children}
+    </button>
   )
 }
