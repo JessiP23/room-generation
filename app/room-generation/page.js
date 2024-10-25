@@ -142,6 +142,8 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
   )
 }
 
+
+// feauure
 const Feature = React.memo(({ 
   type, 
   position, 
