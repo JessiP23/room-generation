@@ -117,6 +117,7 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
     })
   }
 
+  // r button
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'KeyR' && isSelected) {
