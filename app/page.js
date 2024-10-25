@@ -39,7 +39,7 @@ const InteractiveRoom = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseMove]);
 
   useEffect(() => {
     const autoRotate = () => {

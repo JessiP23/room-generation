@@ -11,7 +11,7 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import { Crown, Sparkles, DollarSign } from 'lucide-react'
+import { Crown, Sparkles, DollarSign, Keyboard, Mouse, ClipboardCheck, RotateCcw } from 'lucide-react'
 import { EnvironmentScene } from '../components/environments'
 import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -397,6 +397,85 @@ const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
   )
 })
 
+const ButtonInstructions = ({ isInternalView, isTopView }) => {
+  return (
+    <div className="fixed top-6 right-6 w-64 backdrop-blur-md bg-black/70 rounded-xl p-4 text-white shadow-xl border border-white/10 transition-all duration-300 hover:scale-105">
+      <div className="space-y-4">
+        {isInternalView ? (
+          <>
+            <div className="flex items-center gap-3 animate-fade-in">
+              <div className="p-2 bg-white/10 rounded-lg">
+                <Keyboard className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-sm">Movement Controls</h3>
+                <div className="flex gap-1">
+                  <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">W</kbd>
+                  <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">A</kbd>
+                  <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">S</kbd>
+                  <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">D</kbd>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 animate-fade-in animation-delay-100">
+              <div className="p-2 bg-white/10 rounded-lg">
+                <Mouse className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-sm">Look Around</h3>
+                <p className="text-xs text-white/80">Move mouse to rotate view</p>
+              </div>
+            </div>
+          </>
+        ) : isTopView && (
+          <>
+            <div className="flex items-center gap-3 animate-fade-in">
+              <div className="p-2 bg-white/10 rounded-lg">
+                <ClipboardCheck className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-sm">Room Selection</h3>
+                <p className="text-xs text-white/80">Click on a room to select</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 animate-fade-in animation-delay-100">
+              <div className="p-2 bg-white/10 rounded-lg">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-sm">Release Room</h3>
+                <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">R</kbd>
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="mt-3 pt-3 border-t border-white/10">
+          <p className="text-xs text-white/60 italic">Hover for more details</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const fadeInAnimation = `
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out forwards;
+  }
+  .animation-delay-100 {
+    animation-delay: 0.1s;
+  }
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = fadeInAnimation;
+document.head.appendChild(styleSheet);
 
 
 
@@ -651,27 +730,25 @@ export default function CustomizableRoom() {
     setSavedProjects(querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })))
   }
 
-  const enhanceRealisticMode = () => {
-    if (realisticMode) {
-      // Add more realistic lighting
-      const newRooms = [...rooms]
-      newRooms.forEach(room => {
-        if (!room.features.some(f => f.type === 'light')) {
-          room.features.push({
-            type: 'light',
-            position: [0, room.structure.height - 0.5, 0],
-            intensity: 1,
-            color: '#FFFFFF',
-          })
-        }
-      })
-      setRooms(newRooms)
-    }
-  }
-
   useEffect(() => {
-    enhanceRealisticMode()
-  }, [realisticMode])
+    const enhanceRealisticMode = () => {
+      if (realisticMode) {
+        // Add more realistic lighting
+        const newRooms = [...rooms]
+        newRooms.forEach(room => {
+          if (!room.features.some(f => f.type === 'light')) {
+            room.features.push({
+              type: 'light',
+              position: [0, room.structure.height - 0.5, 0],
+              intensity: 1,
+              color: '#FFFFFF',
+            })
+          }
+        })
+        setRooms(newRooms)
+      }
+    }
+  }, [realisticMode, rooms])
 
   const handleFeatureMove = (featureIndex, newPosition) => {
     const newRooms = [...rooms]
@@ -1412,6 +1489,7 @@ export default function CustomizableRoom() {
             </>
           )}
         </Canvas>
+        <ButtonInstructions isInternalView={isInternalView} isTopView={isTopView} />
 
         <AnimatePresence>
           {showNotification && (
