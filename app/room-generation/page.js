@@ -26,6 +26,7 @@ const Room = React.memo(({
   // width, height, depth
   const { width, height, depth } = structure
 
+  // sides
   const sides = [
     { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, wallThickness], size: [width, height] },
     { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, wallThickness], size: [width, height] },
