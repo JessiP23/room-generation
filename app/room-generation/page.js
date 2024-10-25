@@ -41,6 +41,8 @@ const Room = React.memo(({
   const textureLoader = new THREE.TextureLoader()
   const loadedTextures = wallTextures.map(texture => textureLoader.load(texture))
 
+
+  // return
   return (
     <group>
       {sides.map((side, index) => (
