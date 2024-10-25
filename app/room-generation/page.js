@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 const Room = React.memo(({ 
   structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls 
 }) => {
+  // width, height, depth
   const { width, height, depth } = structure
 
   const sides = [
