@@ -99,6 +99,7 @@ const Room = React.memo(({
 
 // tow view room
 function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
+  // width and depth
   const { width, depth } = structure
   const mesh = useRef()
   const [isDragging, setIsDragging] = useState(false)
