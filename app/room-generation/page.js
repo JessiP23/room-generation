@@ -142,11 +142,6 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
   )
 }
 
-
-
-
-
-
 const Feature = React.memo(({ 
   type, 
   position, 
@@ -167,15 +162,17 @@ const Feature = React.memo(({
   const [isMoving, setIsMoving] = useState(false)
   const [featureDimensions, setFeatureDimensions] = useState({
     width: dimensions?.width || (type === 'door' ? 1 : 1),
-    height: dimensions?.height || (type === 'door' ? 2 : 1)
+    height: dimensions?.height || (type === 'door' ? 2 : 1),
+    depth: type === 'door' ? wallThickness + 0.008 : wallThickness // Add 4mm to each side for doors
   })
 
   useEffect(() => {
     setFeatureDimensions({
       width: dimensions?.width || (type === 'door' ? 1 : 1),
-      height: dimensions?.height || (type === 'door' ? 2 : 1)
+      height: dimensions?.height || (type === 'door' ? 2 : 1),
+      depth: type === 'door' ? wallThickness + 0.008 : wallThickness
     })
-  }, [dimensions, type])
+  }, [dimensions, type, wallThickness])
 
   const doorTextures = [
     '/door_texture.jpg',
@@ -213,28 +210,30 @@ const Feature = React.memo(({
 
   useFrame(({ mouse }) => {
     if (isMoving && mesh.current) {
-      const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation));
-      const planeIntersect = new THREE.Plane(wallNormal, 0);
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(new THREE.Vector2(mouse.x, mouse.y), camera);
+      const wallNormal = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...wallRotation))
+      const planeIntersect = new THREE.Plane(wallNormal, 0)
+      const raycaster = new THREE.Raycaster()
+      raycaster.setFromCamera(new THREE.Vector2(mouse.x, mouse.y), camera)
       
-      const intersectPoint = new THREE.Vector3();
-      raycaster.ray.intersectPlane(planeIntersect, intersectPoint);
+      const intersectPoint = new THREE.Vector3()
+      raycaster.ray.intersectPlane(planeIntersect, intersectPoint)
 
-      const rotatedIntersectPoint = intersectPoint.clone();
-      rotatedIntersectPoint.applyEuler(new THREE.Euler(...wallRotation));
+      const rotatedIntersectPoint = intersectPoint.clone()
+      rotatedIntersectPoint.applyEuler(new THREE.Euler(...wallRotation))
 
-      const localPoint = rotatedIntersectPoint.sub(new THREE.Vector3(...wallPosition));
-      const halfWidth = wallDimensions[0] / 2;
-      const halfHeight = wallDimensions[1] / 2;
+      const localPoint = rotatedIntersectPoint.sub(new THREE.Vector3(...wallPosition))
+      const halfWidth = wallDimensions[0] / 2
+      const halfHeight = wallDimensions[1] / 2
 
-      const newX = THREE.MathUtils.clamp(-localPoint.x, -halfWidth + featureDimensions.width / 2, halfWidth - featureDimensions.width / 2);
-      const newY = THREE.MathUtils.clamp(localPoint.y, -halfHeight + featureDimensions.height / 2, halfHeight - featureDimensions.height / 2);
+      // Ensure consistent movement across all walls
+      const newX = THREE.MathUtils.clamp(localPoint.x, -halfWidth + featureDimensions.width / 2, halfWidth - featureDimensions.width / 2)
+      const newY = THREE.MathUtils.clamp(localPoint.y, -halfHeight + featureDimensions.height / 2, halfHeight - featureDimensions.height / 2)
 
-      mesh.current.position.set(newX, newY, wallThickness / 2 + 0.001);
-      handleMove([newX, newY, wallThickness / 2 + 0.001]);
+      const newPosition = [newX, newY, 0]
+      mesh.current.position.set(...newPosition)
+      handleMove(newPosition)
     }
-  });
+  })
 
   const handlePointerDown = (e) => {
     e.stopPropagation()
@@ -248,12 +247,12 @@ const Feature = React.memo(({
     <group position={wallPosition} rotation={wallRotation}>
       <mesh
         ref={mesh}
-        position={position}
+        position={[position[0], position[1], 0]} // Center the feature in the wall
         onPointerDown={handlePointerDown}
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[featureDimensions.width, featureDimensions.height, wallThickness + 0.003]} />
+        <boxGeometry args={[featureDimensions.width, featureDimensions.height, featureDimensions.depth]} />
         <meshStandardMaterial 
           color={type === 'door' ? '#8B4513' : '#87CEEB'} 
           roughness={realisticMode ? 0.6 : 0.3}
@@ -271,9 +270,6 @@ const Feature = React.memo(({
     </group>
   )
 })
-
-
-
 
 // walking camera
 const WalkingCamera = React.memo(({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room }) => {
