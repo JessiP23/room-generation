@@ -36,6 +36,8 @@ const Room = React.memo(({
     { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, wallThickness], size: [width, depth] },
   ]
 
+
+  // texture and color
   const textureLoader = new THREE.TextureLoader()
   const loadedTextures = wallTextures.map(texture => textureLoader.load(texture))
 
