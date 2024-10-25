@@ -163,14 +163,14 @@ const Feature = React.memo(({
   const [featureDimensions, setFeatureDimensions] = useState({
     width: dimensions?.width || (type === 'door' ? 1 : 1),
     height: dimensions?.height || (type === 'door' ? 2 : 1),
-    depth: type === 'door' ? wallThickness + 0.008 : wallThickness // Add 4mm to each side for doors
+    depth: type === 'door' || type === 'window' ? wallThickness + 0.016 : wallThickness // Add 8mm to each side for doors and windows
   })
 
   useEffect(() => {
     setFeatureDimensions({
       width: dimensions?.width || (type === 'door' ? 1 : 1),
       height: dimensions?.height || (type === 'door' ? 2 : 1),
-      depth: type === 'door' ? wallThickness + 0.008 : wallThickness
+      depth: type === 'door' || type === 'window' ? wallThickness + 0.016 : wallThickness
     })
   }, [dimensions, type, wallThickness])
 
@@ -254,7 +254,7 @@ const Feature = React.memo(({
       >
         <boxGeometry args={[featureDimensions.width, featureDimensions.height, featureDimensions.depth]} />
         <meshStandardMaterial 
-          color={type === 'door' ? '#8B4513' : '#87CEEB'} 
+          color={type === 'door' ? '#8B4513' : type === 'window' ? '#87CEEB' : '#FFFFFF'} 
           roughness={realisticMode ? 0.6 : 0.3}
           metalness={realisticMode ? 0.1 : 0}
           map={featureTexture}
