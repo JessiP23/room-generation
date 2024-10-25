@@ -105,6 +105,7 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
   const [isDragging, setIsDragging] = useState(false)
   const [offset, setOffset] = useState({ x: 0, z: 0 })
 
+  // pointer down
   const handlePointerDown = (e) => {
     e.stopPropagation()
     onSelect()
