@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 // room 
 // Room component
 
+// room
 const Room = React.memo(({ 
   structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls 
 }) => {
