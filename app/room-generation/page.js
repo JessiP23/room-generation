@@ -126,6 +126,7 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
       }
     };
 
+    // keydown
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
