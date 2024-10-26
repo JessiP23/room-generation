@@ -1133,7 +1133,7 @@ export default function CustomizableRoom() {
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
+        {/* <form onSubmit={handleSubmit} className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
           <div className="flex flex-wrap gap-4 mb-4">
             <input
               type="text"
@@ -1211,7 +1211,7 @@ export default function CustomizableRoom() {
               className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
             />
           </div>
-        </form>
+        </form> */}
 
         {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
           <div className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
