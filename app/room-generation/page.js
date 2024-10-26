@@ -1429,6 +1429,7 @@ export default function CustomizableRoom() {
             </>
           )}
         </Canvas>
+        {/* button */}
         <ButtonInstructions isInternalView={isInternalView} isTopView={isTopView} />
 
         <AnimatePresence>
