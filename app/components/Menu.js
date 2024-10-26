@@ -1,15 +1,26 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, Building, Compass, Users, Menu, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getAuth, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '@/firebase';
 
 const FlowerMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const auth = getAuth();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser ) => {
+      if (!currentUser ) {
+        router.push('/sign-in');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+  
 
   const toggleMenu = () => setIsOpen(!isOpen);
 

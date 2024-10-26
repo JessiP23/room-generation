@@ -27,11 +27,16 @@ export async function POST(request) {
       max_tokens: 60,
     })
 
-    const structureData = JSON.parse(completion.choices[0].message.content.trim())
+    const messageContent = completion.choices[0]?.message?.content;
+    if (!messageContent) {
+      throw new Error('No message content returned from OpenAI');
+    }
+
+    const structureData = JSON.parse(messageContent.trim());
 
     return NextResponse.json(structureData)
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error.message, error.stack)
     return NextResponse.json({ message: 'Failed to generate structure' }, { status: 500 })
   }
 }

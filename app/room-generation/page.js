@@ -1,6 +1,5 @@
 'use client'
 
-// code
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import * as THREE from 'three'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
@@ -11,7 +10,7 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import { Crown, Sparkles, DollarSign, Keyboard, Mouse, ClipboardCheck, RotateCcw } from 'lucide-react'
+import { Crown, Sparkles, DollarSign } from 'lucide-react'
 import { EnvironmentScene } from '../components/environments'
 import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -19,14 +18,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 // room 
 // Room component
 
-// room
 const Room = React.memo(({ 
   structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls 
 }) => {
-  // width, height, depth
   const { width, height, depth } = structure
 
-  // sides
   const sides = [
     { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, wallThickness], size: [width, height] },
     { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, wallThickness], size: [width, height] },
@@ -36,13 +32,9 @@ const Room = React.memo(({
     { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, wallThickness], size: [width, depth] },
   ]
 
-
-  // texture and color
   const textureLoader = new THREE.TextureLoader()
   const loadedTextures = wallTextures.map(texture => textureLoader.load(texture))
 
-
-  // return
   return (
     <group>
       {sides.map((side, index) => (
@@ -97,15 +89,13 @@ const Room = React.memo(({
 })
 
 
-// tow view room
+
 function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
-  // width and depth
   const { width, depth } = structure
   const mesh = useRef()
   const [isDragging, setIsDragging] = useState(false)
   const [offset, setOffset] = useState({ x: 0, z: 0 })
 
-  // pointer down
   const handlePointerDown = (e) => {
     e.stopPropagation()
     onSelect()
@@ -117,7 +107,6 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
     })
   }
 
-  // r button
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'KeyR' && isSelected) {
@@ -126,7 +115,6 @@ function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
       }
     };
 
-    // keydown
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -397,85 +385,6 @@ const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
   )
 })
 
-const ButtonInstructions = ({ isInternalView, isTopView }) => {
-  return (
-    <div className="fixed top-6 right-6 w-64 backdrop-blur-md bg-black/70 rounded-xl p-4 text-white shadow-xl border border-white/10 transition-all duration-300 hover:scale-105">
-      <div className="space-y-4">
-        {isInternalView ? (
-          <>
-            <div className="flex items-center gap-3 animate-fade-in">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Keyboard className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-sm">Movement Controls</h3>
-                <div className="flex gap-1">
-                  <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">W</kbd>
-                  <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">A</kbd>
-                  <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">S</kbd>
-                  <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">D</kbd>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 animate-fade-in animation-delay-100">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Mouse className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-sm">Look Around</h3>
-                <p className="text-xs text-white/80">Move mouse to rotate view</p>
-              </div>
-            </div>
-          </>
-        ) : isTopView && (
-          <>
-            <div className="flex items-center gap-3 animate-fade-in">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <ClipboardCheck className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-sm">Room Selection</h3>
-                <p className="text-xs text-white/80">Click on a room to select</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 animate-fade-in animation-delay-100">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <RotateCcw className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-sm">Release Room</h3>
-                <kbd className="px-2 py-1 bg-white/20 rounded text-xs font-mono">R</kbd>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="mt-3 pt-3 border-t border-white/10">
-          <p className="text-xs text-white/60 italic">Hover for more details</p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const fadeInAnimation = `
-  @keyframes fade-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-fade-in {
-    animation: fade-in 0.3s ease-out forwards;
-  }
-  .animation-delay-100 {
-    animation-delay: 0.1s;
-  }
-`;
-
-const styleSheet = document.createElement('style');
-styleSheet.textContent = fadeInAnimation;
-document.head.appendChild(styleSheet);
 
 
 
@@ -541,6 +450,53 @@ export default function CustomizableRoom() {
   const memoizedEnvironment = useMemo(() => environment, [environment])
 
   const [showNotification, setShowNotification] = useState(false)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser)
+      setLoading(false)
+      if (currentUser) {
+        await createOrUpdateUserDocument(currentUser.uid)
+        fetchSavedProjects(currentUser.uid)
+      } else {
+        router.push('/sign-in')
+      }
+    })
+
+    return () => unsubscribe()
+  }, [router])
+  
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser)
+      setLoading(false)
+      if (currentUser) {
+        await createOrUpdateUserDocument(currentUser.uid)
+        fetchSavedProjects(currentUser.uid)
+      } else {
+        router.push('/sign-in')
+      }
+    })
+
+    return () => unsubscribe()
+  }, [router])
+
+  // Initialize rooms state
+  useEffect(() => {
+    setRooms([
+      {
+        id: 1,
+        prompt: '',
+        structure: { width: 10, height: 8, depth: 10 },
+        wallColors: Array(6).fill('#FFFFFF'),
+        wallTextures: Array(6).fill('/wall_texture.jpg'),
+        features: [],
+        position: [0, 0, 0],
+        wallThickness: 0.2,
+        modifiedWalls: {}
+      }
+    ])
+  }, [])
 
   useEffect(() => {
     if (notification) {
@@ -708,27 +664,13 @@ export default function CustomizableRoom() {
     setSubscription(userData?.subscription || 'free')
   }
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser)
-      setLoading(false)
-      if (currentUser) {
-        await createOrUpdateUserDocument(currentUser.uid)
-        fetchSavedProjects(currentUser.uid)
-      } else {
-        router.push('/sign-in')
-      }
-    })
-
-    return () => unsubscribe()
-  }, [router])
-
   const fetchSavedProjects = async (userId) => {
     const userRef = doc(db, 'users', userId)
     const roomsCollectionRef = collection(userRef, 'rooms')
     const querySnapshot = await getDocs(roomsCollectionRef)
     setSavedProjects(querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })))
   }
+
 
   useEffect(() => {
     const enhanceRealisticMode = () => {
@@ -750,13 +692,13 @@ export default function CustomizableRoom() {
     }
   }, [realisticMode, rooms])
 
-  const handleFeatureMove = (featureIndex, newPosition) => {
+  const handleFeatureMove = useCallback((featureIndex, newPosition) => {
     const newRooms = [...rooms]
     if (newRooms[selectedRoom] && newRooms[selectedRoom].features[featureIndex]) {
       newRooms[selectedRoom].features[featureIndex].position = newPosition
       setRooms(newRooms)
     }
-  }
+  }, [rooms, selectedRoom])
 
   const handleFeatureSelect = (featureIndex) => {
     setSelectedFeature(featureIndex)
@@ -767,6 +709,12 @@ export default function CustomizableRoom() {
     setNotification(`Room ${roomIndex + 1}, Wall ${wallIndex + 1} selected`)
     setTimeout(() => setNotification(''), 2000)
   }
+
+  const handleRoomMove = useCallback((index, newPosition) => {
+    const newRooms = [...rooms];
+    newRooms[index].position = newPosition;
+    setRooms(newRooms);
+  }, [rooms]);
   
 
   const renderRooms = useCallback(() => {
@@ -783,7 +731,6 @@ export default function CustomizableRoom() {
           selectedWall={selectedRoom === index ? selectedWall : null}
           realisticMode={realisticMode}
           roomIndex={index}
-          
           selectedRoom={selectedRoom}
           wallThickness={wallThickness}
           modifiedWalls={room.modifiedWalls}
@@ -794,12 +741,12 @@ export default function CustomizableRoom() {
         key={room.id}
         structure={room.structure}
         position={room.position}
-        onMove={(newPosition) => handleRoomMove(index, newPosition)}
+        onMove={(newPosition) => handleRoomMove(index, newPosition)} // Use the memoized handleRoomMove
         isSelected={index === selectedRoom}
         onSelect={() => setSelectedRoom(index)}
       />
-    ))
-  }, [isTopView, memoizedRooms, selectedRoom, selectedWall, realisticMode, wallThickness])
+    ));
+  }, [isTopView, memoizedRooms, selectedRoom, selectedWall, realisticMode, wallThickness, handleFeatureMove, handleRoomMove]);
 
 
   
@@ -1139,13 +1086,6 @@ export default function CustomizableRoom() {
       setCameraRotation([0, 0, 0])
     }
   }
-
-  const handleRoomMove = (index, newPosition) => {
-    const newRooms = [...rooms]
-    newRooms[index].position = newPosition
-    setRooms(newRooms)
-  }
-
   
 
   const handleRoofStyleChange = (e) => {
@@ -1489,7 +1429,6 @@ export default function CustomizableRoom() {
             </>
           )}
         </Canvas>
-        <ButtonInstructions isInternalView={isInternalView} isTopView={isTopView} />
 
         <AnimatePresence>
           {showNotification && (

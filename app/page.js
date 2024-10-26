@@ -1,6 +1,6 @@
 'use client'
 
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import { Book, Box, Camera, Check, ChevronDown, ChevronRight, Cloud, Code, Coffee, Compass, Crown, Flower, Layers, Layout, Moon, Search, Share, Star, Sun, User, X, Zap } from 'lucide-react';
 
 // interactive
@@ -17,7 +17,7 @@ const InteractiveRoom = () => {
     setStartPosition({ x: e.clientX, y: e.clientY });
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!isDragging) return;
     const deltaX = e.clientX - startPosition.x;
     const deltaY = e.clientY - startPosition.y;
@@ -26,11 +26,11 @@ const InteractiveRoom = () => {
       y: prev.y - deltaX * 0.5
     }));
     setStartPosition({ x: e.clientX, y: e.clientY });
-  };
+  }, [isDragging, startPosition]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   useEffect(() => {
     document.addEventListener('mousemove', handleMouseMove);
@@ -39,7 +39,7 @@ const InteractiveRoom = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, handleMouseMove]);
+  }, [handleMouseMove, handleMouseUp]);
 
   useEffect(() => {
     const autoRotate = () => {
@@ -180,6 +180,7 @@ const LandingPage = () => {
             <Camera className="mr-2" size={20} />
             Room Generation
           </a>
+          {/* 
           <a
             href='/building-generator'
             className="w-full sm:w-auto bg-white text-purple-600 px-8 py-3 rounded-full font-bold hover:bg-purple-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 flex items-center justify-center"
@@ -187,6 +188,7 @@ const LandingPage = () => {
             <Layers className="mr-2" size={20} />
             Building Generation
           </a>
+          */}
         </div>
       </div>
       
