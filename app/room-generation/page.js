@@ -10,7 +10,7 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import { Crown, Sparkles, DollarSign } from 'lucide-react'
+import { Crown, Sparkles, DollarSign, RotateCcw, ClipboardCheck, Mouse, Keyboard, Info } from 'lucide-react'
 import { EnvironmentScene } from '../components/environments'
 import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -1429,6 +1429,7 @@ export default function CustomizableRoom() {
             </>
           )}
         </Canvas>
+        <ButtonInstructions isInternalView={isInternalView} isTopView={isTopView} />
 
         <AnimatePresence>
           {showNotification && (
@@ -1545,3 +1546,128 @@ const Button = ({ children, onClick, variant = 'primary', className = '' }) => {
     </button>
   )
 }
+
+const ButtonInstructions = ({ isInternalView, isTopView }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div className="absolute top-6 right-6 z-50">
+      {/* Toggle Button */}
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="absolute -top-2 -right-2 p-2 bg-purple-600 rounded-full shadow-lg hover:bg-purple-700 transition-colors z-10"
+      >
+        <Info className="w-4 h-4 text-white" />
+      </button>
+
+      {/* Instructions Panel */}
+      <div className={`
+        w-72 backdrop-blur-lg bg-black/80 rounded-2xl p-5
+        border border-purple-500/20 shadow-2xl
+        transform transition-all duration-300 ease-in-out
+        ${isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}
+      `}>
+        <div className="space-y-5">
+          <div className="mb-4">
+            <h2 className="text-purple-300 text-lg font-semibold mb-1">Controls Guide</h2>
+            <div className="h-1 w-12 bg-purple-500/50 rounded-full"></div>
+          </div>
+
+          {isInternalView ? (
+            <>
+              <div className="flex items-start gap-4 animate-fade-in group">
+                <div className="p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
+                  <Keyboard className="w-6 h-6 text-purple-300" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-purple-200">Movement Controls</h3>
+                  <div className="flex gap-2">
+                    {['W', 'A', 'S', 'D'].map((key) => (
+                      <kbd key={key} className="px-3 py-2 bg-purple-500/10 rounded-lg text-sm font-mono text-purple-200 hover:bg-purple-500/20 transition-colors shadow-inner">
+                        {key}
+                      </kbd>
+                    ))}
+                  </div>
+                  <p className="text-xs text-purple-300/70">Press keys to move in the scene</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 animate-fade-in animation-delay-100 group">
+                <div className="p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
+                  <Mouse className="w-6 h-6 text-purple-300" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-purple-200">Look Around</h3>
+                  <p className="text-sm text-purple-300/70">Move mouse to rotate camera view</p>
+                  <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-purple-500/10 rounded-lg text-xs">Click + Drag</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : isTopView && (
+            <>
+              <div className="flex items-start gap-4 animate-fade-in group">
+                <div className="p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
+                  <ClipboardCheck className="w-6 h-6 text-purple-300" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-purple-200">Room Selection</h3>
+                  <p className="text-sm text-purple-300/70">Click on any room to select it</p>
+                  <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-purple-500/10 rounded-lg text-xs">Left Click</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 animate-fade-in animation-delay-100 group">
+                <div className="p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
+                  <RotateCcw className="w-6 h-6 text-purple-300" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-purple-200">Release Room</h3>
+                  <p className="text-sm text-purple-300/70">Press R to release selected room</p>
+                  <kbd className="px-3 py-2 bg-purple-500/10 rounded-lg text-sm font-mono text-purple-200 hover:bg-purple-500/20 transition-colors shadow-inner">
+                    R
+                  </kbd>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="pt-4 border-t border-purple-500/20">
+            <p className="text-xs text-purple-300/60 italic">
+              Hover over controls for more details
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const style = `
+  @keyframes fade-in {
+    from { 
+      opacity: 0; 
+      transform: translateY(10px) scale(0.98);
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  
+  .animation-delay-100 {
+    animation-delay: 0.1s;
+  }
+`;
+
+// Apply styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = style;
+document.head.appendChild(styleSheet);
