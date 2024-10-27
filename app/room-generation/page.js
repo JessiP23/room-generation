@@ -1368,20 +1368,20 @@ export default function CustomizableRoom() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent ml-4" />
             {/* actions */}
           </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={handleDownload} className="bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded text-sm text-white">
-                Download
-              </button>
-              <button onClick={handleSave} className="bg-green-500 hover:bg-green-600 px-3 py-2 rounded text-sm text-white">
-                Save
-              </button>
-              <button onClick={handleLoad} className="bg-yellow-500 hover:bg-yellow-600 px-3 py-2 rounded text-sm text-white">
-                Load
-              </button>
-              <button onClick={addRoom} className="bg-purple-500 hover:bg-purple-600 px-3 py-2 rounded text-sm text-white">
-                Add Room
-              </button>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={handleDownload} className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-all duration-200 transform hover:scale-105">
+              Download
+            </button>
+            <button onClick={handleSave} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-green-500/20 transition-all duration-200 transform hover:scale-105">
+              Save
+            </button>
+            <button onClick={handleLoad} className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-amber-500/20 transition-all duration-200 transform hover:scale-105">
+              Load
+            </button>
+            <button onClick={addRoom} className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-purple-500/20 transition-all duration-200 transform hover:scale-105">
+              Add Room
+            </button>
+          </div>
             <button onClick={joinRooms} className="w-full bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded text-sm text-white">
               Join Rooms
             </button>
