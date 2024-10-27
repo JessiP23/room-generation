@@ -18,9 +18,8 @@ import ButtonInstructions from '../components/ButtonInstructions'
 
 // room 
 // Room component
-
 const Room = React.memo(({ 
-  structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls 
+  structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls, wallDesigns 
 }) => {
   const { width, height, depth } = structure
 
@@ -61,6 +60,17 @@ const Room = React.memo(({
                 metalness={realisticMode ? 0.2 : 0}
                 map={loadedTextures[index]}
               />
+              {wallDesigns && wallDesigns[index] && (
+                <Text
+                  position={[0, 0, 0.01]}
+                  fontSize={0.5}
+                  color="#000000"
+                  anchorX="center"
+                  anchorY="middle"
+                >
+                  {wallDesigns[index]}
+                </Text>
+              )}
             </mesh>
           )}
           {selectedRoom === roomIndex && selectedWall === index && (
@@ -88,6 +98,7 @@ const Room = React.memo(({
     </group>
   )
 })
+
 
 
 
@@ -166,7 +177,7 @@ const Feature = React.memo(({
   const [featureDimensions, setFeatureDimensions] = useState({
     width: dimensions?.width || (type === 'door' ? 1 : 1),
     height: dimensions?.height || (type === 'door' ? 2 : 1),
-    depth: type === 'door' || type === 'window' ? wallThickness + 0.016 : wallThickness // Add 8mm to each side for doors and windows
+    depth: type === 'door' || type === 'window' ? wallThickness + 0.016 : wallThickness
   })
 
   useEffect(() => {
@@ -228,7 +239,6 @@ const Feature = React.memo(({
       const halfWidth = wallDimensions[0] / 2
       const halfHeight = wallDimensions[1] / 2
 
-      // Ensure consistent movement across all walls
       const newX = THREE.MathUtils.clamp(localPoint.x, -halfWidth + featureDimensions.width / 2, halfWidth - featureDimensions.width / 2)
       const newY = THREE.MathUtils.clamp(localPoint.y, -halfHeight + featureDimensions.height / 2, halfHeight - featureDimensions.height / 2)
 
@@ -237,6 +247,7 @@ const Feature = React.memo(({
       handleMove(newPosition)
     }
   })
+
 
   const handlePointerDown = (e) => {
     e.stopPropagation()
@@ -250,7 +261,7 @@ const Feature = React.memo(({
     <group position={wallPosition} rotation={wallRotation}>
       <mesh
         ref={mesh}
-        position={[position[0], position[1], 0]} // Center the feature in the wall
+        position={[position[0], position[1], 0]}
         onPointerDown={handlePointerDown}
         castShadow
         receiveShadow
@@ -451,6 +462,45 @@ export default function CustomizableRoom() {
   const memoizedEnvironment = useMemo(() => environment, [environment])
 
   const [showNotification, setShowNotification] = useState(false)
+
+  const [wallDesigns, setWallDesigns] = useState(Array(6).fill(''))
+
+  const [wallStyle, setWallStyle] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    const newRooms = [...rooms]
+    const currentRoom = newRooms[selectedRoom]
+
+   // Update wall textures based on the input style
+   const newTexture = getTextureForStyle(wallStyle)
+   currentRoom.wallTextures = Array(6).fill(newTexture)
+
+   setRooms(newRooms)
+  }
+
+  const getTextureForStyle = (style) => {
+    // This is a simple example. You can expand this function to handle more styles
+    switch (style.toLowerCase()) {
+      case 'brick':
+        return '/brick_texture.jpg'
+      case 'wood':
+        return '/wood_texture.jpg'
+      case 'stone':
+        return '/stone_texture.jpg'
+      case 'plaster':
+        return '/plaster.jpg'
+      default:
+        return '/wall_texture.jpg'
+    }
+  }
+
+  const handleWallDesignChange = (index, design) => {
+    const newWallDesigns = [...wallDesigns]
+    newWallDesigns[index] = design
+    setWallDesigns(newWallDesigns)
+  }
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -796,17 +846,17 @@ export default function CustomizableRoom() {
 
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault()
     
-    const newRooms = [...rooms]
-    newRooms[selectedRoom].structure = { 
-      width: Math.random() * 10 + 5, 
-      height: Math.random() * 5 + 3, 
-      depth: Math.random() * 10 + 5 
-    }
-    setRooms(newRooms)
-  }
+  //   const newRooms = [...rooms]
+  //   newRooms[selectedRoom].structure = { 
+  //     width: Math.random() * 10 + 5, 
+  //     height: Math.random() * 5 + 3, 
+  //     depth: Math.random() * 10 + 5 
+  //   }
+  //   setRooms(newRooms)
+  // }
 
   const handleColorChange = (color) => {
     if (selectedWall !== null) {
@@ -1214,6 +1264,18 @@ export default function CustomizableRoom() {
           </div>
         </form> */}
         <form onSubmit={handleSubmit} className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
+        <div className="flex flex-wrap gap-4 mb-4">
+        <input
+            type="text"
+            value={wallStyle}
+            onChange={(e) => setWallStyle(e.target.value)}
+            placeholder="Enter wall style (e.g., brick, wood, stone, tropical)"
+            className="flex-grow p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+          />
+          <button type="submit" className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl text-white font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">
+            Apply Style
+          </button>
+        </div>
           <div className="flex flex-wrap gap-4 mb-4">
             <input
               type="text"
@@ -1257,28 +1319,40 @@ export default function CustomizableRoom() {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <input
+            type="number"
+            value={rooms[selectedRoom].structure.width}
+            onChange={(e) => handleDimensionChange('width', e.target.value)}
+            placeholder="Width"
+            className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+          />
+          <input
+            type="number"
+            value={rooms[selectedRoom].structure.height}
+            onChange={(e) => handleDimensionChange('height', e.target.value)}
+            placeholder="Height"
+            className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+          />
+          <input
+            type="number"
+            value={rooms[selectedRoom].structure.depth}
+            onChange={(e) => handleDimensionChange('depth', e.target.value)}
+            placeholder="Depth"
+            className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          {wallDesigns.map((design, index) => (
             <input
-              type="number"
-              value={rooms[selectedRoom].structure.width}
-              onChange={(e) => handleDimensionChange('width', e.target.value)}
-              placeholder="Width"
+              key={index}
+              type="text"
+              value={design}
+              onChange={(e) => handleWallDesignChange(index, e.target.value)}
+              placeholder={`Wall ${index + 1} design`}
               className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
             />
-            <input
-              type="number"
-              value={rooms[selectedRoom].structure.height}
-              onChange={(e) => handleDimensionChange('height', e.target.value)}
-              placeholder="Height"
-              className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-            />
-            <input
-              type="number"
-              value={rooms[selectedRoom].structure.depth}
-              onChange={(e) => handleDimensionChange('depth', e.target.value)}
-              placeholder="Depth"
-              className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-            />
-          </div>
+          ))}
+        </div>
           <div className="flex items-center gap-4">
             <label htmlFor="wall-thickness" className="text-sm font-medium text-gray-300">Wall Thickness</label>
             <input
@@ -1445,7 +1519,7 @@ export default function CustomizableRoom() {
                 roomIndex={index}
                 selectedRoom={selectedRoom}
                 wallThickness={wallThickness}
-                modifiedWalls={room.modifiedWalls}
+                modifiedWalls={room.modifiedWalls} wallDesigns={wallDesigns}
               />
             </group>
           ))}
