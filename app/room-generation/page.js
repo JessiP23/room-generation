@@ -1227,39 +1227,50 @@ export default function CustomizableRoom() {
 
           {/* Feature Settings */}
           {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-gray-400 uppercase">Feature Settings</h2>
-              <div className="space-y-2">
-                <input
-                  type="number"
-                  value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
-                  onChange={(e) => handleFeatureResize('width', e.target.value)}
-                  placeholder="Width"
-                  step="0.1"
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
-                />
-                <input
-                  type="number"
-                  value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
-                  onChange={(e) => handleFeatureResize('height', e.target.value)}
-                  placeholder="Height"
-                  step="0.1"
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
-                />
-                <select
-                  value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
-                  onChange={(e) => handleFeatureTextureChange(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
-                >
-                  {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
-                    <option key={index} value={texture}>
-                      {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Feature Settings</h2>
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent ml-4" />
+    </div>
+    <div className="space-y-3">
+      <div className="relative">
+        <input
+          type="number"
+          value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
+          onChange={(e) => handleFeatureResize('width', e.target.value)}
+          step="0.1"
+          className="w-full bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-2.5 text-sm text-gray-300 placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+        />
+        <span className="absolute -top-2 left-3 px-2 text-xs font-medium text-gray-400 bg-gray-800">
+          Width
+        </span>
+      </div>
+      <div className="relative">
+        <input
+          type="number"
+          value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
+          onChange={(e) => handleFeatureResize('height', e.target.value)}
+          step="0.1"
+          className="w-full bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-2.5 text-sm text-gray-300 placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+        />
+        <span className="absolute -top-2 left-3 px-2 text-xs font-medium text-gray-400 bg-gray-800">
+          Height
+        </span>
+      </div>
+      <select
+        value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
+        onChange={(e) => handleFeatureTextureChange(e.target.value)}
+        className="w-full bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-2.5 text-sm text-gray-300 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+      >
+        {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
+          <option key={index} value={texture}>
+            {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+)}
 
           {/* Wall Settings */}
           {selectedWall !== null && (
