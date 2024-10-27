@@ -700,25 +700,28 @@ export default function CustomizableRoom() {
     }
   }, [rooms, selectedRoom])
 
-  const handleFeatureSelect = (featureIndex) => {
+  const handleFeatureSelect = useCallback((featureIndex) => {
     setSelectedFeature(featureIndex)
-  }
-  const handleWallClick = (roomIndex, wallIndex) => {
+  }, [])
+
+  const handleWallClick = useCallback((roomIndex, wallIndex) => {
     setSelectedRoom(roomIndex)
     setSelectedWall(wallIndex)
     setNotification(`Room ${roomIndex + 1}, Wall ${wallIndex + 1} selected`)
     setTimeout(() => setNotification(''), 2000)
-  }
+  }, [])
 
   const handleRoomMove = useCallback((index, newPosition) => {
-    const newRooms = [...rooms];
-    newRooms[index].position = newPosition;
-    setRooms(newRooms);
-  }, [rooms]);
+    setRooms(prevRooms => {
+      const newRooms = [...prevRooms]
+      newRooms[index].position = newPosition
+      return newRooms
+    })
+  }, [])
   
 
   const renderRooms = useCallback(() => {
-    return !isTopView ? memoizedRooms.map((room, index) => (
+    return !isTopView ? rooms.map((room, index) => (
       <group key={room.id} position={room.position}>
         <Room
           structure={room.structure}
@@ -734,20 +737,20 @@ export default function CustomizableRoom() {
           selectedRoom={selectedRoom}
           wallThickness={wallThickness}
           modifiedWalls={room.modifiedWalls}
+          wallDesigns={wallDesigns}
         />
       </group>
-    )) : memoizedRooms.map((room, index) => (
+    )) : rooms.map((room, index) => (
       <TopViewRoom
         key={room.id}
         structure={room.structure}
         position={room.position}
-        onMove={(newPosition) => handleRoomMove(index, newPosition)} // Use the memoized handleRoomMove
+        onMove={(newPosition) => handleRoomMove(index, newPosition)}
         isSelected={index === selectedRoom}
         onSelect={() => setSelectedRoom(index)}
       />
-    ));
-  }, [isTopView, memoizedRooms, selectedRoom, selectedWall, realisticMode, wallThickness, handleFeatureMove, handleRoomMove]);
-
+    ))
+  }, [isTopView, rooms, selectedRoom, selectedWall, realisticMode, wallThickness, handleFeatureMove, handleRoomMove, wallDesigns, handleFeatureSelect, handleWallClick])
 
   
   if (loading) {
@@ -1605,7 +1608,7 @@ const Modal = ({ title, children, onClose }) => (
   </motion.div>
 )
 
-const Button = ({ children, onClick, variant = 'primary', className = '' }) => {
+const Button = React.memo(({ children, onClick, variant = 'primary', className = '' }) => {
   const baseStyle = "px-4 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-opacity-50"
   const variants = {
     primary: "bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700 focus:ring-purple-400",
@@ -1621,4 +1624,4 @@ const Button = ({ children, onClick, variant = 'primary', className = '' }) => {
       {children}
     </button>
   )
-}
+})
