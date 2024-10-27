@@ -23,6 +23,7 @@ export async function POST(request) {
           content: `Create a room design concept for: ${prompt}`
         }
       ],
+      // Use the mixtral-8x7b-32768 model for this task
       model: "mixtral-8x7b-32768",
       max_tokens: 150,
       temperature: 0.7,
