@@ -1276,22 +1276,6 @@ export default function CustomizableRoom() {
             Apply Style
           </button>
         </div>
-          <div className="flex flex-wrap gap-4 mb-4">
-            <input
-              type="text"
-              value={rooms[selectedRoom]?.prompt || ''}
-              onChange={(e) => {
-                const newRooms = [...rooms]
-                newRooms[selectedRoom].prompt = e.target.value
-                setRooms(newRooms)
-              }}
-              placeholder="Describe the house or room..."
-              className="flex-grow p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-            />
-            <button type="submit" className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl text-white font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">
-              Generate
-            </button>
-          </div>
           <div className="flex flex-wrap items-center gap-6 mb-4">
             <label className="flex items-center cursor-pointer">
               <input
@@ -1340,18 +1324,6 @@ export default function CustomizableRoom() {
             placeholder="Depth"
             className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
           />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          {wallDesigns.map((design, index) => (
-            <input
-              key={index}
-              type="text"
-              value={design}
-              onChange={(e) => handleWallDesignChange(index, e.target.value)}
-              placeholder={`Wall ${index + 1} design`}
-              className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-            />
-          ))}
         </div>
           <div className="flex items-center gap-4">
             <label htmlFor="wall-thickness" className="text-sm font-medium text-gray-300">Wall Thickness</label>
