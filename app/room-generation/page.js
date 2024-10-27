@@ -1193,7 +1193,10 @@ export default function CustomizableRoom() {
 
           {/* Environment Settings */}
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase">Environment</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Environment</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent ml-4" />
+            </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between bg-gray-900 p-2 rounded">
                 
