@@ -1121,7 +1121,7 @@ export default function CustomizableRoom() {
   return (
     <div className="flex h-screen bg-gray-900">
       <FlowerMenu />
-      <div className="w-1/5 min-w-[300px] bg-gray-800 border-r border-gray-700 overflow-y-auto">
+      <div className="w-1/5 min-w-[300px] bg-gradient-to-b from-gray-900 to-gray-800 border-r border-gray-700 overflow-y-auto shadow-xl">
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold text-gray-200">Room Designer</h1>
           
