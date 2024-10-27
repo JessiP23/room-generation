@@ -1382,29 +1382,29 @@ export default function CustomizableRoom() {
               Add Room
             </button>
           </div>
-            <button onClick={joinRooms} className="w-full bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded text-sm text-white">
-              Join Rooms
+          <button onClick={joinRooms} className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-indigo-500/20 transition-all duration-200 transform hover:scale-105">
+            Join Rooms
+          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => {
+                toggleView()
+                setIsInternalView(!isInternalView)
+              }}
+              className="bg-gray-700 hover:bg-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 border border-gray-600/50 transition-all duration-200 transform hover:scale-105"
+            >
+              {isInternalView ? 'External' : 'Internal'}
             </button>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => {
-                  toggleView()
-                  setIsInternalView(!isInternalView)
-                }}
-                className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm text-gray-300"
-              >
-                {isInternalView ? 'External' : 'Internal'}
-              </button>
-              <button
-                onClick={() => {
-                  toggleTopView()
-                  setIsTopView(!isTopView)
-                }}
-                className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm text-gray-300"
-              >
-                {isTopView ? 'Normal' : 'Top'}
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                toggleTopView()
+                setIsTopView(!isTopView)
+              }}
+              className="bg-gray-700 hover:bg-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 border border-gray-600/50 transition-all duration-200 transform hover:scale-105"
+            >
+              {isTopView ? 'Normal' : 'Top'}
+            </button>
+          </div>
           </div>
         </div>
       </div>
