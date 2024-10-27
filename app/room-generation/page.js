@@ -1127,23 +1127,23 @@ export default function CustomizableRoom() {
           Room Designer
         </h1>
           
-          {/* Subscription Status */}
-          <div className="mt-4 flex items-center gap-2 bg-gray-900 p-2 rounded">
-            <div className={`p-1 rounded-full ${subscription === 'premium' ? 'bg-yellow-400' : 'bg-gray-600'}`}>
-              {subscription === 'premium' ? (
-                <Crown className="w-4 h-4 text-gray-900" />
-              ) : (
-                <div className="w-4 h-4 rounded-full bg-gray-500" />
-              )}
-            </div>
-            <span className={`text-sm ${subscription === 'premium' ? 'text-yellow-400' : 'text-gray-400'}`}>
-              {subscription === 'premium' ? 'Premium' : 'Free'}
-            </span>
-            {subscription === 'free' && (
-              <button onClick={handleUpgrade} className="ml-auto text-xs bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded">
-                Upgrade
-              </button>
+          {/* Subscription Badge */}
+        <div className="mt-4 flex items-center gap-3 bg-gray-800/50 p-3 rounded-lg backdrop-blur-sm border border-gray-700/50">
+          <div className={`p-1.5 rounded-full ${subscription === 'premium' ? 'bg-gradient-to-r from-yellow-400 to-amber-500' : 'bg-gray-700'}`}>
+            {subscription === 'premium' ? (
+              <Crown className="w-4 h-4 text-gray-900" />
+            ) : (
+              <div className="w-4 h-4 rounded-full bg-gray-600" />
             )}
+          </div>
+          <span className={`text-sm font-medium ${subscription === 'premium' ? 'text-amber-400' : 'text-gray-400'}`}>
+            {subscription === 'premium' ? 'Premium' : 'Free'}
+          </span>
+          {subscription === 'free' && (
+            <button onClick={handleUpgrade} className="ml-auto text-xs bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 px-3 py-1.5 rounded-full font-medium transition-all duration-200 transform hover:scale-105">
+              Upgrade
+            </button>
+          )}
           </div>
         </div>
 
@@ -1151,55 +1151,44 @@ export default function CustomizableRoom() {
         <div className="p-4 space-y-6">
           {/* Room Structure Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase">Room Structure</h2>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={wallStyle}
-                  onChange={(e) => setWallStyle(e.target.value)}
-                  placeholder="Wall style"
-                  className="flex-1 bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                />
-                <button 
-                  type="submit"
-                  className="bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded text-sm text-white"
-                >
-                  Apply
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  value={rooms[selectedRoom].structure.width}
-                  onChange={(e) => handleDimensionChange('width', e.target.value)}
-                  placeholder="Width"
-                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
-                />
-                <input
-                  type="number"
-                  value={rooms[selectedRoom].structure.height}
-                  onChange={(e) => handleDimensionChange('height', e.target.value)}
-                  placeholder="Height"
-                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
-                />
-                <input
-                  type="number"
-                  value={rooms[selectedRoom].structure.depth}
-                  onChange={(e) => handleDimensionChange('depth', e.target.value)}
-                  placeholder="Depth"
-                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
-                />
-                <input
-                  type="number"
-                  value={wallThickness}
-                  onChange={handleWallThicknessChange}
-                  placeholder="Wall Thickness"
-                  step="0.1"
-                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
-                />
-              </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Room Structure</h2>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent ml-4" />
+          </div>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={wallStyle}
+                onChange={(e) => setWallStyle(e.target.value)}
+                placeholder="Wall style"
+                className="flex-1 bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-2.5 text-sm text-gray-300 placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+              />
+              <button 
+                type="submit"
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-all duration-200 transform hover:scale-105"
+              >
+                Apply
+              </button>
             </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {['Width', 'Height', 'Depth', 'Wall Thickness'].map((label, index) => (
+                <div key={label} className="relative">
+                  <input
+                    type="number"
+                    value={index === 3 ? wallThickness : rooms[selectedRoom].structure[label.toLowerCase()]}
+                    onChange={(e) => index === 3 ? handleWallThicknessChange(e) : handleDimensionChange(label.toLowerCase(), e.target.value)}
+                    step={index === 3 ? "0.1" : "1"}
+                    className="w-full bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-2.5 text-sm text-gray-300 placeholder-gray-500 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                  />
+                  <span className="absolute -top-2 left-3 px-2 text-xs font-medium text-gray-400 bg-gray-800">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
           </form>
 
           {/* Environment Settings */}
