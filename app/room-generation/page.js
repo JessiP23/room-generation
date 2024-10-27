@@ -10,7 +10,7 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import { Crown, Sparkles, DollarSign, RotateCcw, ClipboardCheck, Mouse, Keyboard, Info } from 'lucide-react'
+import { Crown, Sparkles, DollarSign, RotateCcw, ClipboardCheck, Mouse, Keyboard, Info, ChevronDown, ChevronRight, AppWindow, AppWindowIcon, DoorOpen, Link2, Download, Save, Upload, Plus, Layout, Box, Eye, PenTool, Layers } from 'lucide-react'
 import { EnvironmentScene } from '../components/environments'
 import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -456,6 +456,14 @@ export default function CustomizableRoom() {
   const [wallDesigns, setWallDesigns] = useState(Array(6).fill(''))
 
   const [wallStyle, setWallStyle] = useState('')
+  const [openPanels, setOpenPanels] = useState({
+    subscription: true,
+    roomProperties: true,
+    features: true,
+    view: true,
+    actions: true,
+    wallSettings: true
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -1095,61 +1103,110 @@ export default function CustomizableRoom() {
     setSelectedRoofStyle(e.target.value);
   };
 
+  const togglePanel = (panel) => {
+    setOpenPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
+  };
+
+  const PanelHeader = ({ title, isOpen, onClick, icon: Icon }) => (
+    <div
+      onClick={onClick}
+      className="flex items-center gap-2 p-2 hover:bg-white/5 cursor-pointer rounded-lg transition-colors duration-200"
+    >
+      {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+      <Icon className="w-4 h-4" />
+      <span className="font-medium">{title}</span>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex h-screen bg-gray-900">
       <FlowerMenu />
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 text-white p-6 overflow-y-auto">
-      <div className="max-w-7xl mx-auto bg-black/30 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 p-8 transition-all duration-300 hover:shadow-purple-500/20">
-        <h1 className="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 animate-pulse">
-          Customizable Room Designer
-        </h1>
-        
-        <div className="flex items-center justify-between mb-8 bg-gradient-to-r from-blue-500/20 to-purple-500/20 p-4 rounded-2xl backdrop-blur-sm">
-          <div className="flex items-center gap-4">
-            <div className={`p-2 rounded-full ${subscription === 'premium' ? 'bg-yellow-400 animate-bounce' : 'bg-gray-600'}`}>
+      <div className="w-1/5 min-w-[300px] bg-gray-800 border-r border-gray-700 overflow-y-auto">
+        <div className="p-4 border-b border-gray-700">
+          <h1 className="text-xl font-bold text-gray-200">Room Designer</h1>
+          
+          {/* Subscription Status */}
+          <div className="mt-4 flex items-center gap-2 bg-gray-900 p-2 rounded">
+            <div className={`p-1 rounded-full ${subscription === 'premium' ? 'bg-yellow-400' : 'bg-gray-600'}`}>
               {subscription === 'premium' ? (
-                <Crown className="w-6 h-6 text-gray-900" />
+                <Crown className="w-4 h-4 text-gray-900" />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-gray-500" />
+                <div className="w-4 h-4 rounded-full bg-gray-500" />
               )}
             </div>
-            <span className={`font-semibold text-lg ${
-              subscription === 'premium'
-                ? 'text-yellow-400'
-                : 'text-gray-300'
-            }`}>
+            <span className={`text-sm ${subscription === 'premium' ? 'text-yellow-400' : 'text-gray-400'}`}>
               {subscription === 'premium' ? 'Premium' : 'Free'}
             </span>
+            {subscription === 'free' && (
+              <button onClick={handleUpgrade} className="ml-auto text-xs bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded">
+                Upgrade
+              </button>
+            )}
           </div>
-          
-          {subscription === 'free' && (
-            <button
-              onClick={handleUpgrade}
-              className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white font-semibold text-lg transition-all duration-300 hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50 transform hover:scale-105"
-            >
-              <span className="relative z-10 flex items-center">
-                Upgrade to Premium
-                <Sparkles className="w-5 h-5 ml-2 animate-spin" />
-              </span>
-              <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </button>
-          )}
         </div>
-        <form onSubmit={handleSubmit} className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
-        <div className="flex flex-wrap gap-4 mb-4">
-        <input
-            type="text"
-            value={wallStyle}
-            onChange={(e) => setWallStyle(e.target.value)}
-            placeholder="Enter wall style (e.g., brick, wood, stone, tropical)"
-            className="flex-grow p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-          />
-          <button type="submit" className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl text-white font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">
-            Apply Style
-          </button>
-        </div>
-          <div className="flex flex-wrap items-center gap-6 mb-4">
-            <label className="flex items-center cursor-pointer">
+
+        {/* Tools Sections */}
+        <div className="p-4 space-y-6">
+          {/* Room Structure Form */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase">Room Structure</h2>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={wallStyle}
+                  onChange={(e) => setWallStyle(e.target.value)}
+                  placeholder="Wall style"
+                  className="flex-1 bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                <button 
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded text-sm text-white"
+                >
+                  Apply
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  value={rooms[selectedRoom].structure.width}
+                  onChange={(e) => handleDimensionChange('width', e.target.value)}
+                  placeholder="Width"
+                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                />
+                <input
+                  type="number"
+                  value={rooms[selectedRoom].structure.height}
+                  onChange={(e) => handleDimensionChange('height', e.target.value)}
+                  placeholder="Height"
+                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                />
+                <input
+                  type="number"
+                  value={rooms[selectedRoom].structure.depth}
+                  onChange={(e) => handleDimensionChange('depth', e.target.value)}
+                  placeholder="Depth"
+                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                />
+                <input
+                  type="number"
+                  value={wallThickness}
+                  onChange={handleWallThicknessChange}
+                  placeholder="Wall Thickness"
+                  step="0.1"
+                  className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                />
+              </div>
+            </div>
+          </form>
+
+          {/* Environment Settings */}
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase">Environment</h2>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between bg-gray-900 p-2 rounded">
+                
+              <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={realisticMode}
@@ -1159,13 +1216,12 @@ export default function CustomizableRoom() {
               <div className="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
               <span className="ml-3 text-sm font-medium text-gray-300">Realistic Mode</span>
             </label>
-            <div className="flex items-center gap-2">
-              <label htmlFor="environment" className="text-sm font-medium text-gray-300">Environment</label>
+              </div>
               <select
                 id="environment"
                 value={environment}
                 onChange={handleEnvironmentChange}
-                className="p-2 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
               >
                 <option value="forest">Forest</option>
                 <option value="city">City</option>
@@ -1174,158 +1230,158 @@ export default function CustomizableRoom() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-          <input
-            type="number"
-            value={rooms[selectedRoom].structure.width}
-            onChange={(e) => handleDimensionChange('width', e.target.value)}
-            placeholder="Width"
-            className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-          />
-          <input
-            type="number"
-            value={rooms[selectedRoom].structure.height}
-            onChange={(e) => handleDimensionChange('height', e.target.value)}
-            placeholder="Height"
-            className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-          />
-          <input
-            type="number"
-            value={rooms[selectedRoom].structure.depth}
-            onChange={(e) => handleDimensionChange('depth', e.target.value)}
-            placeholder="Depth"
-            className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-          />
-        </div>
-          <div className="flex items-center gap-4">
-            <label htmlFor="wall-thickness" className="text-sm font-medium text-gray-300">Wall Thickness</label>
-            <input
-              type="number"
-              id="wall-thickness"
-              value={wallThickness}
-              onChange={handleWallThicknessChange}
-              placeholder="Thickness"
-              step="0.1"
-              className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-            />
-          </div>
-        </form>
 
-        {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
-          <div className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
-            <h3 className="text-xl font-semibold mb-4 text-purple-300">Feature Settings</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <input
-                type="number"
-                value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
-                onChange={(e) => handleFeatureResize('width', e.target.value)}
-                placeholder="Width"
-                step="0.1"
-                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-              />
-              <input
-                type="number"
-                value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
-                onChange={(e) => handleFeatureResize('height', e.target.value)}
-                placeholder="Height"
-                step="0.1"
-                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-              />
-              <select
-                value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
-                onChange={(e) => handleFeatureTextureChange(e.target.value)}
-                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+          {/* Feature Settings */}
+          {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase">Feature Settings</h2>
+              <div className="space-y-2">
+                <input
+                  type="number"
+                  value={rooms[selectedRoom].features[selectedFeature].dimensions?.width || 1}
+                  onChange={(e) => handleFeatureResize('width', e.target.value)}
+                  placeholder="Width"
+                  step="0.1"
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                />
+                <input
+                  type="number"
+                  value={rooms[selectedRoom].features[selectedFeature].dimensions?.height || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? 2 : 1)}
+                  onChange={(e) => handleFeatureResize('height', e.target.value)}
+                  placeholder="Height"
+                  step="0.1"
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                />
+                <select
+                  value={rooms[selectedRoom].features[selectedFeature].texture || (rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures[0] : windowTextures[0])}
+                  onChange={(e) => handleFeatureTextureChange(e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                >
+                  {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
+                    <option key={index} value={texture}>
+                      {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Wall Settings */}
+          {selectedWall !== null && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase">Wall Settings</h2>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => addFeature('door')} className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm text-gray-300">
+                    Add Door
+                  </button>
+                  <button onClick={() => addFeature('window')} className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm text-gray-300">
+                    Add Window
+                  </button>
+                </div>
+                <button onClick={addHallway} className="w-full bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm text-gray-300">
+                  Add Hallway
+                </button>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={rooms[selectedRoom].wallColors[selectedWall]}
+                    onChange={(e) => handleColorChange(e.target.value)}
+                    className="w-10 h-10 rounded bg-gray-900 border border-gray-700"
+                  />
+                  <input
+                    type="text"
+                    value={rooms[selectedRoom].wallColors[selectedWall]}
+                    onChange={(e) => handleColorChange(e.target.value)}
+                    placeholder="Hex color"
+                    className="flex-1 bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                  />
+                </div>
+                <select
+                  value={rooms[selectedRoom].wallTextures[selectedWall]}
+                  onChange={(e) => handleTextureChange(e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                >
+                  {availableTextures.map((texture, index) => (
+                    <option key={index} value={texture}>
+                      {texture.split('/').pop().split('.')[0]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Hallway Settings */}
+          {selectedHallway !== null && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase">Hallway Settings</h2>
+              <div className="space-y-2">
+                <input
+                  type="number"
+                  value={hallwayDimensions.width}
+                  onChange={(e) => handleHallwayResize('width', e.target.value)}
+                  placeholder="Width"
+                  step="0.1"
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                />
+                <input
+                  type="number"
+                  value={hallwayDimensions.height}
+                  onChange={(e) => handleHallwayResize('height', e.target.value)}
+                  placeholder="Height"
+                  step="0.1"
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
+                />
+                <button onClick={confirmHallway} className="w-full bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded text-sm text-white">
+                  Confirm Hallway
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={handleDownload} className="bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded text-sm text-white">
+                Download
+              </button>
+              <button onClick={handleSave} className="bg-green-500 hover:bg-green-600 px-3 py-2 rounded text-sm text-white">
+                Save
+              </button>
+              <button onClick={handleLoad} className="bg-yellow-500 hover:bg-yellow-600 px-3 py-2 rounded text-sm text-white">
+                Load
+              </button>
+              <button onClick={addRoom} className="bg-purple-500 hover:bg-purple-600 px-3 py-2 rounded text-sm text-white">
+                Add Room
+              </button>
+            </div>
+            <button onClick={joinRooms} className="w-full bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded text-sm text-white">
+              Join Rooms
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  toggleView()
+                  setIsInternalView(!isInternalView)
+                }}
+                className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm text-gray-300"
               >
-                {(rooms[selectedRoom].features[selectedFeature].type === 'door' ? doorTextures : windowTextures).map((texture, index) => (
-                  <option key={index} value={texture}>
-                    {`${rooms[selectedRoom].features[selectedFeature].type === 'door' ? 'Door' : 'Window'} Texture ${index + 1}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8">
-          <button onClick={handleDownload} className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl text-white font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">Download 3D Room</button>
-          <button onClick={handleSave} className="p-3 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl text-white font-semibold hover:from-green-600 hover:to-teal-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50">Save Rooms</button>
-          <button onClick={handleLoad} className="p-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl text-white font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50">Load Rooms</button>
-          <button onClick={addRoom} className="p-3 bg-gradient-to-r from-pink-500 to-red-500 rounded-xl text-white font-semibold hover:from-pink-600 hover:to-red-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50">Add Room</button>
-          <button onClick={joinRooms} className="p-3 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-xl text-white font-semibold hover:from-indigo-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-50">Join Rooms</button>
-          <button onClick={() => {
-            toggleView()
-            setIsInternalView(!isInternalView)
-          }} className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50">
-            {isInternalView ? 'External View' : 'Internal View'}
-          </button>
-          <button onClick={() => {
-            toggleTopView()
-            setIsTopView(!isTopView)
-          }} className="p-3 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl text-white font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-teal-400  focus:ring-opacity-50">
-            {isTopView ? 'Normal View' : 'Top View'}
-          </button>
-        </div>
-
-        {selectedWall !== null && (
-          <div className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
-            <h3 className="text-xl font-semibold mb-4 text-purple-300">Wall Settings</h3>
-            <div className="flex flex-wrap gap-4">
-              <button onClick={() => addFeature('door')} className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl text-white font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-opacity-50">Add Door</button>
-              <button onClick={() => addFeature('window')} className="p-3 bg-gradient-to-r from-sky-500 to-blue-500 rounded-xl text-white font-semibold hover:from-sky-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-opacity-50">Add Window</button>
-              <button onClick={addHallway} className="p-3 bg-gradient-to-r from-lime-500 to-green-500 rounded-xl text-white font-semibold hover:from-lime-600 hover:to-green-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-opacity-50">Add Hallway</button>
-              <input
-                type="color"
-                value={rooms[selectedRoom].wallColors[selectedWall]}
-                onChange={(e) => handleColorChange(e.target.value)}
-                className="w-12 h-12 rounded-xl border-2 border-white/20 cursor-pointer transition-all duration-300 hover:scale-110"
-              />
-              <input
-                type="text"
-                value={rooms[selectedRoom].wallColors[selectedWall]}
-                onChange={(e) => handleColorChange(e.target.value)}
-                placeholder="Hex color"
-                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-              />
-              <select
-                value={rooms[selectedRoom].wallTextures[selectedWall]}
-                onChange={(e) => handleTextureChange(e.target.value)}
-                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+                {isInternalView ? 'External' : 'Internal'}
+              </button>
+              <button
+                onClick={() => {
+                  toggleTopView()
+                  setIsTopView(!isTopView)
+                }}
+                className="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm text-gray-300"
               >
-                {availableTextures.map((texture, index) => (
-                  <option key={index} value={texture}>
-                    {texture.split('/').pop().split('.')[0]}
-                  </option>
-                ))}
-              </select>
+                {isTopView ? 'Normal' : 'Top'}
+              </button>
             </div>
           </div>
-        )}
-
-        {selectedHallway !== null && (
-          <div className="mb-8 bg-white/5 p-6 rounded-2xl backdrop-blur-sm">
-            <h3 className="text-xl font-semibold mb-4 text-purple-300">Hallway Settings</h3>
-            <div className="flex flex-wrap gap-4 mb-4">
-              <input
-                type="number"
-                value={hallwayDimensions.width}
-                onChange={(e) => handleHallwayResize('width', e.target.value)}
-                placeholder="Width"
-                step="0.1"
-                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-              />
-              <input
-                type="number"
-                value={hallwayDimensions.height}
-                onChange={(e) => handleHallwayResize('height', e.target.value)}
-                placeholder="Height"
-                step="0.1"
-                className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
-              />
-            </div>
-            <button onClick={confirmHallway} className="p-3 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl text-white font-semibold hover:from-emerald-600 hover:to-green-600 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-50">Confirm Hallway</button>
-          </div>
-        )}
-      </div>
+        </div>
       </div>
       <div className="flex-grow relative min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-4">
         <Canvas shadows className="w-full h-full rounded-3xl overflow-hidden border-4 border-purple-500/30">
