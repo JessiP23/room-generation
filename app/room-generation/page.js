@@ -1197,33 +1197,33 @@ export default function CustomizableRoom() {
               <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Environment</h2>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent ml-4" />
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between bg-gray-900 p-2 rounded">
-                
+            <div className="space-y-3">
+            <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
               <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={realisticMode}
-                onChange={(e) => setRealisticMode(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-              <span className="ml-3 text-sm font-medium text-gray-300">Realistic Mode</span>
-            </label>
-              </div>
-              <select
-                id="environment"
-                value={environment}
-                onChange={handleEnvironmentChange}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300"
-              >
-                <option value="forest">Forest</option>
-                <option value="city">City</option>
-                <option value="desert">Desert</option>
-                <option value="snow">Snow</option>
-              </select>
+                <input
+                  type="checkbox"
+                  checked={realisticMode}
+                  onChange={(e) => setRealisticMode(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="relative w-11 h-6 bg-gray-700 peer-focus:ring-4 peer-focus:ring-purple-500/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-purple-500"></div>
+                <span className="ml-3 text-sm font-medium text-gray-300">Realistic Mode</span>
+              </label>
             </div>
+            
+            <select
+              id="environment"
+              value={environment}
+              onChange={handleEnvironmentChange}
+              className="w-full bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-2.5 text-sm text-gray-300 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+            >
+              <option value="forest">Forest</option>
+              <option value="city">City</option>
+              <option value="desert">Desert</option>
+              <option value="snow">Snow</option>
+            </select>
           </div>
+        </div>
 
           {/* Feature Settings */}
           {selectedFeature !== null && rooms[selectedRoom] && rooms[selectedRoom].features[selectedFeature] && (
