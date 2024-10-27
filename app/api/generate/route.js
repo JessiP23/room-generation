@@ -61,6 +61,7 @@ export async function POST(request) {
       concept: initialConcept,
       design: roomDesign
     })
+    // Return a JSON response with the initial concept and detailed room design
   } catch (error) {
     console.error('Error:', error.message, error.stack)
     return NextResponse.json({ message: 'Failed to generate room design' }, { status: 500 })
