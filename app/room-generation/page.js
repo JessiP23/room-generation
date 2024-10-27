@@ -16,24 +16,23 @@ import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
 import ButtonInstructions from '../components/ButtonInstructions'
 
-// room 
 // Room component
 const Room = React.memo(({ 
   structure, wallColors, features, onFeatureMove, onWallClick, selectedWall, realisticMode, roomIndex, selectedRoom, wallTextures, onFeatureSelect, wallThickness, modifiedWalls, wallDesigns 
 }) => {
   const { width, height, depth } = structure
 
-  const sides = [
+  const sides = useMemo(() => [
     { pos: [0, 0, depth/2], rot: [0, 0, 0], scale: [width, height, wallThickness], size: [width, height] },
     { pos: [0, 0, -depth/2], rot: [0, 0, 0], scale: [width, height, wallThickness], size: [width, height] },
     { pos: [width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, wallThickness], size: [depth, height] },
     { pos: [-width/2, 0, 0], rot: [0, Math.PI/2, 0], scale: [depth, height, wallThickness], size: [depth, height] },
     { pos: [0, height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, wallThickness], size: [width, depth] },
     { pos: [0, -height/2, 0], rot: [Math.PI/2, 0, 0], scale: [width, depth, wallThickness], size: [width, depth] },
-  ]
+  ], [width, height, depth, wallThickness])
 
-  const textureLoader = new THREE.TextureLoader()
-  const loadedTextures = wallTextures.map(texture => textureLoader.load(texture))
+  const textureLoader = useMemo(() => new THREE.TextureLoader(), [])
+  const loadedTextures = useMemo(() => wallTextures.map(texture => textureLoader.load(texture)), [wallTextures, textureLoader])
 
   return (
     <group>
@@ -98,9 +97,6 @@ const Room = React.memo(({
     </group>
   )
 })
-
-
-
 
 function TopViewRoom({ structure, position, onMove, isSelected, onSelect }) {
   const { width, depth } = structure
@@ -248,7 +244,6 @@ const Feature = React.memo(({
     }
   })
 
-
   const handlePointerDown = (e) => {
     e.stopPropagation()
     setIsMoving(true)
@@ -285,7 +280,7 @@ const Feature = React.memo(({
   )
 })
 
-// walking camera
+// WalkingCamera component
 const WalkingCamera = React.memo(({ initialPosition = [0, 1.7, 0], moveSpeed = 0.1, sprintMultiplier = 2, room }) => {
   const { camera, gl } = useThree();
   const controlsRef = useRef();
@@ -317,7 +312,7 @@ const WalkingCamera = React.memo(({ initialPosition = [0, 1.7, 0], moveSpeed = 0
           break;
         case 'KeyR':
           if (camera.position.y === initialPosition[1]) {
-            camera.position.y += 0.5; // Simple jump
+            camera.position.y += 0.5;
           }
           break;
         case 'ShiftLeft':
@@ -377,8 +372,7 @@ const WalkingCamera = React.memo(({ initialPosition = [0, 1.7, 0], moveSpeed = 0
   return <PointerLockControls ref={controlsRef} args={[camera, gl.domElement]} />;
 })
 
-
-
+// EnvironmentWrapper component
 const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
   const { scene } = useThree()
   const envRef = useRef()
@@ -399,15 +393,11 @@ const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
 
 
 
-
 export default function CustomizableRoom() {
-
   const [wallThickness, setWallThickness] = useState(0.2)
-
   const handleWallThicknessChange = (e) => {
     setWallThickness(Number(e.target.value))
   }
-
   const [rooms, setRooms] = useState([
     {
       id: 1,
@@ -467,21 +457,22 @@ export default function CustomizableRoom() {
 
   const [wallStyle, setWallStyle] = useState('')
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    const newRooms = [...rooms]
-    const currentRoom = newRooms[selectedRoom]
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser)
+      setLoading(false)
+      if (currentUser) {
+        await createOrUpdateUserDocument(currentUser.uid)
+        fetchSavedProjects(currentUser.uid)
+      } else {
+        router.push('/sign-in')
+      }
+    })
 
-   // Update wall textures based on the input style
-   const newTexture = getTextureForStyle(wallStyle)
-   currentRoom.wallTextures = Array(6).fill(newTexture)
+    return () => unsubscribe()
+  }, [router])
 
-   setRooms(newRooms)
-  }
-
-  const getTextureForStyle = (style) => {
-    // This is a simple example. You can expand this function to handle more styles
+  const getTextureForStyle = useCallback((style) => {
     switch (style.toLowerCase()) {
       case 'brick':
         return '/brick_texture.jpg'
@@ -494,43 +485,29 @@ export default function CustomizableRoom() {
       default:
         return '/wall_texture.jpg'
     }
-  }
+  }, [])
 
-  const handleWallDesignChange = (index, design) => {
-    const newWallDesigns = [...wallDesigns]
-    newWallDesigns[index] = design
-    setWallDesigns(newWallDesigns)
-  }
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault()
+    
+    const newRooms = [...rooms]
+    const currentRoom = newRooms[selectedRoom]
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser)
-      setLoading(false)
-      if (currentUser) {
-        await createOrUpdateUserDocument(currentUser.uid)
-        fetchSavedProjects(currentUser.uid)
-      } else {
-        router.push('/sign-in')
-      }
+    // Update wall textures based on the input style
+    const newTexture = getTextureForStyle(wallStyle)
+    currentRoom.wallTextures = Array(6).fill(newTexture)
+
+    setRooms(newRooms)
+  }, [rooms, selectedRoom, wallStyle, getTextureForStyle])
+
+  const handleWallDesignChange = useCallback((index, design) => {
+    setWallDesigns(prev => {
+      const newWallDesigns = [...prev]
+      newWallDesigns[index] = design
+      return newWallDesigns
     })
+  }, [])
 
-    return () => unsubscribe()
-  }, [router])
-  
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser)
-      setLoading(false)
-      if (currentUser) {
-        await createOrUpdateUserDocument(currentUser.uid)
-        fetchSavedProjects(currentUser.uid)
-      } else {
-        router.push('/sign-in')
-      }
-    })
-
-    return () => unsubscribe()
-  }, [router])
 
   // Initialize rooms state
   useEffect(() => {
@@ -670,34 +647,6 @@ export default function CustomizableRoom() {
 
   const handleEnvironmentChange = (e) => {
     setEnvironment(e.target.value)
-  }
-
-  const handlePriceChange = (e) => {
-    setPrice(Number(e.target.value))
-  }
-
-  const sellRoom = async () => {
-    if (!user) {
-      setNotification('Please sign in to sell rooms')
-      setTimeout(() => setNotification(''), 2000)
-      return
-    }
-
-    try {
-      const userRef = doc(db, 'users', user.uid)
-      const roomsCollectionRef = collection(userRef, 'rooms')
-      await addDoc(roomsCollectionRef, {
-        name: `Room for Sale - $${price}`,
-        rooms: rooms,
-        price: price,
-        createdAt: new Date(),
-        status: 'for sale'
-      })
-      setNotification('Room listed for sale successfully')
-    } catch (error) {
-      setNotification('Error listing room for sale: ' + error.message)
-    }
-    setTimeout(() => setNotification(''), 2000)
   }
 
   const createOrUpdateUserDocument = async (userId) => {
