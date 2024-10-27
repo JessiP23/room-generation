@@ -6,6 +6,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 })
 
+// Define the POST method for the /api/generate route
 export async function POST(request) {
   try {
     const { prompt } = await request.json()
