@@ -52,7 +52,7 @@ const Forest = ({ count = 100, spread = 20 }) => {
   )
 }
 
-
+// city
 const City = ({ buildingCount = 40, spread = 20 }) => {
   const buildings = useMemo(() => {
     const buildingsArray = [];
