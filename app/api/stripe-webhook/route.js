@@ -38,6 +38,7 @@ export async function POST(req) {
   return NextResponse.json({ received: true })
 }
 
+// update user's subscription status
 async function updateUserSubscription(userId, status) {
   const userRef = doc(db, 'users', userId)
   await updateDoc(userRef, {
