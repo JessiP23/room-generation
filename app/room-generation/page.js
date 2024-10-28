@@ -734,12 +734,28 @@ export default function CustomizableRoom() {
     if (user) {
       const checkoutUrl = new URL('https://buy.stripe.com/7sI03B8eE7Ge4ZaaEE')
       checkoutUrl.searchParams.append('client_reference_id', user.uid)
+      checkoutUrl.searchParams.append('success_url', `${window.location.origin}/upgrade-success`)
+      checkoutUrl.searchParams.append('cancel_url', `${window.location.origin}/upgrade-cancel`)
       router.push(checkoutUrl.toString())
     } else {
       setNotification('Please sign in to upgrade your subscription')
       setTimeout(() => setNotification(''), 2000)
     }
   }
+
+  
+  useEffect(() => {
+    const checkUpgradeStatus = async () => {
+      if (user && window.location.pathname === '/upgrade-success') {
+        await fetchSubscription(user.uid)
+        setNotification('Subscription upgraded to premium successfully')
+        router.push('/')
+      }
+    }
+
+    checkUpgradeStatus()
+  }, [user, router])
+
 
 
   const confirmUpgrade = async () => {
@@ -1214,23 +1230,23 @@ export default function CustomizableRoom() {
         </h1>
           
           {/* Subscription Badge */}
-          <div className="mt-4 flex items-center gap-3 bg-gray-800/50 p-3 rounded-lg backdrop-blur-sm border border-gray-700/50">
-            <div className={`p-1.5 rounded-full ${subscription === 'premium' ? 'bg-gradient-to-r from-yellow-400 to-amber-500' : 'bg-gray-700'}`}>
-              {subscription === 'premium' ? (
-                <Crown className="w-4 h-4 text-gray-900" />
-              ) : (
-                <div className="w-4 h-4 rounded-full bg-gray-600" />
-              )}
-            </div>
-            <span className={`text-sm font-medium ${subscription === 'premium' ? 'text-amber-400' : 'text-gray-400'}`}>
-              {subscription === 'premium' ? 'Premium' : 'Free'}
-            </span>
-            {subscription === 'free' && (
-              <button onClick={handleUpgrade} className="ml-auto text-xs bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 px-3 py-1.5 rounded-full font-medium transition-all duration-200 transform hover:scale-105">
-                Upgrade
-              </button>
-            )}
-          </div>
+          {/* <div className="mt-4 flex items-center gap-3 bg-gray-800/50 p-3 rounded-lg backdrop-blur-sm border border-gray-700/50">
+        <div className={`p-1.5 rounded-full ${subscription === 'premium' ? 'bg-gradient-to-r from-yellow-400 to-amber-500' : 'bg-gray-700'}`}>
+          {subscription === 'premium' ? (
+            <Crown className="w-4 h-4 text-gray-900" />
+          ) : (
+            <div className="w-4 h-4 rounded-full bg-gray-600" />
+          )}
+        </div>
+        <span className={`text-sm font-medium ${subscription === 'premium' ? 'text-amber-400' : 'text-gray-400'}`}>
+          {subscription === 'premium' ? 'Premium' : 'Free'}
+        </span>
+        {subscription === 'free' && (
+          <button onClick={handleUpgrade} className="ml-auto text-xs bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 px-3 py-1.5 rounded-full font-medium transition-all duration-200 transform hover:scale-105">
+            Upgrade
+          </button>
+        )}
+      </div> */}
         </div>
 
         {/* Tools Sections */}
