@@ -6,7 +6,6 @@ import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-
 export async function POST(req) {
   const body = await req.text()
   const signature = headers().get('stripe-signature')
@@ -38,10 +37,26 @@ export async function POST(req) {
   return NextResponse.json({ received: true })
 }
 
-// update user's subscription status in firestore
 async function updateUserSubscription(userId, status) {
   const userRef = doc(db, 'users', userId)
-  await updateDoc(userRef, {
-    subscription: status,
-  })
+  
+  try {
+    const userDoc = await getDoc(userRef)
+    if (userDoc.exists()) {
+      const userData = userDoc.data()
+      const currentRooms = userData.rooms || []
+      
+      await updateDoc(userRef, {
+        subscription: status,
+        maxRooms: status === 'premium' ? 10 : 2,
+        rooms: currentRooms.slice(0, status === 'premium' ? 10 : 2) // Limit rooms based on subscription
+      })
+      
+      console.log(`Updated subscription for user ${userId} to ${status}`)
+    } else {
+      console.error(`User document not found for userId: ${userId}`)
+    }
+  } catch (error) {
+    console.error(`Error updating user subscription: ${error}`)
+  }
 }
