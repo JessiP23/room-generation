@@ -730,20 +730,6 @@ export default function CustomizableRoom() {
     }
   }
 
-  const handleUpgrade = async () => {
-    if (user) {
-      const checkoutUrl = new URL('https://buy.stripe.com/7sI03B8eE7Ge4ZaaEE')
-      checkoutUrl.searchParams.append('client_reference_id', user.uid)
-      checkoutUrl.searchParams.append('success_url', `${window.location.origin}/upgrade-success`)
-      checkoutUrl.searchParams.append('cancel_url', `${window.location.origin}/upgrade-cancel`)
-      router.push(checkoutUrl.toString())
-    } else {
-      setNotification('Please sign in to upgrade your subscription')
-      setTimeout(() => setNotification(''), 2000)
-    }
-  }
-
-  
   useEffect(() => {
     const checkUpgradeStatus = async () => {
       if (user && window.location.pathname === '/upgrade-success') {
