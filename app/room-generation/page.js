@@ -429,7 +429,7 @@ export default function CustomizableRoom() {
   const [showLoadModal, setShowLoadModal] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-  const [environment, setEnvironment] = useState('forest')
+  const [environment, setEnvironment] = useState('')
 
   const [selectedHallway, setSelectedHallway] = useState(null)
   const [hallwayDimensions, setHallwayDimensions] = useState({ width: 2, height: 2.5 })
@@ -1226,6 +1226,9 @@ export default function CustomizableRoom() {
               onChange={handleEnvironmentChange}
               className="w-full bg-gray-800/50 border border-gray-700/50 rounded-lg px-4 py-2.5 text-sm text-gray-300 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
             >
+              <option value="">Select an environment</option>
+              <option value="simple">Simple</option>
+              <option value="town">Town</option>
               <option value="forest">Forest</option>
               <option value="city">City</option>
               <option value="desert">Desert</option>
