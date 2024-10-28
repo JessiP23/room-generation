@@ -10,7 +10,7 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import { Crown, Sparkles, DollarSign, RotateCcw, ClipboardCheck, Mouse, Keyboard, Info, ChevronDown, ChevronRight, AppWindow, AppWindowIcon, DoorOpen, Link2, Download, Save, Upload, Plus, Layout, Box, Eye, PenTool, Layers } from 'lucide-react'
+import { Crown, Sparkles, DollarSign, RotateCcw, ClipboardCheck, Mouse, Keyboard, Info, ChevronDown, ChevronRight, AppWindow, AppWindowIcon, DoorOpen, Link2, Download, Save, Upload, Plus, Layout, Box, Eye, PenTool, Layers, X } from 'lucide-react'
 import { EnvironmentScene } from '../components/environments'
 import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -396,7 +396,7 @@ const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
 
 const stripePromise = loadStripe('pk_live_51POkrBKqHeRNv81GpdjhZT418vSsp3oUqemp4dN9CPZ9r1zGnxZIYo3m6ByKjS7hW44sJCIiglukgVsiWOvNRT5S00Erl4Icpy')
 
-const StripeCheckoutForm = ({ onSuccess }) => {
+const StripeCheckoutForm = ({ onSuccess, onClose }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -430,10 +430,10 @@ const StripeCheckoutForm = ({ onSuccess }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 relative">
       <div className="bg-gray-800 p-4 rounded-lg">
         <h3 className="text-lg font-semibold text-white mb-2">Room Designer Pro</h3>
-        <p className="text-gray-300">Upgrade to Premium for $9.99/month</p>
+        <p className="text-gray-300">Upgrade to Premium for $5.00/month</p>
       </div>
       <div className="bg-gray-800 p-4 rounded-lg">
         <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -471,6 +471,7 @@ const StripeCheckoutForm = ({ onSuccess }) => {
     </form>
   );
 };
+
 
 
 export default function CustomizableRoom() {
