@@ -1042,11 +1042,11 @@ export default function CustomizableRoom() {
     const querySnapshot = await getDocs(roomsCollectionRef)
     const userRoomsCount = querySnapshot.size
 
-    // if ((subscription === 'free' && userRoomsCount >= 2) || (subscription === 'premium' && userRoomsCount >= 10)) {
-    //   setNotification('You have reached your room limit. Please upgrade your subscription to save more rooms.')
-    //   setTimeout(() => setNotification(''), 2000)
-    //   return
-    // }
+    if ((subscription === 'free' && userRoomsCount >= 5) || (subscription === 'premium' && userRoomsCount >= 10)) {
+      setNotification('You have reached your room limit. Please upgrade your subscription to save more rooms.')
+      setTimeout(() => setNotification(''), 2000)
+      return
+    }
 
     setShowSaveModal(true)
   }
