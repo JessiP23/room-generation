@@ -517,14 +517,6 @@ export default function CustomizableRoom() {
     setRooms(newRooms)
   }, [rooms, selectedRoom, wallStyle, getTextureForStyle])
 
-  const handleWallDesignChange = useCallback((index, design) => {
-    setWallDesigns(prev => {
-      const newWallDesigns = [...prev]
-      newWallDesigns[index] = design
-      return newWallDesigns
-    })
-  }, [])
-
   // Initialize rooms state
   useEffect(() => {
     setRooms([
@@ -631,14 +623,6 @@ export default function CustomizableRoom() {
     } catch (error) {
       console.error('Error preparing scene for export:', error)
       setNotification('Error preparing scene for export: ' + error.message)
-    }
-  }
-
-  const handleHallwayMove = (hallwayIndex, newPosition) => {
-    const newRooms = [...rooms]
-    if (newRooms[selectedRoom] && newRooms[selectedRoom].features[hallwayIndex]) {
-      newRooms[selectedRoom].features[hallwayIndex].position = newPosition
-      setRooms(newRooms)
     }
   }
 
