@@ -223,7 +223,6 @@ const Town = ({ buildingCount = 40, spread = 20 }) => {
   );
 };
 
-
 const Forest = ({ count = 100, spread = 100 }) => {
   const groupRef = useRef()
   const { camera } = useThree()
