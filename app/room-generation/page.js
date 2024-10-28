@@ -18,6 +18,7 @@ import ButtonInstructions from '../components/ButtonInstructions'
 import { saveAs } from 'file-saver'
 import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
+import StripeCheckoutForm from '../components/StripeCheckout'
 
 // Room component
 const Room = React.memo(({ 
@@ -396,81 +397,6 @@ const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
 
 const stripePromise = loadStripe('pk_live_51POkrBKqHeRNv81GpdjhZT418vSsp3oUqemp4dN9CPZ9r1zGnxZIYo3m6ByKjS7hW44sJCIiglukgVsiWOvNRT5S00Erl4Icpy')
 
-const StripeCheckoutForm = ({ onSuccess, onClose }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setIsProcessing(true);
-    setErrorMessage('');
-
-    if (!stripe || !elements) {
-      setIsProcessing(false);
-      return;
-    }
-
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: 'card',
-      card: elements.getElement(CardElement),
-    });
-
-    if (error) {
-      console.log('[error]', error);
-      setErrorMessage(error.message);
-      setIsProcessing(false);
-    } else {
-      console.log('[PaymentMethod]', paymentMethod);
-      // Here you would typically send the paymentMethod.id to your server
-      // to complete the subscription process
-      onSuccess();
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 relative">
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold text-white mb-2">Room Designer Pro</h3>
-        <p className="text-gray-300">Upgrade to Premium for $5.00/month</p>
-      </div>
-      <div className="bg-gray-800 p-4 rounded-lg">
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          Card Information
-        </label>
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#ffffff',
-                '::placeholder': {
-                  color: '#aab7c4',
-                },
-              },
-              invalid: {
-                color: '#fa755a',
-                iconColor: '#fa755a',
-              },
-            },
-          }}
-          className="p-3 bg-gray-700 rounded-md"
-        />
-      </div>
-      {errorMessage && (
-        <div className="text-red-500 text-sm">{errorMessage}</div>
-      )}
-      <button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isProcessing ? 'Processing...' : 'Subscribe Now'}
-      </button>
-    </form>
-  );
-};
 
 
 
@@ -545,6 +471,7 @@ export default function CustomizableRoom() {
     actions: true,
     wallSettings: true
   });
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -553,6 +480,7 @@ export default function CustomizableRoom() {
       if (currentUser) {
         await createOrUpdateUserDocument(currentUser.uid)
         fetchSavedProjects(currentUser.uid)
+        fetchSubscription(currentUser.uid)
       } else {
         router.push('/sign-in')
       }
@@ -596,36 +524,6 @@ export default function CustomizableRoom() {
       return newWallDesigns
     })
   }, [])
-
-  const handleUpgrade = async () => {
-    if (user) {
-      const checkoutUrl = new URL('https://buy.stripe.com/7sI03B8eE7Ge4ZaaEE')
-      checkoutUrl.searchParams.append('client_reference_id', user.uid)
-      router.push(checkoutUrl.toString())
-    } else {
-      setNotification('Please sign in to upgrade your subscription')
-      setTimeout(() => setNotification(''), 2000)
-    }
-  }
-
-
-  const confirmUpgrade = async () => {
-    // This function will now be called after successful payment
-    try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        subscription: 'premium'
-      });
-      setSubscription('premium');
-      setNotification('Subscription upgraded to premium successfully');
-      setShowUpgradeModal(false);
-    } catch (error) {
-      console.error('Error upgrading subscription:', error);
-      setNotification('Error upgrading subscription');
-    }
-    setTimeout(() => setNotification(''), 2000);
-  };
-
 
   // Initialize rooms state
   useEffect(() => {
@@ -825,11 +723,42 @@ export default function CustomizableRoom() {
   }
 
   const fetchSubscription = async (userId) => {
-    const userDoc = await getDocs(query(collection(db, 'users'), where('userId', '==', userId)))
-    if (!userDoc.empty) {
-      setSubscription(userDoc.docs[0].data().subscription || 'free')
+    const userRef = doc(db, 'users', userId)
+    const userSnap = await getDoc(userRef)
+    if (userSnap.exists()) {
+      setSubscription(userSnap.data().subscription || 'free')
     }
   }
+
+  const handleUpgrade = async () => {
+    if (user) {
+      const checkoutUrl = new URL('https://buy.stripe.com/7sI03B8eE7Ge4ZaaEE')
+      checkoutUrl.searchParams.append('client_reference_id', user.uid)
+      router.push(checkoutUrl.toString())
+    } else {
+      setNotification('Please sign in to upgrade your subscription')
+      setTimeout(() => setNotification(''), 2000)
+    }
+  }
+
+
+  const confirmUpgrade = async () => {
+    // This function will now be called after successful payment
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        subscription: 'premium'
+      });
+      setSubscription('premium');
+      setNotification('Subscription upgraded to premium successfully');
+      setShowUpgradeModal(false);
+    } catch (error) {
+      console.error('Error upgrading subscription:', error);
+      setNotification('Error upgrading subscription');
+    }
+    setTimeout(() => setNotification(''), 2000);
+  };
+
 
   const handleEnvironmentChange = (e) => {
     setEnvironment(e.target.value)

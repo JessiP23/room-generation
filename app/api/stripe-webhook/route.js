@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { doc, updateDoc } from 'firebase/firestore'
+import { doc, updateDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+
+
+
 export async function POST(req) {
   const body = await req.text()
   const signature = headers().get('stripe-signature')
