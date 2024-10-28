@@ -463,15 +463,6 @@ export default function CustomizableRoom() {
   const [wallDesigns, setWallDesigns] = useState(Array(6).fill(''))
 
   const [wallStyle, setWallStyle] = useState('')
-  const [openPanels, setOpenPanels] = useState({
-    subscription: true,
-    roomProperties: true,
-    features: true,
-    view: true,
-    actions: true,
-    wallSettings: true
-  });
-  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
