@@ -1,24 +1,11 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import Stripe from 'stripe'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
+import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
-
-async function updateUserSubscription(userId, status) {
-  const userRef = doc(db, 'users', userId)
-  await updateDoc(userRef, {
-    subscription: status,
-  })
-}
 
 export async function POST(req) {
   const body = await req.text()
@@ -49,4 +36,11 @@ export async function POST(req) {
   }
 
   return NextResponse.json({ received: true })
+}
+
+async function updateUserSubscription(userId, status) {
+  const userRef = doc(db, 'users', userId)
+  await updateDoc(userRef, {
+    subscription: status,
+  })
 }
