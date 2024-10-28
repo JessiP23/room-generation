@@ -38,7 +38,7 @@ export async function POST(req) {
   return NextResponse.json({ received: true })
 }
 
-// update user's subscription status
+// update user's subscription status in firestore
 async function updateUserSubscription(userId, status) {
   const userRef = doc(db, 'users', userId)
   await updateDoc(userRef, {
