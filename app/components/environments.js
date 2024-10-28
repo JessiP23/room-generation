@@ -8,6 +8,108 @@ import { Instances, Instance, useGLTF, Environment, Cloud, Stars, Effects, Perfo
 
 const randomInRange = (min, max) => Math.random() * (max - min) + min
 
+const GrassPlane = ({ size = 200 }) => {
+  const planeRef = useRef()
+  
+  const grassTexture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 256
+    canvas.height = 256
+    const ctx = canvas.getContext('2d')
+    
+    // Create grass pattern
+    const drawGrassBlade = (x, y) => {
+      ctx.beginPath()
+      ctx.moveTo(x, y)
+      ctx.quadraticCurveTo(
+        x + Math.random() * 4 - 2,
+        y - 10 - Math.random() * 5,
+        x + Math.random() * 6 - 3,
+        y - 15 - Math.random() * 5
+      )
+      ctx.strokeStyle = `rgb(${30 + Math.random() * 50}, ${100 + Math.random() * 50}, ${30 + Math.random() * 30})`
+      ctx.lineWidth = 1 + Math.random()
+      ctx.stroke()
+    }
+    
+    // Fill background
+    ctx.fillStyle = '#2d5a27'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Draw grass blades
+    for (let i = 0; i < 1000; i++) {
+      drawGrassBlade(
+        Math.random() * canvas.width,
+        canvas.height - Math.random() * 5
+      )
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    texture.repeat.set(20, 20)
+    return texture
+  }, [])
+
+  return (
+    <mesh 
+      ref={planeRef} 
+      rotation={[-Math.PI / 2, 0, 0]} 
+      position={[0, -0.01, 0]}
+    >
+      <planeGeometry args={[size, size, 128, 128]} />
+      <meshStandardMaterial
+        map={grassTexture}
+        roughnessMap={grassTexture}
+        normalScale={new THREE.Vector3(0.5, 0.5)}
+        color="#4a8505"
+        roughness={0.8}
+        metalness={0.1}
+      />
+    </mesh>
+  )
+}
+
+const Vegetation = ({ count = 1000, spread = 100 }) => {
+  const positions = useMemo(() => {
+    const pos = []
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2
+      const radius = Math.random() * spread
+      pos.push({
+        position: [
+          Math.cos(angle) * radius,
+          0,
+          Math.sin(angle) * radius
+        ],
+        scale: [
+          0.3 + Math.random() * 0.4,
+          0.2 + Math.random() * 0.3,
+          0.3 + Math.random() * 0.4
+        ],
+        rotation: [0, Math.random() * Math.PI * 2, 0]
+      })
+    }
+    return pos
+  }, [count, spread])
+
+  return (
+    <Instances range={count}>
+      <planeGeometry args={[1, 1]} />
+      <meshStandardMaterial
+        color="#3d7c32"
+        roughness={0.8}
+        metalness={0.1}
+        transparent
+        alphaTest={0.5}
+        side={THREE.DoubleSide}
+      />
+      {positions.map((props, i) => (
+        <Instance key={i} {...props} />
+      ))}
+    </Instances>
+  )
+}
+
 
 
 // Improved noise function for more natural terrain
@@ -283,6 +385,8 @@ const Forest = ({ count = 100, spread = 100 }) => {
   return (
     <group ref={groupRef}>
       {/* Enhanced ground with better materials and shading */}
+      <GrassPlane size={spread * 2} />
+      <Vegetation count={count * 3} spread={spread} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} geometry={terrainGeometry}>
         <meshStandardMaterial
           color="#2d5a27"
