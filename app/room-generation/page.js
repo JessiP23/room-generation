@@ -16,6 +16,8 @@ import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
 import ButtonInstructions from '../components/ButtonInstructions'
 import { saveAs } from 'file-saver'
+import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
 
 // Room component
 const Room = React.memo(({ 
@@ -392,6 +394,83 @@ const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
   )
 })
 
+const stripePromise = loadStripe('pk_live_51POkrBKqHeRNv81GpdjhZT418vSsp3oUqemp4dN9CPZ9r1zGnxZIYo3m6ByKjS7hW44sJCIiglukgVsiWOvNRT5S00Erl4Icpy')
+
+const StripeCheckoutForm = ({ onSuccess }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setIsProcessing(true);
+    setErrorMessage('');
+
+    if (!stripe || !elements) {
+      setIsProcessing(false);
+      return;
+    }
+
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: elements.getElement(CardElement),
+    });
+
+    if (error) {
+      console.log('[error]', error);
+      setErrorMessage(error.message);
+      setIsProcessing(false);
+    } else {
+      console.log('[PaymentMethod]', paymentMethod);
+      // Here you would typically send the paymentMethod.id to your server
+      // to complete the subscription process
+      onSuccess();
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-white mb-2">Room Designer Pro</h3>
+        <p className="text-gray-300">Upgrade to Premium for $9.99/month</p>
+      </div>
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Card Information
+        </label>
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#ffffff',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+              invalid: {
+                color: '#fa755a',
+                iconColor: '#fa755a',
+              },
+            },
+          }}
+          className="p-3 bg-gray-700 rounded-md"
+        />
+      </div>
+      {errorMessage && (
+        <div className="text-red-500 text-sm">{errorMessage}</div>
+      )}
+      <button
+        type="submit"
+        disabled={!stripe || isProcessing}
+        className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isProcessing ? 'Processing...' : 'Subscribe Now'}
+      </button>
+    </form>
+  );
+};
 
 
 export default function CustomizableRoom() {
@@ -516,6 +595,27 @@ export default function CustomizableRoom() {
       return newWallDesigns
     })
   }, [])
+
+  const handleUpgrade = async () => {
+    setShowUpgradeModal(true);
+  };
+
+  const confirmUpgrade = async () => {
+    // This function will now be called after successful payment
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        subscription: 'premium'
+      });
+      setSubscription('premium');
+      setNotification('Subscription upgraded to premium successfully');
+      setShowUpgradeModal(false);
+    } catch (error) {
+      console.error('Error upgrading subscription:', error);
+      setNotification('Error upgrading subscription');
+    }
+    setTimeout(() => setNotification(''), 2000);
+  };
 
 
   // Initialize rooms state
@@ -1071,27 +1171,6 @@ export default function CustomizableRoom() {
     }
   }
 
-
-  const handleUpgrade = async () => {
-    setShowUpgradeModal(true)
-  }
-
-  const confirmUpgrade = async () => {
-    try {
-      const userRef = doc(db, 'users', user.uid)
-      await updateDoc(userRef, {
-        subscription: 'premium'
-      })
-      setSubscription('premium')
-      setNotification('Subscription upgraded to premium successfully')
-      setShowUpgradeModal(false)
-    } catch (error) {
-      console.error('Error upgrading subscription:', error)
-      setNotification('Error upgrading subscription')
-    }
-    setTimeout(() => setNotification(''), 2000)
-  }
-
   const addRoom = () => {
     const lastRoom = rooms[rooms.length - 1]
     const newRoom = {
@@ -1644,22 +1723,17 @@ export default function CustomizableRoom() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {showUpgradeModal && (
-            <Modal title="Upgrade to Premium" onClose={() => setShowUpgradeModal(false)}>
-              <p className="text-gray-300 mb-4">
-                Upgrade to Premium to save up to 5 rooms and enjoy additional features!
-              </p>
-              <div className="flex justify-end space-x-2">
-                <Button onClick={() => setShowUpgradeModal(false)} variant="secondary">
-                  Cancel
-                </Button>
-                <Button onClick={confirmUpgrade} variant="premium">
-                  Upgrade
-                </Button>
-              </div>
-            </Modal>
-          )}
-        </AnimatePresence>
+        {showUpgradeModal && (
+          <Modal title="Upgrade to Premium" onClose={() => setShowUpgradeModal(false)}>
+            <p className="text-gray-300 mb-4">
+              Upgrade to Premium to save up to 5 rooms and enjoy additional features!
+            </p>
+            <Elements stripe={stripePromise}>
+              <StripeCheckoutForm onSuccess={confirmUpgrade} />
+            </Elements>
+          </Modal>
+        )}
+      </AnimatePresence>
       </div>
     </div>
   )
