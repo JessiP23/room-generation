@@ -15,6 +15,7 @@ import { EnvironmentScene } from '../components/environments'
 import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
 import ButtonInstructions from '../components/ButtonInstructions'
+import { saveAs } from 'file-saver'
 
 // Room component
 const Room = React.memo(({ 
@@ -556,6 +557,74 @@ export default function CustomizableRoom() {
     newRooms[selectedRoom].features.push(newHallway)
     setRooms(newRooms)
     setSelectedHallway(newRooms[selectedRoom].features.length - 1)
+  }
+
+  const exportToBlender = async () => {
+    const scene = new THREE.Scene()
+    const textureLoader = new THREE.TextureLoader()
+
+    // Function to load texture and return a promise
+    const loadTexture = (url) => {
+      return new Promise((resolve, reject) => {
+        textureLoader.load(url, resolve, undefined, reject)
+      })
+    }
+
+    try {
+      // Add all rooms and their features to the scene
+      for (const room of rooms) {
+        const roomGroup = new THREE.Group()
+
+        // Create room geometry
+        const roomGeometry = new THREE.BoxGeometry(room.structure.width, room.structure.height, room.structure.depth)
+        const roomTexture = await loadTexture(room.wallTextures[0])
+        const roomMaterial = new THREE.MeshStandardMaterial({
+          color: room.wallColors[0],
+          map: roomTexture
+        })
+        const roomMesh = new THREE.Mesh(roomGeometry, roomMaterial)
+        roomGroup.add(roomMesh)
+
+        // Add features (doors, windows, etc.)
+        for (const feature of room.features) {
+          const featureGeometry = new THREE.BoxGeometry(
+            feature.dimensions?.width || 1,
+            feature.dimensions?.height || 1,
+            feature.type === 'door' || feature.type === 'window' ? 0.1 : room.wallThickness
+          )
+          const featureTexture = feature.texture ? await loadTexture(feature.texture) : null
+          const featureMaterial = new THREE.MeshStandardMaterial({
+            color: feature.type === 'door' ? 0x8B4513 : 0x87CEEB,
+            map: featureTexture
+          })
+          const featureMesh = new THREE.Mesh(featureGeometry, featureMaterial)
+          featureMesh.position.set(...feature.position)
+          roomGroup.add(featureMesh)
+        }
+
+        roomGroup.position.set(...room.position)
+        scene.add(roomGroup)
+      }
+
+      // Export the scene
+      const exporter = new GLTFExporter()
+      exporter.parse(
+        scene,
+        (gltf) => {
+          const output = JSON.stringify(gltf, null, 2)
+          const blob = new Blob([output], { type: 'application/octet-stream' })
+          saveAs(blob, 'room_design.gltf')
+        },
+        (error) => {
+          console.error('Error exporting to GLTF:', error)
+          setNotification('Error exporting to GLTF: ' + error.message)
+        },
+        { binary: false }
+      )
+    } catch (error) {
+      console.error('Error preparing scene for export:', error)
+      setNotification('Error preparing scene for export: ' + error.message)
+    }
   }
 
   const handleHallwayMove = (hallwayIndex, newPosition) => {
@@ -1384,6 +1453,12 @@ export default function CustomizableRoom() {
           </div>
           <button onClick={joinRooms} className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-indigo-500/20 transition-all duration-200 transform hover:scale-105">
             Join Rooms
+          </button>
+          <button
+            onClick={exportToBlender}
+            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-orange-500/20 transition-all duration-200 transform hover:scale-105"
+          >
+            Export to Blender
           </button>
           <div className="grid grid-cols-2 gap-3">
             <button
