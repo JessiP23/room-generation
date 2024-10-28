@@ -395,11 +395,6 @@ const EnvironmentWrapper = React.memo(({ environment, rooms }) => {
   )
 })
 
-const stripePromise = loadStripe('pk_live_51POkrBKqHeRNv81GpdjhZT418vSsp3oUqemp4dN9CPZ9r1zGnxZIYo3m6ByKjS7hW44sJCIiglukgVsiWOvNRT5S00Erl4Icpy')
-
-
-
-
 export default function CustomizableRoom() {
   const [wallThickness, setWallThickness] = useState(0.2)
   const handleWallThicknessChange = (e) => {
@@ -430,11 +425,6 @@ export default function CustomizableRoom() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // handling roof
-  const [roofs, setRoofs] = useState([]);
-  const [selectedRoomForRoof, setSelectedRoomForRoof] = useState(null);
-  const [selectedRoofStyle, setSelectedRoofStyle] = useState('pyramid'); 
-
   const [user, setUser] = useState(null)
   const [subscription, setSubscription] = useState('free')
   const [showSaveModal, setShowSaveModal] = useState(false)
@@ -444,19 +434,15 @@ export default function CustomizableRoom() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   const [environment, setEnvironment] = useState('forest')
-  const [price, setPrice] = useState(0)
 
   const [selectedHallway, setSelectedHallway] = useState(null)
   const [hallwayDimensions, setHallwayDimensions] = useState({ width: 2, height: 2.5 })
-  const [modifiedWalls, setModifiedWalls] = useState({})
 
-  const [fenceMode, setFenceMode] = useState(false)
   const [fencePoints, setFencePoints] = useState([])
   const [fenceDesign, setFenceDesign] = useState('wooden')
 
   // Memoize expensive computations
   const memoizedRooms = useMemo(() => rooms, [rooms])
-  const memoizedEnvironment = useMemo(() => environment, [environment])
 
   const [showNotification, setShowNotification] = useState(false)
 
