@@ -1140,23 +1140,6 @@ export default function CustomizableRoom() {
     setSelectedRoom(rooms.length)
   }
 
-  const roofStyles = {
-    pyramid: (width, height) => new THREE.ConeGeometry(width / 2, height, 4),
-    gable: (width, height) => {
-      const shape = new THREE.Shape();
-      shape.moveTo(-width / 2, 0);
-      shape.lineTo(0, height);
-      shape.lineTo(width / 2, 0);
-      return new THREE.ExtrudeGeometry(shape, { depth: width, bevelEnabled: false });
-    },
-    flat: (width) => new THREE.BoxGeometry(width, 0.1, width),
-    dome: (width, height) => new THREE.SphereGeometry(width / 2, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2)
-  };
-
-  const handleRoomClick = (roomIndex) => {
-    setSelectedRoomForRoof(roomIndex);
-  };
-
   const handleDimensionChange = (dimension, value) => {
     const newRooms = [...rooms]
     newRooms[selectedRoom].structure[dimension] = Number(value)
@@ -1200,25 +1183,6 @@ export default function CustomizableRoom() {
     }
   }
   
-
-  const handleRoofStyleChange = (e) => {
-    setSelectedRoofStyle(e.target.value);
-  };
-
-  const togglePanel = (panel) => {
-    setOpenPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
-  };
-
-  const PanelHeader = ({ title, isOpen, onClick, icon: Icon }) => (
-    <div
-      onClick={onClick}
-      className="flex items-center gap-2 p-2 hover:bg-white/5 cursor-pointer rounded-lg transition-colors duration-200"
-    >
-      {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-      <Icon className="w-4 h-4" />
-      <span className="font-medium">{title}</span>
-    </div>
-  );
 
   return (
     <div className="flex h-screen bg-gray-900">
