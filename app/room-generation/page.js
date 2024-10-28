@@ -10,15 +10,11 @@ import { db, auth } from '@/firebase'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
-import { Crown, Sparkles, DollarSign, RotateCcw, ClipboardCheck, Mouse, Keyboard, Info, ChevronDown, ChevronRight, AppWindow, AppWindowIcon, DoorOpen, Link2, Download, Save, Upload, Plus, Layout, Box, Eye, PenTool, Layers, X } from 'lucide-react'
 import { EnvironmentScene } from '../components/environments'
 import { CSG } from 'three-csg-ts'
 import { motion, AnimatePresence } from 'framer-motion'
 import ButtonInstructions from '../components/ButtonInstructions'
 import { saveAs } from 'file-saver'
-import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
-import StripeCheckoutForm from '../components/StripeCheckout'
 
 // Room component
 const Room = React.memo(({ 
@@ -1586,19 +1582,6 @@ export default function CustomizableRoom() {
             </Modal>
           )}
         </AnimatePresence>
-
-        <AnimatePresence>
-        {showUpgradeModal && (
-          <Modal title="Upgrade to Premium" onClose={() => setShowUpgradeModal(false)}>
-            <p className="text-gray-300 mb-4">
-              Upgrade to Premium to save up to 5 rooms and enjoy additional features!
-            </p>
-            <Elements stripe={stripePromise}>
-              <StripeCheckoutForm onSuccess={confirmUpgrade} />
-            </Elements>
-          </Modal>
-        )}
-      </AnimatePresence>
       </div>
     </div>
   )
