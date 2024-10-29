@@ -1396,12 +1396,12 @@ export default function CustomizableRoom() {
             <button onClick={joinRooms} className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-indigo-500/20 transition-all duration-200 transform hover:scale-105">
               Join Rooms
             </button>
-          <button
-            onClick={exportToBlender}
-            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-orange-500/20 transition-all duration-200 transform hover:scale-105"
-          >
-            Export to Blender
-          </button>
+            <button
+              onClick={exportToBlender}
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-orange-500/20 transition-all duration-200 transform hover:scale-105"
+            >
+              Export to Blender
+            </button>
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => {
