@@ -15,6 +15,8 @@ const InteractiveStructure = () => {
   const sceneRef = useRef(null);
   const roomRef = useRef(null);
 
+  /// useeffect for the is rotating object in motion with an horizontal motion. 
+  
   useEffect(() => {
     // Scene setup
     const scene = new THREE.Scene()
@@ -81,6 +83,7 @@ const InteractiveStructure = () => {
     }
   }, [isRotating])
 
+  // handle rotation toggle for the rotating objec tin the main page.
   const handleRotationToggle = () => {
     setIsRotating(!isRotating)
   }
