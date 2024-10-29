@@ -86,7 +86,7 @@ const InteractiveStructure = () => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-64 sm:h-80 md:h-96 lg:h-[450px] xl:h-[500px]">
       <div ref={mountRef} className="w-full h-96 rounded-xl shadow-2xl" />
       <button
         className="absolute bottom-4 right-4 bg-white text-gray-800 px-4 py-2 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-300"
