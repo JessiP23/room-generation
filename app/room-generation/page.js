@@ -1590,6 +1590,7 @@ export default function CustomizableRoom() {
   )
 }
 
+// modal
 const Modal = ({ title, children, onClose }) => (
   <motion.div
     initial={{ opacity: 0 }}
