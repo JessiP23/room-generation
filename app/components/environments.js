@@ -4,12 +4,11 @@ import React, { useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Color, MathUtils } from 'three'
-import { Instances, Instance, useGLTF, Environment, Cloud, Stars, Effects, PerformanceMonitor, useTexture } from '@react-three/drei'
+import { Instances, Instance,  useTexture } from '@react-three/drei'
+import { AdditiveBlending } from 'three'
 import { Vector3 } from 'three'
-import { createNoise2D } from 'simplex-noise'
 
 const randomInRange = (min, max) => Math.random() * (max - min) + min
-const simplex = createNoise2D()
 
 const GrassPlane = ({ size = 200 }) => {
   const planeRef = useRef()
@@ -993,88 +992,83 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
   );
 };
 
-// snow component
-const Snow = ({ particleCount = 9000, spread = 50 }) => {
+// // snow component
+const Snow = ({ particleCount = 6000, spread = 50 }) => {
   const snowRef = useRef();
   const groundRef = useRef();
+  const planeRef = useRef();
   const accumulatedSnow = useRef(new Array(100).fill(0));
   
-  // Load snow textures
-  const [snowDiffuse, snowNormal] = useTexture([
+  // Load snow textures and optimize with suspense
+  const [snowDiffuse, snowNormal, snowflakeTexture] = useTexture([
     '/snow_diffuse.jpg',
-    '/snow_normal.jpg'
+    '/snow_normal.jpg',
+    '/snowflake.png'
   ]);
 
-  // Generate more realistic snowflakes
+  // Optimize snowflake generation with instancing
   const snowflakes = useMemo(() => {
-    return new Array(particleCount).fill(null).map(() => {
+    const positions = new Float32Array(particleCount * 3);
+    const scales = new Float32Array(particleCount);
+    const rotations = new Float32Array(particleCount);
+    
+    for (let i = 0; i < particleCount; i++) {
       const radius = Math.sqrt(Math.random()) * spread;
       const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI * 2;
       
-      return {
-        position: new Vector3(
-          Math.cos(theta) * radius,
-          randomInRange(0, spread),
-          Math.sin(theta) * radius
-        ),
-        initialY: randomInRange(0, spread),
-        speed: randomInRange(0.02, 0.08),
-        size: randomInRange(0.02, 0.08),
-        wobble: randomInRange(0, Math.PI * 2),
-        wobbleSpeed: randomInRange(0.5, 1.5)
-      };
-    });
+      positions[i * 3] = Math.cos(theta) * radius;
+      positions[i * 3 + 1] = Math.random() * spread;
+      positions[i * 3 + 2] = Math.sin(theta) * radius;
+      
+      scales[i] = Math.random() * 0.3 + 0.2;
+      rotations[i] = phi;
+    }
+    
+    return {
+      positions,
+      scales,
+      rotations,
+      velocities: new Float32Array(particleCount).fill(0).map(() => Math.random() * 0.1 + 0.05),
+      wobble: new Float32Array(particleCount).fill(0).map(() => Math.random() * Math.PI * 2),
+      wobbleSpeed: new Float32Array(particleCount).fill(0).map(() => Math.random() * 0.5 + 0.5)
+    };
   }, [particleCount, spread]);
 
-  // Create ground heightmap for snow accumulation
-  const heightMap = useMemo(() => {
-    const resolution = 128;
-    const data = new Float32Array(resolution * resolution);
-    
-    for (let i = 0; i < resolution; i++) {
-      for (let j = 0; j < resolution; j++) {
-        const index = i * resolution + j;
-        data[index] = simplex(i / 20, j / 20) * 2;
-      }
-    }
-    
-    return data;
-  }, []);
-
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
     
-    snowflakes.forEach((snowflake, i) => {
-      // Update position
-      snowflake.position.y -= snowflake.speed;
-      
-      // Add wind effect
-      snowflake.position.x += Math.sin(time * snowflake.wobbleSpeed + snowflake.wobble) * 0.02;
-      snowflake.position.z += Math.cos(time * snowflake.wobbleSpeed + snowflake.wobble) * 0.02;
-      
-      // Reset position when snowflake hits ground
-      if (snowflake.position.y < 0) {
-        snowflake.position.y = snowflake.initialY;
-        
-        // Accumulate snow where the snowflake landed
-        const gridX = Math.floor((snowflake.position.x + spread) / (spread * 2) * 99);
-        const gridZ = Math.floor((snowflake.position.z + spread) / (spread * 2) * 99);
-        const index = Math.max(0, Math.min(99, gridX + gridZ * 100));
-        accumulatedSnow.current[index] += 0.01;
-      }
-    });
+    // Optimized snow particle updates using typed arrays
+    const positions = snowRef.current.geometry.attributes.position.array;
     
-    // Update ground mesh based on accumulated snow
-    if (groundRef.current) {
-      const vertices = groundRef.current.geometry.attributes.position.array;
-      for (let i = 0; i < vertices.length; i += 3) {
-        const gridX = Math.floor((vertices[i] + spread) / (spread * 2) * 99);
-        const gridZ = Math.floor((vertices[i + 2] + spread) / (spread * 2) * 99);
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      
+      // Apply gravity and wind
+      positions[i3 + 1] -= snowflakes.velocities[i] * delta * 15;
+      
+      // More realistic wind effect
+      const wind = Math.sin(time * 0.1) * 2;
+      positions[i3] += Math.sin(time * snowflakes.wobbleSpeed[i] + snowflakes.wobble[i]) * 0.01 + wind * delta;
+      positions[i3 + 2] += Math.cos(time * snowflakes.wobbleSpeed[i] + snowflakes.wobble[i]) * 0.01;
+      
+      // Reset position with variation
+      if (positions[i3 + 1] < 0) {
+        positions[i3 + 1] = spread;
+        positions[i3] = (Math.random() - 0.5) * spread * 2;
+        positions[i3 + 2] = (Math.random() - 0.5) * spread * 2;
+        
+        // Accumulate snow more efficiently
+        const gridX = Math.floor((positions[i3] + spread) / (spread * 2) * 99);
+        const gridZ = Math.floor((positions[i3 + 2] + spread) / (spread * 2) * 99);
         const index = Math.max(0, Math.min(99, gridX + gridZ * 100));
-        vertices[i + 1] = heightMap[index] + accumulatedSnow.current[index];
+        accumulatedSnow.current[index] = Math.min(accumulatedSnow.current[index] + 0.005, 2);
       }
-      groundRef.current.geometry.attributes.position.needsUpdate = true;
     }
+    
+    snowRef.current.geometry.attributes.position.needsUpdate = true;
+    
+    
   });
 
   return (
@@ -1084,28 +1078,30 @@ const Snow = ({ particleCount = 9000, spread = 50 }) => {
         position={[50, 50, 0]} 
         intensity={1.2} 
         castShadow 
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
       />
       
-      {/* Snowflakes */}
       <points ref={snowRef}>
         <bufferGeometry>
           <bufferAttribute 
             attach="attributes-position"
             count={particleCount}
-            array={new Float32Array(snowflakes.flatMap(s => [s.position.x, s.position.y, s.position.z]))}
+            array={snowflakes.positions}
             itemSize={3}
           />
         </bufferGeometry>
         <pointsMaterial 
-          size={0.1}
-          color="white"
+          size={0.15}
+          map={snowflakeTexture}
           transparent
-          opacity={0.8}
+          opacity={0.7}
+          depthWrite={false}
+          blending={AdditiveBlending}
           sizeAttenuation
         />
       </points>
       
-      {/* Snow-covered ground */}
       <mesh 
         ref={groundRef}
         rotation={[-Math.PI / 2, 0, 0]} 
@@ -1117,17 +1113,143 @@ const Snow = ({ particleCount = 9000, spread = 50 }) => {
           color="#ffffff"
           map={snowDiffuse}
           normalMap={snowNormal}
-          roughness={0.3}
+          roughness={0.4}
           metalness={0.1}
           envMapIntensity={0.8}
         />
       </mesh>
+
+      <mesh
+        ref={planeRef}
+        position={[0, 15, -30]}
+        rotation={[0, Math.PI, 0]}
+        scale={[0.15, 0.15, 0.15]}
+        castShadow
+      >
+        <planeGeometry args={[40, 40]} />
+        <meshStandardMaterial
+          color="#888888"
+          roughness={0.8}
+          metalness={0.2}
+          envMapIntensity={0.5}
+        />
+      </mesh>
       
-      {/* Atmospheric effects */}
-      <fog attach="fog" args={['#e6f2ff', 50, 200]} />
+      <fog attach="fog" args={['#e6f2ff', 30, 150]} />
     </group>
   );
 };
+
+// snow component
+// const Snow = ({ particleCount = 9000, spread = 50 }) => {
+//   const snowRef = useRef();
+//   const groundRef = useRef();
+//   const accumulatedSnow = useRef(new Array(100).fill(0));
+  
+//   // Load snow textures
+//   const [snowDiffuse, snowNormal] = useTexture([
+//     '/snow_diffuse.jpg',
+//     '/snow_normal.jpg'
+//   ]);
+
+//   // Generate more realistic snowflakes
+//   const snowflakes = useMemo(() => {
+//     return new Array(particleCount).fill(null).map(() => {
+//       const radius = Math.sqrt(Math.random()) * spread;
+//       const theta = Math.random() * Math.PI * 2;
+      
+//       return {
+//         position: new Vector3(
+//           Math.cos(theta) * radius,
+//           randomInRange(0, spread),
+//           Math.sin(theta) * radius
+//         ),
+//         initialY: randomInRange(0, spread),
+//         speed: randomInRange(0.02, 0.08),
+//         size: randomInRange(0.02, 0.08),
+//         wobble: randomInRange(0, Math.PI * 2),
+//         wobbleSpeed: randomInRange(0.5, 1.5)
+//       };
+//     });
+//   }, [particleCount, spread]);
+
+ 
+//   useFrame((state) => {
+//     const time = state.clock.getElapsedTime();
+    
+//     snowflakes.forEach((snowflake, i) => {
+//       // Update position
+//       snowflake.position.y -= snowflake.speed;
+      
+//       // Add wind effect
+//       snowflake.position.x += Math.sin(time * snowflake.wobbleSpeed + snowflake.wobble) * 0.02;
+//       snowflake.position.z += Math.cos(time * snowflake.wobbleSpeed + snowflake.wobble) * 0.02;
+      
+//       // Reset position when snowflake hits ground
+//       if (snowflake.position.y < 0) {
+//         snowflake.position.y = snowflake.initialY;
+        
+//         // Accumulate snow where the snowflake landed
+//         const gridX = Math.floor((snowflake.position.x + spread) / (spread * 2) * 99);
+//         const gridZ = Math.floor((snowflake.position.z + spread) / (spread * 2) * 99);
+//         const index = Math.max(0, Math.min(99, gridX + gridZ * 100));
+//         accumulatedSnow.current[index] += 0.01;
+//       }
+//     });
+    
+//   });
+
+//   return (
+//     <group>
+//       <ambientLight intensity={0.4} />
+//       <directionalLight 
+//         position={[50, 50, 0]} 
+//         intensity={1.2} 
+//         castShadow 
+//       />
+      
+//       {/* Snowflakes */}
+//       <points ref={snowRef}>
+//         <bufferGeometry>
+//           <bufferAttribute 
+//             attach="attributes-position"
+//             count={particleCount}
+//             array={new Float32Array(snowflakes.flatMap(s => [s.position.x, s.position.y, s.position.z]))}
+//             itemSize={3}
+//           />
+//         </bufferGeometry>
+//         <pointsMaterial 
+//           size={0.1}
+//           color="white"
+//           transparent
+//           opacity={0.8}
+//           sizeAttenuation
+//         />
+//       </points>
+      
+//       {/* Snow-covered ground */}
+//       <mesh 
+//         ref={groundRef}
+//         rotation={[-Math.PI / 2, 0, 0]} 
+//         position={[0, 0, 0]}
+//         receiveShadow
+//       >
+//         <planeGeometry args={[spread * 2, spread * 2, 128, 128]} />
+//         <meshStandardMaterial
+//           color="#ffffff"
+//           map={snowDiffuse}
+//           normalMap={snowNormal}
+//           roughness={0.3}
+//           metalness={0.1}
+//           envMapIntensity={0.8}
+//         />
+//       </mesh>
+      
+//       {/* Atmospheric effects */}
+//       <fog attach="fog" args={['#e6f2ff', 50, 200]} />
+//     </group>
+//   );
+// };
 
 export const EnvironmentScene = ({ environment }) => {
   switch (environment) {
