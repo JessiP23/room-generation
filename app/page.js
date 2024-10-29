@@ -16,7 +16,6 @@ const InteractiveStructure = () => {
   const roomRef = useRef(null);
 
   /// useeffect for the is rotating object in motion with an horizontal motion. 
-  
   useEffect(() => {
     // Scene setup
     const scene = new THREE.Scene()
