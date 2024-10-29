@@ -1402,26 +1402,26 @@ export default function CustomizableRoom() {
             >
               Export to Blender
             </button>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => {
-                toggleView()
-                setIsInternalView(!isInternalView)
-              }}
-              className="bg-gray-700 hover:bg-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 border border-gray-600/50 transition-all duration-200 transform hover:scale-105"
-            >
-              {isInternalView ? 'External' : 'Internal'}
-            </button>
-            <button
-              onClick={() => {
-                toggleTopView()
-                setIsTopView(!isTopView)
-              }}
-              className="bg-gray-700 hover:bg-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 border border-gray-600/50 transition-all duration-200 transform hover:scale-105"
-            >
-              {isTopView ? 'Normal' : 'Top'}
-            </button>
-          </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  toggleView()
+                  setIsInternalView(!isInternalView)
+                }}
+                className="bg-gray-700 hover:bg-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 border border-gray-600/50 transition-all duration-200 transform hover:scale-105"
+              >
+                {isInternalView ? 'External' : 'Internal'}
+              </button>
+              <button
+                onClick={() => {
+                  toggleTopView()
+                  setIsTopView(!isTopView)
+                }}
+                className="bg-gray-700 hover:bg-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 border border-gray-600/50 transition-all duration-200 transform hover:scale-105"
+              >
+                {isTopView ? 'Normal' : 'Top'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
