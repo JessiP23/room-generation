@@ -1,9 +1,137 @@
 'use client'
 
 import React, {useState, useEffect, useRef, useCallback} from 'react';
-import { Book, Box, Camera, Check, ChevronDown, ChevronRight, Cloud, Code, Coffee, Compass, Crown, Flower, Layers, Layout, Moon, Search, Share, Star, Sun, User, X, Zap } from 'lucide-react';
+import { Book, Box, Camera, Check, ChevronDown, ChevronRight, Cloud, Code, Coffee, CoffeeIcon, Compass, Crown, DollarSign, Flower, Gift, Heart, HeartHandshake, Layers, Layout, Moon, Search, Share, Sparkles, Star, Sun, User, X, Zap } from 'lucide-react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 // interactive
+const InteractiveStructure = () => {
+  const mountRef = useRef(null);
+  const [isRotating, setIsRotating] = useState(false);
+
+  useEffect(() => {
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+    mountRef.current.appendChild(renderer.domElement);
+
+    // Room creation
+    const roomGeometry = new THREE.BoxGeometry(5, 4, 5);
+    const roomMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.BackSide });
+    const room = new THREE.Mesh(roomGeometry, roomMaterial);
+    scene.add(room);
+
+    // Furniture
+    const tableGeometry = new THREE.BoxGeometry(2, 0.1, 1);
+    const tableMaterial = new THREE.MeshPhongMaterial({ color: 0x8b4513 });
+    const table = new THREE.Mesh(tableGeometry, tableMaterial);
+    table.position.set(0, -1.5, 0);
+    scene.add(table);
+
+    const chairGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const chairMaterial = new THREE.MeshPhongMaterial({ color: 0x4a4a4a });
+    const chair = new THREE.Mesh(chairGeometry, chairMaterial);
+    chair.position.set(-1, -1.75, 0);
+    scene.add(chair);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(0, 2, 0);
+    scene.add(pointLight);
+
+    camera.position.z = 5;
+
+    // OrbitControls setup
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.25;
+    controls.enableZoom = false;
+
+    // Animation
+    const animate = () => {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // Auto-rotation
+    const autoRotate = () => {
+      if (isRotating) {
+        room.rotation.y += 0.005;
+      }
+      requestAnimationFrame(autoRotate);
+    };
+
+    autoRotate();
+
+    
+  }, [isRotating]);
+
+  return (
+    <div className="relative">
+      <div ref={mountRef} className="w-full h-96 rounded-xl shadow-2xl" />
+      <button
+        className="absolute bottom-4 right-4 bg-white text-gray-800 px-4 py-2 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-300"
+        onClick={() => setIsRotating(!isRotating)}
+      >
+        {isRotating ? 'Stop Rotation' : 'Start Rotation'}
+      </button>
+    </div>
+  );
+};
+
+const DonationSection = () => {
+  const [isHovering, setIsHovering] = useState(false);
+
+  return (
+    <section className="py-20 bg-gradient-to-b from-white to-indigo-50 overflow-hidden">
+      <div className="container mx-auto px-4">
+        
+        <div className="max-w-4xl mx-auto p-6">
+          <div 
+            className="relative group"
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 rounded-3xl opacity-75 blur-xl group-hover:opacity-100 transition-all duration-500 animate-pulse" />
+            
+            <div className="relative bg-white rounded-2xl shadow-xl p-8">
+              <InteractiveStructure />
+              
+              <div className="mt-8 text-center">
+                <p className="text-xl text-gray-700 mb-6">Your support helps us continue creating innovative 3D architectural solutions.</p>
+                <button
+                  onClick={() => window.location.href = '/donate'}
+                  className="py-3 px-8 text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all duration-300 transform hover:scale-105 rounded-xl shadow-xl relative overflow-hidden"
+                >
+                  <div className="relative z-10 flex items-center justify-center gap-3">
+                    <HeartHandshake 
+                      className={`w-6 h-6 transition-transform duration-300 ${
+                        isHovering ? 'scale-125' : ''
+                      }`}
+                    />
+                    Donate Now
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/50 to-pink-600/50 animate-shine" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 
 const InteractiveRoom = () => {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -88,6 +216,12 @@ const LandingPage = () => {
   const [rotationX, setRotationX] = useState(0);
   const [rotationY, setRotationY] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const mountRef = useRef(null);
+  const sceneRef = useRef(null);
+  const cameraRef = useRef(null);
+  const rendererRef = useRef(null);
+  const controlsRef = useRef(null);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -98,7 +232,6 @@ const LandingPage = () => {
       setRotationX(y);
       setRotationY(x);
     };
-
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
@@ -283,85 +416,15 @@ const LandingPage = () => {
         <section className="py-20 bg-gradient-to-b from-white to-indigo-50 overflow-hidden">
       <div className="container mx-auto px-4">
         <h2 className="text-5xl font-bold text-center mb-16 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 animate-pulse">
-          Choose Your Membership Plan
+          Support our Project
         </h2>
         
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {/* Free Tier */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="relative p-8 bg-white rounded-2xl shadow-xl hover:transform hover:-translate-y-2 transition-transform duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold text-gray-900">Free</h3>
-                <Star className="w-8 h-8 text-blue-500" />
-              </div>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">$0</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <ul className="space-y-4 mb-8 text-gray-800">
-                <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span>Basic 3D model viewing</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span>Limited cloud storage</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span>Community support</span>
-                </li>
-              </ul>
-              <a href='/room-generation' className="block w-full text-center py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity duration-300">
-                Get Started
-              </a>
-            </div>
-          </div>
-
-          {/* Premium Tier */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="relative p-8 bg-white rounded-2xl shadow-xl hover:transform hover:-translate-y-2 transition-transform duration-300">
-              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-1 rounded-full text-sm font-semibold animate-bounce">
-                Popular
-              </div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold text-gray-900">Premium</h3>
-                <Crown className="w-8 h-8 text-purple-500" />
-              </div>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">$29</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <ul className="space-y-4 mb-8 text-gray-800">
-                <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span>Advanced 3D modeling tools</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span>Unlimited cloud storage</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span>Real-time collaboration</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span>24/7 Priority support</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-2" />
-                  <span>Custom exports</span>
-                </li>
-              </ul>
-              <button className="w-full py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity duration-300">
-                Upgrade Now
-              </button>
-            </div>
-          </div>
-        </div>
+        
+        
+        {/* Main container */}
+        <div className="w-full max-w-4xl mx-auto">
+      <DonationSection />
+    </div>
       </div>
     </section>
 
