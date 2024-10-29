@@ -86,8 +86,8 @@ const InteractiveStructure = () => {
   }
 
   return (
-    <div className="relative w-full h-64 sm:h-80 md:h-96 lg:h-[450px] xl:h-[500px]">
-      <div ref={mountRef} className="w-full h-96 rounded-xl shadow-2xl" />
+    <div className="relative">
+      <div ref={mountRef} className="min-w-full h-96 rounded-xl shadow-2xl" />
       <button
         className="absolute bottom-4 right-4 bg-white text-gray-800 px-4 py-2 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-300"
         onClick={handleRotationToggle}
@@ -131,7 +131,7 @@ const DonationSection = () => {
           >
             <div className="absolute inset-0 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 rounded-3xl opacity-75 blur-xl group-hover:opacity-100 transition-all duration-500 animate-pulse" />
             
-            <div className="relative bg-white rounded-2xl shadow-xl p-8 sm:p-8 md:p-10">
+            <div className="relative bg-white rounded-2xl shadow-xl p-2">
               <InteractiveStructure />
               
               <div className="mt-8 sm:mt-10 md:mt-12 text-center">
