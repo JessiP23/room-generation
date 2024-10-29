@@ -282,7 +282,6 @@ const LandingPage = () => {
             <a href="/room-generation" className="hover:underline">Get started</a>
             <a href="/contact-us" className="hover:underline">Contact us</a>
             <a href="/about-us" className="hover:underline">About us</a>
-            <a href="#" className="hover:underline">Portfolio</a>
           </div>
           
           <div className="hidden lg:flex space-x-2 text-white">
@@ -314,7 +313,6 @@ const LandingPage = () => {
               <a href="/room-generation" className="block text-white hover:text-indigo-300 transition-colors duration-200">Get started</a>
               <a href="/contact-us" className="block text-white hover:text-indigo-300 transition-colors duration-200">Contact us</a>
               <a href="/about-us" className="block text-white hover:text-indigo-300 transition-colors duration-200">About us</a>
-              <a href="#" className="block text-white hover:text-indigo-300 transition-colors duration-200">Portfolio</a>
             </div>
             <div className="bg-purple-800 bg-opacity-50 p-4 flex justify-around">
               <Search size={20} className="text-white hover:text-indigo-300 transition-colors duration-200" />
