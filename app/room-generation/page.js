@@ -7,7 +7,7 @@ import { OrbitControls, Text, PerspectiveCamera, PointerLockControls, useTexture
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import FlowerMenu from '../components/Menu'
 import { db, auth } from '@/firebase'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, collection, addDoc, query, where, getDocs, limit, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { EnvironmentScene } from '../components/environments'
