@@ -1,96 +1,123 @@
 'use client'
 
-import React, {useState, useEffect, useRef, useCallback} from 'react';
+import React, {useState, useEffect, useRef, useCallback, use} from 'react';
 import { Book, Box, Camera, Check, ChevronDown, ChevronRight, Cloud, Code, Coffee, CoffeeIcon, Compass, Crown, DollarSign, Flower, Gift, Heart, HeartHandshake, Layers, Layout, Moon, Search, Share, Sparkles, Star, Sun, User, X, Zap } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { useRouter } from 'next/navigation';
+
+const STRIPE_DONATION_URL = 'https://buy.stripe.com/9AQcQn0Mc4u29fqbIJ'
 
 // interactive
 const InteractiveStructure = () => {
   const mountRef = useRef(null);
   const [isRotating, setIsRotating] = useState(false);
+  const sceneRef = useRef(null);
+  const roomRef = useRef(null);
 
   useEffect(() => {
     // Scene setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const scene = new THREE.Scene()
+    sceneRef.current = scene
+    const camera = new THREE.PerspectiveCamera(75, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000)
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
     
-    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
-    mountRef.current.appendChild(renderer.domElement);
+    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
+    mountRef.current.appendChild(renderer.domElement)
 
     // Room creation
-    const roomGeometry = new THREE.BoxGeometry(5, 4, 5);
-    const roomMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.BackSide });
-    const room = new THREE.Mesh(roomGeometry, roomMaterial);
-    scene.add(room);
+    const roomGeometry = new THREE.BoxGeometry(5, 4, 5)
+    const roomMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.BackSide })
+    const room = new THREE.Mesh(roomGeometry, roomMaterial)
+    roomRef.current = room
+    scene.add(room)
 
     // Furniture
-    const tableGeometry = new THREE.BoxGeometry(2, 0.1, 1);
-    const tableMaterial = new THREE.MeshPhongMaterial({ color: 0x8b4513 });
-    const table = new THREE.Mesh(tableGeometry, tableMaterial);
-    table.position.set(0, -1.5, 0);
-    scene.add(table);
+    const tableGeometry = new THREE.BoxGeometry(2, 0.1, 1)
+    const tableMaterial = new THREE.MeshPhongMaterial({ color: 0x8b4513 })
+    const table = new THREE.Mesh(tableGeometry, tableMaterial)
+    table.position.set(0, -1.5, 0)
+    scene.add(table)
 
-    const chairGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    const chairMaterial = new THREE.MeshPhongMaterial({ color: 0x4a4a4a });
-    const chair = new THREE.Mesh(chairGeometry, chairMaterial);
-    chair.position.set(-1, -1.75, 0);
-    scene.add(chair);
+    const chairGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5)
+    const chairMaterial = new THREE.MeshPhongMaterial({ color: 0x4a4a4a })
+    const chair = new THREE.Mesh(chairGeometry, chairMaterial)
+    chair.position.set(-1, -1.75, 0)
+    scene.add(chair)
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+    scene.add(ambientLight)
 
-    const pointLight = new THREE.PointLight(0xffffff, 1);
-    pointLight.position.set(0, 2, 0);
-    scene.add(pointLight);
+    const pointLight = new THREE.PointLight(0xffffff, 1)
+    pointLight.position.set(0, 2, 0)
+    scene.add(pointLight)
 
-    camera.position.z = 5;
+    camera.position.z = 5
 
     // OrbitControls setup
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.25;
-    controls.enableZoom = false;
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.enableDamping = true
+    controls.dampingFactor = 0.25
+    controls.enableZoom = false
 
     // Animation
     const animate = () => {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    // Auto-rotation
-    const autoRotate = () => {
-      if (isRotating) {
-        room.rotation.y += 0.005;
+      requestAnimationFrame(animate)
+      if (isRotating && roomRef.current) {
+        roomRef.current.rotation.y += 0.005
       }
-      requestAnimationFrame(autoRotate);
-    };
+      controls.update()
+      renderer.render(scene, camera)
+    }
 
-    autoRotate();
+    animate()
 
-    
-  }, [isRotating]);
+    // Cleanup
+    return () => {
+      if (mountRef.current) {
+        mountRef.current.removeChild(renderer.domElement)
+      }
+    }
+  }, [isRotating])
+
+  const handleRotationToggle = () => {
+    setIsRotating(!isRotating)
+  }
 
   return (
     <div className="relative">
       <div ref={mountRef} className="w-full h-96 rounded-xl shadow-2xl" />
       <button
         className="absolute bottom-4 right-4 bg-white text-gray-800 px-4 py-2 rounded-full shadow-md hover:bg-gray-100 transition-colors duration-300"
-        onClick={() => setIsRotating(!isRotating)}
+        onClick={handleRotationToggle}
       >
         {isRotating ? 'Stop Rotation' : 'Start Rotation'}
       </button>
     </div>
-  );
-};
+  )
+}
+
 
 const DonationSection = () => {
   const [isHovering, setIsHovering] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if router.query is defined and has the payment_status property
+    if (router.query && router.query.payment_status) {
+      const { payment_status } = router.query;
+      if (payment_status === 'paid') {
+        alert('Thank you for your donation!');
+      }
+    }
+    // remove the query params
+    router.replace('/', undefined, { shallow: true });
+  }, [router.query]);
+
+  const handleDonateClick = () => {
+    window.location.href = STRIPE_DONATION_URL;
+  }
 
   return (
     <section className="py-20 bg-gradient-to-b from-white to-indigo-50 overflow-hidden">
@@ -110,7 +137,7 @@ const DonationSection = () => {
               <div className="mt-8 text-center">
                 <p className="text-xl text-gray-700 mb-6">Your support helps us continue creating innovative 3D architectural solutions.</p>
                 <button
-                  onClick={() => window.location.href = '/donate'}
+                  onClick={handleDonateClick}
                   className="py-3 px-8 text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all duration-300 transform hover:scale-105 rounded-xl shadow-xl relative overflow-hidden"
                 >
                   <div className="relative z-10 flex items-center justify-center gap-3">
