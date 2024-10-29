@@ -4,9 +4,12 @@ import React, { useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Color, MathUtils } from 'three'
-import { Instances, Instance, useGLTF, Environment, Cloud, Stars, Effects, PerformanceMonitor } from '@react-three/drei'
+import { Instances, Instance, useGLTF, Environment, Cloud, Stars, Effects, PerformanceMonitor, useTexture } from '@react-three/drei'
+import { Vector3 } from 'three'
+import { createNoise2D } from 'simplex-noise'
 
 const randomInRange = (min, max) => Math.random() * (max - min) + min
+const simplex = createNoise2D()
 
 const GrassPlane = ({ size = 200 }) => {
   const planeRef = useRef()
@@ -831,69 +834,106 @@ const City = ({ buildingCount = 40, spread = 150 }) => {
 }
 
 const Desert = ({ duneCount = 20, spread = 40 }) => {
-  const sandMountains = useMemo(() => {
-    const cornerDunes = [];
-    const corners = [
-      [spread, -spread],
-      [-spread, -spread],
-      [spread, spread],
-      [-spread, spread]
-    ];
-    
-    const dunesPerCorner = 5;
-    
-    corners.forEach(corner => {
-      for (let i = 0; i < dunesPerCorner; i++) {
-        const angle = (i / dunesPerCorner) * Math.PI / 2 + randomInRange(-0.3, 0.3);
-        const radius = randomInRange(10, 20);
-        
-        const mainDune = {
-          position: [
-            corner[0] + Math.cos(angle) * radius,
-            randomInRange(-1, 0),
-            corner[1] + Math.sin(angle) * radius
-          ],
-          scale: [
-            randomInRange(10, 15),
-            randomInRange(15, 20),
-            randomInRange(10, 15)
-          ],
-          rotation: [0, angle + randomInRange(-0.15, 0.15), 0],
-          color: `hsl(43, ${randomInRange(35, 45)}%, ${randomInRange(65, 75)}%)`
-        };
-        cornerDunes.push(mainDune);
+  const groundRef = useRef();
+  const duneRefs = useRef([]);
+  
+  // Load textures
+  const [sandDiffuse, sandNormal, sandRoughness] = useTexture([
+    '/sand_diffuse.jpg',
+    '/sand_normal.jpg',
+    '/sand_roughness.jpg'
+  ]);
 
-        const companionRadius = radius + randomInRange(-5, 5);
-        const companionAngle = angle + randomInRange(-0.2, 0.2);
-        cornerDunes.push({
+  // Create more natural dune formations
+  const sandMountains = useMemo(() => {
+    const dunes = [];
+    const duneGroups = [];
+    
+    // Create main dune ridge formations
+    for (let i = 0; i < 4; i++) {
+      const centerX = randomInRange(-spread * 0.7, spread * 0.7);
+      const centerZ = randomInRange(-spread * 0.7, spread * 0.7);
+      const groupRotation = Math.random() * Math.PI * 2;
+      
+      // Create a ridge of connected dunes
+      for (let j = 0; j < 8; j++) {
+        const distance = j * randomInRange(8, 12);
+        const offset = Math.sin(j * 0.5) * randomInRange(5, 10);
+        
+        const dune = {
           position: [
-            corner[0] + Math.cos(companionAngle) * companionRadius,
-            randomInRange(-0.5, 0),
-            corner[1] + Math.sin(companionAngle) * companionRadius
+            centerX + Math.cos(groupRotation) * distance + Math.cos(groupRotation + Math.PI/2) * offset,
+            randomInRange(-1, 1),
+            centerZ + Math.sin(groupRotation) * distance + Math.sin(groupRotation + Math.PI/2) * offset
           ],
           scale: [
-            randomInRange(5, 8),
-            randomInRange(8, 12),
-            randomInRange(5, 8)
+            randomInRange(12, 20),
+            randomInRange(15, 25),
+            randomInRange(12, 20)
           ],
-          rotation: [0, companionAngle + randomInRange(-0.2, 0.2), 0],
-          color: `hsl(43, ${randomInRange(40, 50)}%, ${randomInRange(70, 80)}%)`
-        });
+          rotation: [0, groupRotation + randomInRange(-0.2, 0.2), 0],
+          color: `hsl(43, ${randomInRange(35, 45)}%, ${randomInRange(65, 75)}%)`,
+          windEffect: randomInRange(0.2, 0.4)
+        };
+        
+        dunes.push(dune);
+        
+        // Add smaller companion dunes
+        for (let k = 0; k < 3; k++) {
+          const companionDistance = randomInRange(5, 10);
+          const companionAngle = groupRotation + randomInRange(-Math.PI/4, Math.PI/4);
+          
+          dunes.push({
+            position: [
+              dune.position[0] + Math.cos(companionAngle) * companionDistance,
+              randomInRange(-0.5, 0.5),
+              dune.position[2] + Math.sin(companionAngle) * companionDistance
+            ],
+            scale: [
+              dune.scale[0] * randomInRange(0.3, 0.5),
+              dune.scale[1] * randomInRange(0.3, 0.5),
+              dune.scale[2] * randomInRange(0.3, 0.5)
+            ],
+            rotation: [0, companionAngle + randomInRange(-0.2, 0.2), 0],
+            color: `hsl(43, ${randomInRange(40, 50)}%, ${randomInRange(70, 80)}%)`,
+            windEffect: randomInRange(0.1, 0.3)
+          });
+        }
+      }
+    }
+    
+    return dunes;
+  }, [spread]);
+
+  // Animate sand particles and wind effects
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+    
+    // Animate ground texture
+    if (groundRef.current) {
+      groundRef.current.material.map.offset.x = Math.sin(time * 0.1) * 0.01;
+      groundRef.current.material.map.offset.y = Math.cos(time * 0.1) * 0.01;
+    }
+    
+    // Animate dunes slightly with wind
+    duneRefs.current.forEach((dune, i) => {
+      if (dune) {
+        const windStrength = sandMountains[i].windEffect;
+        dune.position.y += Math.sin(time + i) * 0.001 * windStrength;
+        dune.rotation.y += Math.sin(time * 0.2 + i) * 0.0001 * windStrength;
       }
     });
-    
-    return cornerDunes;
-  }, [spread]);
+  });
 
   return (
     <group>
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={0.3} />
       <directionalLight 
         position={[50, 50, 0]} 
-        intensity={1.4} 
+        intensity={1.6} 
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
         shadow-camera-far={300}
         shadow-camera-left={-100}
         shadow-camera-right={100}
@@ -901,90 +941,193 @@ const Desert = ({ duneCount = 20, spread = 40 }) => {
         shadow-camera-bottom={-100}
       />
       <hemisphereLight 
-        args={[new Color('#ffd700'), new Color('#e6c587'), 0.4]}
+        args={[new Color('#ffd700'), new Color('#e6c587'), 0.6]}
       />
+      
+      {/* Dunes */}
       {sandMountains.map((dune, i) => (
         <mesh
           key={`dune-${i}`}
+          ref={el => duneRefs.current[i] = el}
           position={dune.position}
           scale={dune.scale}
           rotation={dune.rotation}
           castShadow
           receiveShadow
         >
-          <sphereGeometry args={[1, 32, 32, 0, Math.PI, 0, Math.PI]} />
+          <sphereGeometry args={[1, 64, 64, 0, Math.PI, 0, Math.PI]} />
           <meshStandardMaterial
             color={dune.color}
+            map={sandDiffuse}
+            normalMap={sandNormal}
+            roughnessMap={sandRoughness}
             roughness={0.95}
             metalness={0.05}
-            envMapIntensity={0.6}
+            envMapIntensity={0.8}
           />
         </mesh>
       ))}
+      
+      {/* Ground */}
       <mesh 
+        ref={groundRef}
         rotation={[-Math.PI / 2, 0, 0]} 
         position={[0, -0.01, 0]}
         receiveShadow
       >
-        <planeGeometry args={[spread * 4, spread * 4, 128, 128]} />
+        <planeGeometry args={[spread * 4, spread * 4, 256, 256]} />
         <meshStandardMaterial
           color="#e6c587"
+          map={sandDiffuse}
+          normalMap={sandNormal}
+          roughnessMap={sandRoughness}
           roughness={1}
           metalness={0}
+          envMapIntensity={0.4}
         />
       </mesh>
-      <fog attach="fog" args={['#ffd700', 100, 400]} />
+      
+      {/* Atmospheric effects */}
+      <fog attach="fog" args={['#ffd700', 150, 400]} />
     </group>
   );
 };
 
-const Snow = ({ particleCount = 5000, spread = 50 }) => {
+// snow component
+const Snow = ({ particleCount = 9000, spread = 50 }) => {
+  const snowRef = useRef();
+  const groundRef = useRef();
+  const accumulatedSnow = useRef(new Array(100).fill(0));
+  
+  // Load snow textures
+  const [snowDiffuse, snowNormal] = useTexture([
+    '/snow_diffuse.jpg',
+    '/snow_normal.jpg'
+  ]);
+
+  // Generate more realistic snowflakes
   const snowflakes = useMemo(() => {
     return new Array(particleCount).fill(null).map(() => {
-      let x, z;
-      if (Math.random() < 0.5) {
-        x = randomInRange(-spread, -spread/2)
-      } else {
-        x = randomInRange(spread/2, spread)
-      }
-      if (Math.random() < 0.5) {
-        z = randomInRange(-spread, -spread/2)
-      } else {
-        z = randomInRange(spread/2, spread)
-      }
+      const radius = Math.sqrt(Math.random()) * spread;
+      const theta = Math.random() * Math.PI * 2;
+      
       return {
-        position: [x, randomInRange(0, spread), z],
-        speed: randomInRange(0.01, 0.05),
+        position: new Vector3(
+          Math.cos(theta) * radius,
+          randomInRange(0, spread),
+          Math.sin(theta) * radius
+        ),
+        initialY: randomInRange(0, spread),
+        speed: randomInRange(0.02, 0.08),
+        size: randomInRange(0.02, 0.08),
+        wobble: randomInRange(0, Math.PI * 2),
+        wobbleSpeed: randomInRange(0.5, 1.5)
+      };
+    });
+  }, [particleCount, spread]);
+
+  // Create ground heightmap for snow accumulation
+  const heightMap = useMemo(() => {
+    const resolution = 128;
+    const data = new Float32Array(resolution * resolution);
+    
+    for (let i = 0; i < resolution; i++) {
+      for (let j = 0; j < resolution; j++) {
+        const index = i * resolution + j;
+        data[index] = simplex(i / 20, j / 20) * 2;
       }
-    })
-  }, [particleCount, spread])
+    }
+    
+    return data;
+  }, []);
 
   useFrame((state) => {
-    const time = state.clock.getElapsedTime()
+    const time = state.clock.getElapsedTime();
+    
     snowflakes.forEach((snowflake, i) => {
-      snowflake.position[1] -= snowflake.speed
-      if (snowflake.position[1] < 0) snowflake.position[1] = spread
-      snowflake.position[0] += Math.sin(time + i) * 0.01
-    })
-  })
+      // Update position
+      snowflake.position.y -= snowflake.speed;
+      
+      // Add wind effect
+      snowflake.position.x += Math.sin(time * snowflake.wobbleSpeed + snowflake.wobble) * 0.02;
+      snowflake.position.z += Math.cos(time * snowflake.wobbleSpeed + snowflake.wobble) * 0.02;
+      
+      // Reset position when snowflake hits ground
+      if (snowflake.position.y < 0) {
+        snowflake.position.y = snowflake.initialY;
+        
+        // Accumulate snow where the snowflake landed
+        const gridX = Math.floor((snowflake.position.x + spread) / (spread * 2) * 99);
+        const gridZ = Math.floor((snowflake.position.z + spread) / (spread * 2) * 99);
+        const index = Math.max(0, Math.min(99, gridX + gridZ * 100));
+        accumulatedSnow.current[index] += 0.01;
+      }
+    });
+    
+    // Update ground mesh based on accumulated snow
+    if (groundRef.current) {
+      const vertices = groundRef.current.geometry.attributes.position.array;
+      for (let i = 0; i < vertices.length; i += 3) {
+        const gridX = Math.floor((vertices[i] + spread) / (spread * 2) * 99);
+        const gridZ = Math.floor((vertices[i + 2] + spread) / (spread * 2) * 99);
+        const index = Math.max(0, Math.min(99, gridX + gridZ * 100));
+        vertices[i + 1] = heightMap[index] + accumulatedSnow.current[index];
+      }
+      groundRef.current.geometry.attributes.position.needsUpdate = true;
+    }
+  });
 
   return (
     <group>
-      <Instances>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshStandardMaterial color="white" />
-        {snowflakes.map((snowflake, i) => (
-          <Instance key={i} position={snowflake.position} />
-        ))}
-      </Instances>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#e6f2ff" />
+      <ambientLight intensity={0.4} />
+      <directionalLight 
+        position={[50, 50, 0]} 
+        intensity={1.2} 
+        castShadow 
+      />
+      
+      {/* Snowflakes */}
+      <points ref={snowRef}>
+        <bufferGeometry>
+          <bufferAttribute 
+            attach="attributes-position"
+            count={particleCount}
+            array={new Float32Array(snowflakes.flatMap(s => [s.position.x, s.position.y, s.position.z]))}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial 
+          size={0.1}
+          color="white"
+          transparent
+          opacity={0.8}
+          sizeAttenuation
+        />
+      </points>
+      
+      {/* Snow-covered ground */}
+      <mesh 
+        ref={groundRef}
+        rotation={[-Math.PI / 2, 0, 0]} 
+        position={[0, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[spread * 2, spread * 2, 128, 128]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          map={snowDiffuse}
+          normalMap={snowNormal}
+          roughness={0.3}
+          metalness={0.1}
+          envMapIntensity={0.8}
+        />
       </mesh>
+      
+      {/* Atmospheric effects */}
+      <fog attach="fog" args={['#e6f2ff', 50, 200]} />
     </group>
-  )
-}
-
+  );
+};
 
 export const EnvironmentScene = ({ environment }) => {
   switch (environment) {
