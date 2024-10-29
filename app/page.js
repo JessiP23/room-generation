@@ -100,7 +100,7 @@ const InteractiveStructure = () => {
   )
 }
 
-
+// donation section
 const DonationSection = () => {
   const [isHovering, setIsHovering] = useState(false);
   const router = useRouter();
