@@ -121,9 +121,9 @@ const DonationSection = () => {
 
   return (
     <section className="py-20 bg-gradient-to-b from-white to-indigo-50 overflow-hidden">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8">
         
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-4xl mx-auto p-6 sm:p-8 md:p-10">
           <div 
             className="relative group"
             onMouseEnter={() => setIsHovering(true)}
@@ -131,18 +131,18 @@ const DonationSection = () => {
           >
             <div className="absolute inset-0 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 rounded-3xl opacity-75 blur-xl group-hover:opacity-100 transition-all duration-500 animate-pulse" />
             
-            <div className="relative bg-white rounded-2xl shadow-xl p-8">
+            <div className="relative bg-white rounded-2xl shadow-xl p-8 sm:p-8 md:p-10">
               <InteractiveStructure />
               
-              <div className="mt-8 text-center">
-                <p className="text-xl text-gray-700 mb-6">Your support helps us continue creating innovative 3D architectural solutions.</p>
+              <div className="mt-8 sm:mt-10 md:mt-12 text-center">
+                <p className="text-xl sm:text-2xl md:text-3xl text-gray-700 mb-6">Your support helps us continue creating innovative 3D architectural solutions.</p>
                 <button
                   onClick={handleDonateClick}
-                  className="py-3 px-8 text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all duration-300 transform hover:scale-105 rounded-xl shadow-xl relative overflow-hidden"
+                  className="py-3 px-8 sm:py-4 sm:px-10 md:py-5 md:px-12 text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all duration-300 transform hover:scale-105 rounded-xl shadow-xl relative overflow-hidden"
                 >
                   <div className="relative z-10 flex items-center justify-center gap-3">
                     <HeartHandshake 
-                      className={`w-6 h-6 transition-transform duration-300 ${
+                      className={`w-6 sm:w-7 md:w-8 h-6 sm:h-7 md:h-8 transition-transform duration-300 ${
                         isHovering ? 'scale-125' : ''
                       }`}
                     />
