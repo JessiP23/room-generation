@@ -1372,14 +1372,13 @@ export default function CustomizableRoom() {
             </div>
           )}
 
-
           {/* Action Buttons */}
           <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Actions</h2>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent ml-4" />
-            {/* actions */}
-          </div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Actions</h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-700 to-transparent ml-4" />
+              {/* actions */}
+            </div>
           <div className="grid grid-cols-2 gap-3">
             <button onClick={handleDownload} className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-all duration-200 transform hover:scale-105">
               Download
