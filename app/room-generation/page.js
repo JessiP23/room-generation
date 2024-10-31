@@ -445,6 +445,10 @@ export default function CustomizableRoom() {
   const [wallDesigns, setWallDesigns] = useState(Array(6).fill(''))
 
   const [wallStyle, setWallStyle] = useState('')
+  const [userInput, setUserInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -476,6 +480,34 @@ export default function CustomizableRoom() {
         return '/wall_texture.jpg'
     }
   }, [])
+
+  const generateRoom = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch('http://localhost:5000/generate-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: userInput }),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to generate room')
+      }
+      const data = await response.json()
+      setRooms(prevRooms => [...prevRooms, data.room])
+      setSelectedRoom(prevRooms => prevRooms.length)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [userInput])
+
+  const handleInputChange = (e) => {
+    setUserInput(e.target.value)
+  }
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault()
@@ -1180,6 +1212,25 @@ export default function CustomizableRoom() {
                 Apply
               </button>
             </div>
+
+            {/* <div className='flex gap-2'>
+                <input
+                type="text"
+                value={userInput}
+                onChange={handleInputChange}
+                placeholder="Describe your room or building..."
+                className="w-full p-2 bg-gray-700 text-white rounded"
+              />
+            
+              <button
+                onClick={generateRoom}
+                disabled={isLoading}
+                className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors"
+              >
+                {isLoading ? 'Generating...' : 'Generate Room'}
+              </button>
+              {error && <p className="text-red-500 mt-2">{error}</p>}
+            </div> */}
             
             <div className="grid grid-cols-2 gap-3">
               {['Width', 'Height', 'Depth', 'Wall Thickness'].map((label, index) => (
